@@ -24,7 +24,7 @@ endif
 #LDFLAGS = -static -o
 LDFLAGS = -o
 
-PROGS = cdhit cdhit-est cdhit-2d cdhit-est-2d
+PROGS = cdhit cdhit-est cdhit-2d cdhit-est-2d cdhit-div
 
 .c++.o:
 	$(CC) $(CCFLAGS) -c $<
@@ -48,6 +48,9 @@ cdhit-est: cdhit-common.o cdhit-utility.o cdhit-est.o
 cdhit-est-2d: cdhit-common.o cdhit-utility.o cdhit-est-2d.o
 	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cdhit-est-2d
 
+cdhit-div: cdhit-common.o cdhit-utility.o cdhit-div.o
+	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cdhit-div
+
 # objects
 cdhit-common.o: cdhit-common.c++ cdhit-common.h
 	$(CC) $(CCFLAGS) cdhit-common.c++ -c
@@ -66,4 +69,7 @@ cdhit-est.o: cdhit-est.c++ cdhit-utility.h
 
 cdhit-est-2d.o: cdhit-est-2d.c++ cdhit-utility.h
 	$(CC) $(CCFLAGS) cdhit-est-2d.c++ -c
+
+cdhit-div.o: cdhit-div.c++ cdhit-common.h
+	$(CC) $(CCFLAGS) cdhit-div.c++ -c
 

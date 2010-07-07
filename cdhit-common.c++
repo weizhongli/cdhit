@@ -1309,6 +1309,50 @@ void SequenceDB::SortDivide( Options & options, bool sort )
   }
 }// END sort_seqs_divide_segs
 
+void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Options & options )
+{
+  if( n == 0 or sequences.size() ==0 ) return;
+
+  size_t max_seg = options.total_letters / n + sequences[0]->size;
+  if( max_seg >= MAX_BIN_SWAP ) max_seg = (size_t) MAX_BIN_SWAP;
+
+  FILE *fin = fopen( db, "r" );
+  char *buf = new char[MAX_LINE_SIZE+1];
+  char outfile[512];
+  size_t seg_size = 0;
+  int i, j, count, rest, seg = 0;
+  sprintf( outfile, "%s-%i", newdb, 0 );
+  FILE *fout = fopen( outfile, "w+" );
+  n = sequences.size();
+  for (i=0; i<n; i++){
+    Sequence *seq = sequences[i];
+    fseek( fin, seq->des_begin, SEEK_SET );
+
+    seg_size += seq->size;
+    if( seg_size >= max_seg ){
+      seg += 1;
+      sprintf( outfile, "%s-%i", newdb, seg );
+      fclose( fout );
+      fout = fopen( outfile, "w+" );
+      seg_size = seq->size;
+    }
+
+    count = (seq->des_length + seq->dat_length) / MAX_LINE_SIZE;
+    rest = (seq->des_length + seq->dat_length) % MAX_LINE_SIZE;
+    //printf( "count = %6i,  rest = %6i\n", count, rest );
+    for (j=0; j<count; j++){
+      if( fread( buf, 1, MAX_LINE_SIZE, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
+      fwrite( buf, 1, MAX_LINE_SIZE, fout );
+    }
+    if( rest ){
+      if( fread( buf, 1, rest, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
+      fwrite( buf, 1, rest, fout );
+    }
+  }
+  fclose( fin );
+  fclose( fout );
+  delete []buf;
+}
 void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options & options )
 {
   FILE *fin = fopen( db, "r" );

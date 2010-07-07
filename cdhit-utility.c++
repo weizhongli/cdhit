@@ -237,6 +237,6 @@ int print_usage_div (char *arg) {
   cout << "    -i in_dbname, required" << endl;
   cout << "    -o out_dbname, required" << endl;
   cout << "    -div number of divide, required " << endl;
-  cout << "    -dbmax max size of your db\n\n\n";
+//  cout << "    -dbmax max size of your db\n\n\n";
   exit(1);
 } // END print_usage_div

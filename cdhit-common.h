@@ -461,6 +461,7 @@ public:
   void WriteClusters( const char *db, const char *newdb, const Options & options );
   void WriteExtra1D( const Options & options );
   void WriteExtra2D( SequenceDB & other, const Options & options );
+  void DivideSave( const char *db, const char *newdb, int n, const Options & options );
 
   void SwapIn( int seg, bool reponly=false );
   void SwapOut( int seg );
