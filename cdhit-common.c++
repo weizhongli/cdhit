@@ -2076,12 +2076,11 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
     }
     for (j=0; j<S; j++){
       if ( look_and_count[j] < required_aan ) continue;
-      //if ( look_and_count[j]+20 < required_aan ) continue;
 
       Sequence *rep = table.sequences[j];
       len2 = rep->size;
-      //if (len2 > len_upper_bound ) continue;
-      //if (options.has2D && len2 < len_lower_bound ) continue;
+      if (len2 > len_upper_bound ) continue;
+      if (options.has2D && len2 < len_lower_bound ) continue;
       seqj = rep->data;
 
       param.ControlLongCoverage( len2, options );
@@ -2094,7 +2093,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
       band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
       diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
           band_width1, band_left, band_right, required_aa1);
-      //if ( best_sum < required_aas ) continue;
+      if ( best_sum < required_aas ) continue;
 
       if (options.print || aln_cover_flag){ //return overlap region
         local_band_align2(seqi, seqj, len, len2, mat,
@@ -2109,10 +2108,10 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
         local_band_align(seqi, seqj, len, len2, mat,
             best_score, tiden_no, band_left, band_right);
       }
-      //if ( tiden_no < required_aa1 ) continue;
+      if ( tiden_no < required_aa1 ) continue;
       len_eff1 = (options.global_identity == 0) ? alnln : len;
-      tiden_no = (tiden_no * 10000) / len_eff1;
-      if (tiden_no < 100*options.cluster_thd100) continue;
+      tiden_no = (tiden_no * 100) / len_eff1;
+      if (tiden_no < options.cluster_thd100) continue;
       if (options.cluster_best and tiden_no < seq->identity) continue; // existing iden_no
       if (aln_cover_flag) {
         if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;

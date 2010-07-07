@@ -61,7 +61,7 @@ int main(int argc, char **argv)
   times(&CPU_begin);
 
   // ***********************************    parse command line and open file
-  if (argc < 7) print_usage_est(argv[0]);
+  if (argc < 7) print_usage_est_2d(argv[0]);
   if (options.SetOptions( argc, argv, true, true ) == 0) print_usage_est_2d(argv[0]);
   options.Validate();
 
