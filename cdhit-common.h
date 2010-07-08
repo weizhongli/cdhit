@@ -344,7 +344,8 @@ struct Sequence
 
   // index of the sequence in the original database:
   int   index;
-  int   state;
+  short state;
+  short xletter; // number of un-encoded letters
   int   cluster_id;
   int   fragment; // the first fragment, for representatives only
   int   identity;
@@ -433,7 +434,7 @@ struct WorkingBuffer
     aan_list_comp.resize( MAX_SEQ );
   }
 
-  void EncodeWords( Sequence *seq, int NA, bool est = false );
+  int EncodeWords( Sequence *seq, int NA, bool est = false );
   void ComputeAAP( const char *seqi, int size );
   void ComputeAAP2( const char *seqi, int size );
 };

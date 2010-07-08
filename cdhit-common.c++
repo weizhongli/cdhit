@@ -453,6 +453,18 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
       diag_score[i1 - *bip]++;
     }
   }
+#if 0
+  int mmax = 0;
+  int immax = 0;
+  for(i=0; i<=nall; i++){
+    printf( "%3i\t", diag_score[i] );
+    if( i%10 ==0 or i == nall ) printf( "\n" );
+    if( diag_score[i] > mmax ){
+      mmax = diag_score[i];
+      immax = i;
+    }
+  }
+#endif
 
   //find the best band range
 //  int band_b = required_aa1;
@@ -464,6 +476,12 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
   int from=band_b;
   int end =band_m;
   int score = best_score;  
+  
+#if 0
+  printf( "%i\n", required_aa1 );
+  printf( "max=%3i  imax=%3i; band:  %3i  %3i  %i\n", mmax, immax, band_b, band_e, band_m );
+  printf( "best: %i\n", best_score );
+#endif
   for (k=from, j=band_m+1; j<band_e; j++) {
     score -= diag_score[k++]; 
     score += diag_score[j]; 
@@ -473,6 +491,7 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
       best_score = score;
     }
   }
+  //printf( "best: %i\n", best_score );
   for (j=from; j<=end; j++) { // if aap pairs fail to open gap
     if ( diag_score[j] < 5 ) { best_score -= diag_score[j]; from++;}
     else break;
@@ -481,6 +500,7 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
     if ( diag_score[j] < 5 ) { best_score -= diag_score[j]; end--;}
     else break;
   }
+  //printf( "best: %i\n", best_score );
 
 //  delete [] diag_score;
   band_left = from-len1+1; 
@@ -838,11 +858,15 @@ void setaa_to_na() {
 } // END void setaa_to_na
 
 
-int setiseq(char *seq, int len) {
+int setiseq(char *seq, int len)
+{
+  int m = 0;
   for (int i=0; i<len; i++) {
     seq[i] = aa2idx[seq[i] - 'A'];
+    //m += (seq[i] == NAA1);
   }
-  return 0;
+  //printf( "NAA1 = %i %i\n", NAA1, m );
+  return m;
 } // END void SEQ::seq2iseq()
 
 
@@ -1555,13 +1579,14 @@ void WorkingParam::ComputeRequiredBases( int NAA, int ss )
     len_eff-NAA+1-(len_eff-required_aa1)*NAA :
     int (aan_cutoff* (double) len_eff);
 }
-void WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
+int WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
 {
   char *seqi = seq->data;
   int len = seq->size;
   // check_word_encodes
   int aan_no = len - NAA + 1;
   int i, j, k, i0, i1, k1;
+  int skip = 0;
   for (j=0; j<aan_no; j++) {
     word_encodes[j] = 0;
     for (k=0, k1=NAA-1; k<NAA; k++, k1--) word_encodes[j] += seqi[j+k] * NAAN_array[k1];
@@ -1572,10 +1597,10 @@ void WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
     for (j=0; j<len; j++){
       if ( seqi[j] == 4 ) {                      // here N is 4
         i0 = (j-NAA+1 > 0)      ? j-NAA+1 : 0;
-        i1 = (j+NAA < aan_no)   ? j+NAA   : aan_no;
-        for (i=i0; i< i1; i++) word_encodes[i]=-1;
+        for (i=i0; i<=j; i++) word_encodes[i]=-1;
       }
     }
+    for (j=0; j<len; j++) skip += (word_encodes[j] == -1);
   }
   std::sort( word_encodes.begin(), word_encodes.begin() + aan_no );
   for(j=0; j<aan_no; j++) word_encodes_no[j]=1;
@@ -1585,6 +1610,7 @@ void WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
       word_encodes_no[j]=0;
     }
   }
+  return skip;
   // END check_word_encodes
 }
 void WorkingBuffer::ComputeAAP( const char *seqi, int size )
@@ -1974,7 +2000,7 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 
     band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
     diag_test_aapn(NAA1, seqj, len, len2, buf, best_sum,
-        band_width1, band_left, band_right, required_aa1);
+        band_width1, band_left, band_right, required_aa1-1);
     if ( best_sum < required_aa2 ) continue;
 
     if (options.print || aln_cover_flag) //return overlap region
@@ -2040,7 +2066,8 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 
   param.ControlShortCoverage( len, options );
   param.ComputeRequiredBases( options.NAA, 4 );
-  buf.EncodeWords( seq, options.NAA, true );
+  int skip = buf.EncodeWords( seq, options.NAA, true );
+  required_aan -= skip;
 
   // if minimal alignment length > len, return
   // I can not return earlier, because I need to calc the word_encodes etc
@@ -2075,6 +2102,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
       table.CountWords(aan_no, word_encodes, word_encodes_no, look_and_count, true);
     }
     for (j=0; j<S; j++){
+      //printf( "1: %4i %4i %3i\n", look_and_count[j], required_aan, seq->xletter );
       if ( look_and_count[j] < required_aan ) continue;
 
       Sequence *rep = table.sequences[j];
@@ -2092,7 +2120,8 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 
       band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
       diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
-          band_width1, band_left, band_right, required_aa1);
+          band_width1, band_left, band_right, required_aa1-3);
+      //printf( "a:  %5i  %5i\n", best_sum, required_aas );
       if ( best_sum < required_aas ) continue;
 
       if (options.print || aln_cover_flag){ //return overlap region
@@ -2105,6 +2134,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
           talign_info[2] = len - talign_info[2] - 1;
         }
       }else{
+        //printf( "b:  %5i  %5i\n", band_left, band_right );
         local_band_align(seqi, seqj, len, len2, mat,
             best_score, tiden_no, band_left, band_right);
       }
@@ -2426,8 +2456,7 @@ int calc_ann_list(int len, char *seqi, int NAA, int& aan_no, Vector<int> & aan_l
     for (j=0; j<len; j++){
       if ( seqi[j] == 4 ) {                      // here N is 4
         i0 = (j-NAA+1 > 0)      ? j-NAA+1 : 0;
-        i1 = (j+NAA < aan_no)   ? j+NAA   : aan_no;
-        for (i=i0; i< i1; i++) aan_list[i]=-1;
+        for (i=i0; i<=j; i++) aan_list[i]=-1;
       }
     }
   }
