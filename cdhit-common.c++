@@ -411,7 +411,7 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
     score2 -= diag_score2[k]; 
     score2 += diag_score2[j]; 
     if ( score2 > best_score2 ) {
-      from = k;
+      from = k + 1;
       end  = j;
       best_score = score;
       best_score2 = score2;
@@ -507,7 +507,7 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
     score2 -= diag_score2[k]; 
     score2 += diag_score2[j]; 
     if ( score2 > best_score2 ) {
-      from = k;
+      from = k + 1;
       end  = j;
       best_score = score;
       best_score2 = score2;
