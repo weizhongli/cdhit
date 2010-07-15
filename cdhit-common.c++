@@ -362,11 +362,13 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
   Vector<INTs> & aap_begin = buffer.aap_begin;
   Vector<INTs> & aap_list = buffer.aap_list;
   Vector<int> & diag_score = buffer.diag_score;
+  Vector<int> & diag_score2 = buffer.diag_score2;
 
   if (nall > MAX_DIAG) bomb_error("in diag_test_aapn, MAX_DIAG reached");
   for (pp=&diag_score[0], i=nall; i; i--, pp++) *pp=0;
+  for (pp=&diag_score2[0], i=nall; i; i--, pp++) *pp=0;
 
-  int c22;
+  int c22, cpx;
   INTs *bip;
   int len11 = len1-1;
   int len22 = len2-1;
@@ -374,6 +376,7 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
   for (i=0; i<len22; i++,i1++) {
 //    c22 = iseq2[i]*NAA1 + iseq2[i+1];
     c22 = iseq2[i]*NAA1+ iseq2[i+1];
+    cpx = 1 + (iseq2[i] != iseq2[i+1]);
     if ( (j=taap[c22]) == 0) continue;
 #if 0
     int bi, bj;
@@ -383,7 +386,10 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
     }
 #endif
     int m = aap_begin[c22];
-    for(int k=0; k<j; k++) diag_score[ i1 - aap_list[m+k] ] ++;
+    for(int k=0; k<j; k++){
+      diag_score[ i1 - aap_list[m+k] ] ++;
+      diag_score2[ i1 - aap_list[m+k] ] += cpx;
+    }
   }
 
   //find the best band range
@@ -392,17 +398,23 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
   int band_e = nall - required_aa1;
   int band_m = ( band_b+band_width-1 < band_e ) ? band_b+band_width-1 : band_e;
   int best_score=0;
+  int best_score2=0;
   for (i=band_b; i<=band_m; i++) best_score += diag_score[i];
+  for (i=band_b; i<=band_m; i++) best_score2 += diag_score2[i];
   int from=band_b;
   int end =band_m;
-  int score = best_score;  
-  for (k=from, j=band_m+1; j<band_e; j++) {
-    score -= diag_score[k++]; 
+  int score = best_score;
+  int score2 = best_score2;
+  for (k=from, j=band_m+1; j<band_e; j++, k++) {
+    score -= diag_score[k]; 
     score += diag_score[j]; 
-    if ( score > best_score ) {
+    score2 -= diag_score2[k]; 
+    score2 += diag_score2[j]; 
+    if ( score2 > best_score2 ) {
       from = k;
       end  = j;
       best_score = score;
+      best_score2 = score2;
     }
   }
   for (j=from; j<=end; j++) { // if aap pairs fail to open gap
@@ -435,11 +447,13 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
   Vector<INTs> & aap_begin = buffer.aap_begin;
   Vector<INTs> & aap_list = buffer.aap_list;
   Vector<int> & diag_score = buffer.diag_score;
+  Vector<int> & diag_score2 = buffer.diag_score2;
 
   if (nall > MAX_DIAG) bomb_error("in diag_test_aapn_est, MAX_DIAG reached");
   for (pp=&diag_score[0], i=nall; i; i--, pp++) *pp=0;
+  for (pp=&diag_score2[0], i=nall; i; i--, pp++) *pp=0;
 
-  int c22;
+  int c22, cpx;
   INTs *bip;
   int len22 = len2-3;
   i1 = len1-1;
@@ -447,10 +461,12 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
     if ((iseq2[i]==4) || (iseq2[i+1]==4) || (iseq2[i+2]==4) || (iseq2[i+3]==4)) continue; //skip N
 
     c22 = iseq2[i]*NAA3+ iseq2[i+1]*NAA2 + iseq2[i+2]*NAA1 + iseq2[i+3];
+    cpx = 1 + (iseq2[i] != iseq2[i+1]) + (iseq2[i+1] != iseq2[i+2]) + (iseq2[i+2] != iseq2[i+3]);
     if ( (j=taap[c22]) == 0) continue;
     bip = & aap_list[ aap_begin[c22] ];     //    bi = aap_begin[c22];
     for (; j; j--, bip++) {  //  for (j=0; j<taap[c22]; j++,bi++) {
       diag_score[i1 - *bip]++;
+      diag_score2[i1 - *bip] += cpx;
     }
   }
 #if 0
@@ -472,26 +488,34 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
   int band_e = nall - required_aa1;
   int band_m = ( band_b+band_width-1 < band_e ) ? band_b+band_width-1 : band_e;
   int best_score=0;
+  int best_score2=0;
   for (i=band_b; i<=band_m; i++) best_score += diag_score[i];
+  for (i=band_b; i<=band_m; i++) best_score2 += diag_score2[i];
   int from=band_b;
   int end =band_m;
   int score = best_score;  
+  int score2 = best_score2;  
   
 #if 0
   printf( "%i\n", required_aa1 );
   printf( "max=%3i  imax=%3i; band:  %3i  %3i  %i\n", mmax, immax, band_b, band_e, band_m );
   printf( "best: %i\n", best_score );
 #endif
-  for (k=from, j=band_m+1; j<band_e; j++) {
-    score -= diag_score[k++]; 
+  for (k=from, j=band_m+1; j<band_e; j++, k++) {
+    score -= diag_score[k]; 
     score += diag_score[j]; 
-    if ( score > best_score ) {
+    score2 -= diag_score2[k]; 
+    score2 += diag_score2[j]; 
+    if ( score2 > best_score2 ) {
       from = k;
       end  = j;
       best_score = score;
+      best_score2 = score2;
     }
   }
-  //printf( "best: %i\n", best_score );
+#if 0
+  printf( "from: %i, end: %i,  best: %i\n", from, end, best_score );
+#endif
   for (j=from; j<=end; j++) { // if aap pairs fail to open gap
     if ( diag_score[j] < 5 ) { best_score -= diag_score[j]; from++;}
     else break;
@@ -506,6 +530,10 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
   band_left = from-len1+1; 
   band_right= end-len1+1;
   best_sum = best_score;
+#if 0
+  printf( "max=%3i  imax=%3i; band:  %3i  %3i  %i\n", mmax, immax, band_b, band_e, band_m );
+  printf( "best: %i\n", best_score );
+#endif
   return OK_FUNC;
 }
 // END diag_test_aapn_est
@@ -2121,7 +2149,6 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
       band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
       diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
           band_width1, band_left, band_right, required_aa1-3);
-      //printf( "a:  %5i  %5i\n", best_sum, required_aas );
       if ( best_sum < required_aas ) continue;
 
       if (options.print || aln_cover_flag){ //return overlap region
@@ -2134,7 +2161,6 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
           talign_info[2] = len - talign_info[2] - 1;
         }
       }else{
-        //printf( "b:  %5i  %5i\n", band_left, band_right );
         local_band_align(seqi, seqj, len, len2, mat,
             best_score, tiden_no, band_left, band_right);
       }

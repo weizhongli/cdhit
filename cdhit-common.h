@@ -413,6 +413,7 @@ struct WorkingBuffer
   Vector<INTs> look_and_count;
   Vector<IndexCount>  indexCounts;
   Vector<int>  diag_score;
+  Vector<int>  diag_score2;
   Vector<int> aan_list_comp;
   char seqi_comp[MAX_SEQ];
 
@@ -431,6 +432,7 @@ struct WorkingBuffer
     word_encodes_backup.resize( MAX_SEQ );
     look_and_count.resize( frag );
     diag_score.resize( MAX_DIAG );
+    diag_score2.resize( MAX_DIAG );
     aan_list_comp.resize( MAX_SEQ );
   }
 
