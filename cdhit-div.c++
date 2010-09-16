@@ -16,7 +16,7 @@
 //
 // Modified by:
 //                                      Limin Fu
-//                                      Calit2, UCSD
+//                                      Center for Research in Biological Systems (CRBS), UCSD
 //                                      La Jolla, CA, 92093
 //                                      Email: l2fu@ucsd.edu, fu@daovm.net
 // =============================================================================

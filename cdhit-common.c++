@@ -20,7 +20,7 @@
 //
 // modified by:
 //                                      Limin Fu
-//                                      Calit2, UCSD
+//                                      Center for Research in Biological Systems (CRBS), UCSD
 //                                      La Jolla, CA, 92093
 //                                      Email: l2fu@ucsd.edu, fu@daovm.net
 // =============================================================================
@@ -439,7 +439,7 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
         int &best_sum, int band_width, int &band_left, int &band_right, int required_aa1)
 {
   int i, i1, j, k;
-  int *pp;
+  int *pp, *pp2;
   int nall = len1+len2-1;
   int NAA2 = NAA1 * NAA1;
   int NAA3 = NAA2 * NAA1;
@@ -450,19 +450,24 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
   Vector<int> & diag_score2 = buffer.diag_score2;
 
   if (nall > MAX_DIAG) bomb_error("in diag_test_aapn_est, MAX_DIAG reached");
-  for (pp=&diag_score[0], i=nall; i; i--, pp++) *pp=0;
-  for (pp=&diag_score2[0], i=nall; i; i--, pp++) *pp=0;
+  pp = & diag_score[0];
+  pp2 = & diag_score2[0];
+  for (i=nall; i; i--, pp++, pp2++) *pp = *pp2 =0;
 
-  int c22, cpx;
   INTs *bip;
+  int c22, cpx;
   int len22 = len2-3;
   i1 = len1-1;
-  for (i=0; i<len22; i++,i1++) {
-    if ((iseq2[i]==4) || (iseq2[i+1]==4) || (iseq2[i+2]==4) || (iseq2[i+3]==4)) continue; //skip N
+  for (i=0; i<len22; i++,i1++,iseq2++) {
+    unsigned char c0 = iseq2[0];
+    unsigned char c1 = iseq2[1];
+    unsigned char c2 = iseq2[2];
+    unsigned char c3 = iseq2[3];
+    if ((c0==4) || (c1==4) || (c2==4) || (c3==4)) continue; //skip N
 
-    c22 = iseq2[i]*NAA3+ iseq2[i+1]*NAA2 + iseq2[i+2]*NAA1 + iseq2[i+3];
-    cpx = 1 + (iseq2[i] != iseq2[i+1]) + (iseq2[i+1] != iseq2[i+2]) + (iseq2[i+2] != iseq2[i+3]);
+    c22 = c0*NAA3+ c1*NAA2 + c2*NAA1 + c3;
     if ( (j=taap[c22]) == 0) continue;
+    cpx = 1 + (c0 != c1) + (c1 != c2) + (c2 != c3);
     bip = & aap_list[ aap_begin[c22] ];     //    bi = aap_begin[c22];
     for (; j; j--, bip++) {  //  for (j=0; j<taap[c22]; j++,bi++) {
       diag_score[i1 - *bip]++;
@@ -489,8 +494,10 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
   int band_m = ( band_b+band_width-1 < band_e ) ? band_b+band_width-1 : band_e;
   int best_score=0;
   int best_score2=0;
-  for (i=band_b; i<=band_m; i++) best_score += diag_score[i];
-  for (i=band_b; i<=band_m; i++) best_score2 += diag_score2[i];
+  for (i=band_b; i<=band_m; i++){
+    best_score += diag_score[i];
+    best_score2 += diag_score2[i];
+  }
   int from=band_b;
   int end =band_m;
   int score = best_score;  
@@ -578,7 +585,7 @@ mat is matrix, return ALN_PAIR class
 
 int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
                      ScoreMatrix &mat, int &best_score, int &iden_no,
-                     int band_left, int band_right) {
+                     int band_left, int band_right, WorkingBuffer & buffer) {
   int i, j, k, j1;
   int jj, kk;
   int best_score1, iden_no1;
@@ -590,9 +597,21 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 
   // allocate mem for score_mat[len1][len2] etc
   int band_width = band_right - band_left + 1;
-  VectorInt row( band_width, 0 );
-  MatrixInt score_mat( len1, row );
-  MatrixInt iden_mat( len1, row );
+
+  MatrixInt & score_mat = buffer.score_mat;
+  MatrixInt & iden_mat = buffer.iden_mat;
+
+  if( score_mat.size() < len1 ){
+    VectorInt row( band_width, 0 );
+    while( score_mat.size() < len1 ){
+      score_mat.Append( row );
+      iden_mat.Append( row );
+    }
+  }
+  for(i=0; i<len1; i++){
+    if( score_mat[i].Size() < band_width ) score_mat[i].Resize( band_width );
+    if( iden_mat[i].Size() < band_width ) iden_mat[i].Resize( band_width );
+  }
 
   VectorInt & gap_array  = mat.gap_array;
   best_score = 0;
@@ -700,7 +719,8 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 int local_band_align2(char iseq1[], char iseq2[], int len1, int len2,
                      ScoreMatrix &mat, int &best_score, int &iden_no,
                      int band_left, int band_right, 
-                     int &from1, int &end1, int &from2, int &end2, int &alnln) {
+                     int &from1, int &end1, int &from2, int &end2, int &alnln, WorkingBuffer & buffer )
+{
   int i, j, k, j1;
   int jj, kk;
   int best_score1, iden_no1;
@@ -713,15 +733,33 @@ int local_band_align2(char iseq1[], char iseq2[], int len1, int len2,
 
   // allocate mem for score_mat[len1][len2] etc
   int band_width = band_right - band_left + 1;
-  VectorInt row( band_width, 0 );
-  MatrixInt score_mat( len1, row );
-  MatrixInt iden_mat( len1, row );
-  MatrixInt from1_mat( len1, row );
-  MatrixInt from2_mat( len1, row );
-  MatrixInt alnln_mat( len1, row );
+
+  MatrixInt & score_mat = buffer.score_mat;
+  MatrixInt & iden_mat = buffer.iden_mat;
+  MatrixInt & from1_mat = buffer.from1_mat;
+  MatrixInt & from2_mat = buffer.from2_mat;
+  MatrixInt & alnln_mat = buffer.alnln_mat;
 
   VectorInt & gap_array  = mat.gap_array;
   best_score = 0;
+
+  if( score_mat.size() < len1 ){
+    VectorInt row( band_width, 0 );
+    while( score_mat.size() < len1 ){
+      score_mat.Append( row );
+      iden_mat.Append( row );
+      from1_mat.Append( row );
+      from2_mat.Append( row );
+      alnln_mat.Append( row );
+    }
+  }
+  for(i=0; i<len1; i++){
+    if( score_mat[i].Size() < band_width ) score_mat[i].Resize( band_width );
+    if( iden_mat[i].Size() < band_width ) iden_mat[i].Resize( band_width );
+    if( from1_mat[i].Size() < band_width ) from1_mat[i].Resize( band_width );
+    if( from2_mat[i].Size() < band_width ) from2_mat[i].Resize( band_width );
+    if( alnln_mat[i].Size() < band_width ) alnln_mat[i].Resize( band_width );
+  }
 
   if (band_left < 0) {  //set score to left border of the matrix within band
     int tband = (band_right < 0) ? band_right : 0;
@@ -886,18 +924,6 @@ void setaa_to_na() {
 } // END void setaa_to_na
 
 
-int setiseq(char *seq, int len)
-{
-  int m = 0;
-  for (int i=0; i<len; i++) {
-    seq[i] = aa2idx[seq[i] - 'A'];
-    //m += (seq[i] == NAA1);
-  }
-  //printf( "NAA1 = %i %i\n", NAA1, m );
-  return m;
-} // END void SEQ::seq2iseq()
-
-
 /////////////////
 ScoreMatrix::ScoreMatrix() : gap_array( MAX_GAP )
 {
@@ -1056,7 +1082,7 @@ void WordTable::PrintAll()
   cout << "total cols: " << cols << " total words: " << total_words << endl;
 }
 
-int WordTable::CountWords( NVector<IndexCount> & counts, Vector<INTs> & look_and_count, bool est)
+int WordTable::CountWords( NVector<IndexCount> & counts, NVector<INTs> & look_and_count, bool est)
 {
   int aan_no = counts.Size();
   int  j, k, j0, j1, k1;
@@ -1078,7 +1104,7 @@ int WordTable::CountWords( NVector<IndexCount> & counts, Vector<INTs> & look_and
   return OK_FUNC;
 }
 int WordTable::CountWords(int aan_no, Vector<int> & word_encodes,
-                           Vector<INTs> & word_encodes_no, Vector<INTs> &look_and_count, bool est)
+                           Vector<INTs> & word_encodes_no, NVector<INTs> &look_and_count, bool est)
 {
   int  j, k, j0, j1, k1;
 
@@ -1095,6 +1121,55 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes,
         look_and_count[ ic.index ] += ( j1 < ic.count ) ? j1 : ic.count ;
       }
     }
+  }
+                                                                                
+  return OK_FUNC;
+}
+
+
+int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> & word_encodes_no,
+    NVector<INTs> &look_and_count, 
+    NVector<uint32_t> &look_and_count1, 
+    NVector<uint32_t> &look_and_count2, 
+    NVector<uint8_t> &look_and_count3, 
+    bool est)
+{
+  int  j, k, j0, j1, k1, m;
+  int ix1, ix2, ix3, ix4;
+
+  int *we = & word_encodes[0];
+  j0 = 0;
+  if( est ) while( *we <0 ) j0++, we++; // if met short word has 'N'
+  INTs *wen = & word_encodes_no[j0];
+  for (; j0<aan_no; j0++, we++, wen++) {
+	  j  = *we;
+	  j1 = *wen;
+	  if( j1==0 ) continue;
+	  NVector<IndexCount> & one = indexCounts[j];
+	  k1 = one.Size();
+	  IndexCount *ic = one.items;
+	  for (k=0; k<k1; k++, ic++){
+		  ix1 = ic->index >> CBIT1;
+		  ix2 = ic->index >> CBIT2;
+		  ix3 = ic->index >> CBIT3;
+
+		  if( look_and_count3[ ix3 ] ==0 ){
+			  look_and_count3[ ix3 ] = 1;
+			  memset( look_and_count2.items + (ix3 << CBIT1), 0, CHUNK1 * sizeof(uint32_t) );
+		  }
+		  if( look_and_count2[ ix2 ] ==0 ){
+			  memset( look_and_count1.items + (ix2 << CBIT1), 0, CHUNK1 * sizeof(uint32_t) );
+		  }
+		  if( look_and_count1[ ix1 ] ==0 ){
+			  memset( look_and_count.items + (ix1 << CBIT1), 0, CHUNK1 * sizeof(INTs) );
+		  }
+		  int c = look_and_count[ ic->index ] + ( (j1 < ic->count) ? j1 : ic->count );
+		  look_and_count[ ic->index ] = c;
+		  if( c > look_and_count1[ ix1 ] ){
+			  look_and_count1[ ix1 ] = c;
+			  if( c > look_and_count2[ ix2 ] ) look_and_count2[ ix2 ] = c;
+		  }
+	  }
   }
                                                                                 
   return OK_FUNC;
@@ -1117,11 +1192,18 @@ Sequence::Sequence( const Sequence & other )
     memcpy( data, other.data, size );
     //for (i=0; i<size; i++) data[i] = other.data[i];
   }
+  if( other.identifier ){
+    int len = strlen( other.identifier );
+    identifier = new char[len+1];
+    memcpy( identifier, other.identifier, len );
+    identifier[len] = 0;
+  }
 }
 Sequence::~Sequence()
 {
   //printf( "delete: %p\n", this );
   if( data ) delete[] data;
+  if( identifier ) delete[] identifier;
 }
 
 void Sequence::Clear()
@@ -1176,6 +1258,43 @@ void Sequence::Reserve( int n )
     if( size ) data[size] = 0;
   }
 }
+void Sequence::ConvertBases()
+{
+	int i;
+	for(i=0; i<size; i++) data[i] = aa2idx[data[i] - 'A'];
+	//ComputeStats();
+}
+#if 0
+extern Options options;
+void Sequence::ComputeStats()
+{
+	int oneCounts[4];
+	int twoCounts[16];
+	int i = 0;
+	stats = 0;
+	if( size <=1 or options.isEST == false ) return;
+	memset( oneCounts, 0, 4*sizeof(int) );
+	memset( twoCounts, 0, 16*sizeof(int) );
+	if( data[0] < 4 ) oneCounts[ data[0] ] = 1;
+	for(i=1; i<size; i++){
+		if( data[i] >=4 or data[i-1] >=4 ) continue;
+		oneCounts[ data[i] ] += 1;
+		twoCounts[ data[i-1] * 4 + data[i] ] += 1;
+	}
+	unsigned char *s4 = (unsigned char*) & stats;
+	double entropy = 0.0;
+	for(i=0; i<16; i++){
+		if( twoCounts[i] == 0 ) continue;
+		double p = twoCounts[i] / (size - 1.0);
+		entropy += - p * log( p );
+	}
+	entropy = entropy * 255.0 / (4.0 * log(2));
+	s4[0] = (oneCounts[0] * 255) / size;
+	s4[1] = (oneCounts[1] * 255) / size;
+	s4[2] = (oneCounts[2] * 255) / size;
+	s4[3] = (int) entropy;
+}
+#endif
 
 void Sequence::Swap( Sequence & other )
 {
@@ -1213,20 +1332,11 @@ void Sequence::SwapOut()
     data = NULL;
   }
 }
-void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options )
+void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options, char *buf )
 {
   const char *tag = options.isEST ? "nt" : "aa";
-  char *buf = new char[ MAX_DES + 1 ];
   bool print = options.print != 0;
   bool strand = options.isEST;
-  int i, len = options.des_len ? options.des_len : MAX_DES;
-  fseek( fin, des_begin, SEEK_SET );
-  if( (len=fread( buf, 1, len, fin )) ==0 ) bomb_error( "Can not swap in sequence" );
-  i = 0;
-  if( buf[i] == '>' ) i += 1;
-  if( buf[i] == ' ' or buf[i] == '\t' ) i += 1;
-  while( i < len and ! isspace( buf[i] ) ) i += 1;
-  buf[i] = 0;
 #if 0
   if( options.des_len ==0 ){
     len = 0;
@@ -1234,7 +1344,7 @@ void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options
   }
   buf[ len ] = 0;
 #endif
-  fprintf( fout, "%i\t%i%s, %s...", id, size, tag, buf );
+  fprintf( fout, "%i\t%i%s, %s...", id, size, tag, identifier );
   if( identity ){
     int *c = coverage;
     fprintf( fout, " at " );
@@ -1244,13 +1354,13 @@ void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options
   }else{
     fprintf( fout, " *\n" );
   }
-  delete []buf;
 }
 
 void SequenceDB::Read( const char *file, const Options & options )
 {
   Sequence one;
   Sequence dummy;
+  Sequence des;
   FILE *swap = NULL;
   FILE *fin = fopen( file, "r" );
   char *buffer = NULL;
@@ -1281,7 +1391,7 @@ void SequenceDB::Read( const char *file, const Options & options )
             dummy.size = one.size;
             dummy.offset = ftell( swap );
             sequences.Append( new Sequence( dummy ) ); 
-            setiseq( one.data, one.size );
+			one.ConvertBases();
             fwrite( one.data, 1, one.size, swap );
           }else{
             //printf( "==================\n" );
@@ -1294,14 +1404,25 @@ void SequenceDB::Read( const char *file, const Options & options )
       }
       int len = strlen( buffer );
       int len2 = len;
+      des.size = 0;
+      des += buffer;
       while( len2 && buffer[len2-1] != '\n' ){
         if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+        des += buffer;
         len2 = strlen( buffer );
         len += len2;
       }
       size_t offset = ftell( fin );
       one.des_begin = dummy.des_begin = offset - len;
       one.des_length = dummy.des_length = len;
+
+      int i = 0;
+      if( des.data[i] == '>' ) i += 1;
+      if( des.data[i] == ' ' or des.data[i] == '\t' ) i += 1;
+      if( options.des_len and options.des_len < des.size ) des.size = options.des_len;
+      while( i < des.size and ! isspace( des.data[i] ) ) i += 1;
+      des.data[i] = 0;
+      one.identifier = dummy.identifier = des.data;
     } else {
       one += buffer;
     }
@@ -1313,10 +1434,41 @@ void SequenceDB::Read( const char *file, const Options & options )
   int i;
   scanf( "%i", & i );
 #endif
+  one.identifier = dummy.identifier = NULL;
   delete[] buffer;
   fclose( fin );
 }
 
+#if 0
+void SequenceDB::Sort( int first, int last )
+{
+	int lower=first+1, upper=last;
+	Sequence *pivot;
+	Sequence *val;
+	if( first >= last ) return;
+	val = sequences[first];
+	sequences[first] = sequences[ (first+last)/2 ];
+	sequences[ (first+last)/2 ] = val;
+	pivot = sequences[ first ];
+
+	while( lower <= upper ){
+		while( lower <= last && sequences[lower]->stats < pivot->stats ) lower ++;
+		while( pivot->stats < sequences[upper]->stats ) upper --;
+		if( lower < upper ){
+			val = sequences[lower];
+			sequences[lower] = sequences[upper];
+			sequences[upper] = val;
+			upper --;
+		}
+		lower ++;
+	}
+	val = sequences[first];
+	sequences[first] = sequences[upper];
+	sequences[upper] = val;
+	if( first < upper-1 ) Sort( first, upper-1 );
+	if( upper+1 < last ) Sort( upper+1, last );
+}
+#endif
 void SequenceDB::SortDivide( Options & options, bool sort )
 {
   int i, j, k, len;
@@ -1329,7 +1481,7 @@ void SequenceDB::SortDivide( Options & options, bool sort )
     total_letter += len;
     if (len > max_len) max_len = len;
     if (len < min_len) min_len = len;
-    if (seq->swap == NULL) setiseq( seq->data, len );
+    if (seq->swap == NULL) seq->ConvertBases();
   }
   options.total_letters = total_letter;
   if (max_len >= 65536) 
@@ -1356,6 +1508,15 @@ void SequenceDB::SortDivide( Options & options, bool sort )
       offset[len] ++;
     }
     for (i=0; i<N; i++) sequences[i] = sorting[i];
+#if 0
+	if( options.isEST ){
+		int start = 0;
+		for (i=0; i<M; i++){
+			Sort( start, accum[i] );
+			start = accum[i];
+		}
+	}
+#endif
     cout << "Sequences have been sorted" << endl;
     // END sort them from long to short
   }
@@ -1447,9 +1608,10 @@ void SequenceDB::WriteExtra1D( const Options & options )
 
   FILE *fin = fopen( options.input.c_str(), "r" );
   FILE *fout = fopen( db_clstr_bak.c_str(), "w+" );
+  char *buf = new char[ MAX_DES + 1 ];
   for (i=0; i<N; i++) {
     Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
-    seq->PrintInfo( seq->cluster_id, fin, fout, options );
+    seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
   }
   fclose( fout );
 
@@ -1466,8 +1628,10 @@ void SequenceDB::WriteExtra1D( const Options & options )
   for (i=0; i<M; i++) {
     fprintf( fout, ">Cluster %i\n", i );
     for (k=0; k<(int)clusters[i].size(); k++)
-      sequences[ clusters[i][k] ]->PrintInfo( k, fin, fout, options );
+      sequences[ clusters[i][k] ]->PrintInfo( k, fin, fout, options, buf );
   }
+  delete []buf;
+  fclose( fin );
 }
 void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
 {
@@ -1482,13 +1646,14 @@ void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
   FILE *fin = fopen( options.input.c_str(), "r" );
   FILE *fin2 = fopen( options.input2.c_str(), "r" );
   FILE *fout = fopen( db_clstr_bak.c_str(), "w+" );
+  char *buf = new char[ MAX_DES + 1 ];
   for (i=0; i<N; i++) {
     Sequence *seq = other.sequences[ sorting[i] & 0xffffffff ];
-    seq->PrintInfo( seq->cluster_id, fin, fout, options );
+    seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
   }
   for (i=0; i<N2; i++) {
     Sequence *seq = sequences[i];
-    if( seq->state & IS_REDUNDANT ) seq->PrintInfo( seq->cluster_id, fin2, fout, options );
+    if( seq->state & IS_REDUNDANT ) seq->PrintInfo( seq->cluster_id, fin2, fout, options, buf );
   }
   fclose( fout );
 
@@ -1503,10 +1668,12 @@ void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
   for (i=0; i<N; i++) {
     Sequence *seq = other.sequences[ i ];
     fprintf( fout, ">Cluster %i\n", i );
-    seq->PrintInfo( 0, fin, fout, options );
+    seq->PrintInfo( 0, fin, fout, options, buf );
     for (k=0; k<(int)clusters[i].size(); k++)
-      sequences[ clusters[i][k] ]->PrintInfo( k+1, fin2, fout, options );
+      sequences[ clusters[i][k] ]->PrintInfo( k+1, fin2, fout, options, buf );
   }
+  delete []buf;
+  fclose( fin );
 }
 void WorkingParam::ControlShortCoverage( int len, const Options & options )
 {
@@ -1613,8 +1780,9 @@ int WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
   int len = seq->size;
   // check_word_encodes
   int aan_no = len - NAA + 1;
-  int i, j, k, i0, i1, k1;
+  int i, j, i0, i1;
   int skip = 0;
+  unsigned char k, k1;
   for (j=0; j<aan_no; j++) {
     word_encodes[j] = 0;
     for (k=0, k1=NAA-1; k<NAA; k++, k1--) word_encodes[j] += seqi[j+k] * NAAN_array[k1];
@@ -1624,12 +1792,14 @@ int WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
   if( est ){
     for (j=0; j<len; j++){
       if ( seqi[j] == 4 ) {                      // here N is 4
-        i0 = (j-NAA+1 > 0)      ? j-NAA+1 : 0;
-        for (i=i0; i<=j; i++) word_encodes[i]=-1;
+        i0 = (j-NAA+1 > 0) ? j-NAA+1 : 0;
+        i1 = j < aan_no ? j : aan_no - 1;
+        for (i=i0; i<=i1; i++) word_encodes[i]=-1;
       }
     }
-    for (j=0; j<len; j++) skip += (word_encodes[j] == -1);
+    for (j=0; j<aan_no; j++) skip += (word_encodes[j] == -1);
   }
+
   std::sort( word_encodes.begin(), word_encodes.begin() + aan_no );
   for(j=0; j<aan_no; j++) word_encodes_no[j]=1;
   for(j=aan_no-1; j; j--) {
@@ -1660,22 +1830,22 @@ void WorkingBuffer::ComputeAAP( const char *seqi, int size )
 }
 void WorkingBuffer::ComputeAAP2( const char *seqi, int size )
 {
-  int len1 = size - 3;
-  int sk, j1, mm, c22;
-  for (sk=0; sk<NAA4; sk++) taap[sk] = 0;
-  for (j1=0; j1<len1; j1++) {
-    if ((seqi[j1]==4) || (seqi[j1+1]==4) || (seqi[j1+2]==4) || (seqi[j1+3]==4)) continue; //skip N
-    c22 = seqi[j1]*NAA3 + seqi[j1+1]*NAA2 + seqi[j1+2]*NAA1 + seqi[j1+3];
-    taap[c22]++;
-  }
-  for (sk=0,mm=0; sk<NAA4; sk++) {
-    aap_begin[sk] = mm; mm+=taap[sk]; taap[sk] = 0;
-  }
-  for (j1=0; j1<len1; j1++) {
-    if ((seqi[j1]==4) || (seqi[j1+1]==4) || (seqi[j1+2]==4) || (seqi[j1+3]==4)) continue; //skip N
-    c22 = seqi[j1]*NAA3 + seqi[j1+1]*NAA2 + seqi[j1+2]*NAA1 + seqi[j1+3];
-    aap_list[aap_begin[c22]+taap[c22]++] =j1;
-  }
+	int len1 = size - 3;
+	int sk, j1, mm, c22;
+	for (sk=0; sk<NAA4; sk++) taap[sk] = 0;
+	for (j1=0; j1<len1; j1++) {
+		if ((seqi[j1]==4) || (seqi[j1+1]==4) || (seqi[j1+2]==4) || (seqi[j1+3]==4)) continue; //skip N
+		c22 = seqi[j1]*NAA3 + seqi[j1+1]*NAA2 + seqi[j1+2]*NAA1 + seqi[j1+3];
+		taap[c22]++;
+	}
+	for (sk=0,mm=0; sk<NAA4; sk++) {
+		aap_begin[sk] = mm;  mm += taap[sk];  taap[sk] = 0;
+	}
+	for (j1=0; j1<len1; j1++) {
+		if ((seqi[j1]==4) || (seqi[j1+1]==4) || (seqi[j1+2]==4) || (seqi[j1+3]==4)) continue; //skip N
+		c22 = seqi[j1]*NAA3 + seqi[j1+1]*NAA2 + seqi[j1+2]*NAA1 + seqi[j1+3];
+		aap_list[aap_begin[c22]+taap[c22]++] =j1;
+	}
 }
 
 void SequenceDB::ClusterOne( Sequence *seq, int id, WordTable & table,
@@ -1783,7 +1953,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
     if( lim > mem_limit ) lim = mem_limit; // SCB size has upper limit
     if( i ==0 ) lim /= 8; // first SCB with small size
     if( lim < mem_limit2 ) lim = (lim + mem_limit2) / 2; // SCB size has lower limit
-    while( m < N && sum < lim ){
+    while( m < N && sum < lim && m < (i + 255*CHUNK3) ){
       Sequence *seq = sequences[m];
       if( ! (seq->state & IS_REDUNDANT) ){
         if ( options.store_disk ) seq->SwapIn();
@@ -1833,7 +2003,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
                 int Q = m + (N-done)/T + 1000;
                 if( Q > done ) Q = done;
                 //printf( "update m: %9i\n", m );
-                while( m < Q && sum < mem_limit ){
+                while( m < Q && sum < mem_limit && m < (m0 + 255*CHUNK3) ){
                   Sequence *seq = sequences[m];
                   if( ! (seq->state & IS_REDUNDANT) ){
                     if ( options.store_disk ){
@@ -1937,141 +2107,267 @@ int SequenceDB::CheckOne( Sequence *seq, WordTable & table, WorkingParam & param
 }
 int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & param, WorkingBuffer & buf, const Options & options )
 {
-  Vector<INTs> & look_and_count = buf.look_and_count;
-  Vector<INTs> & word_encodes_no = buf.word_encodes_no;
-  Vector<INTs> & aap_list = buf.aap_list;
-  Vector<INTs> & aap_begin = buf.aap_begin;
-  Vector<int>  & word_encodes = buf.word_encodes;
-  Vector<int>  & taap = buf.taap;
-  double aa1_cutoff = param.aa1_cutoff;
-  double aa2_cutoff = param.aas_cutoff;
-  double aan_cutoff = param.aan_cutoff;
+	NVector<INTs> & look_and_count = buf.look_and_count;
+	NVector<uint32_t> & look_and_count1 = buf.look_and_count1;
+	NVector<uint32_t> & look_and_count2 = buf.look_and_count2;
+	NVector<uint8_t> & look_and_count3 = buf.look_and_count3;
+	Vector<INTs> & word_encodes_no = buf.word_encodes_no;
+	Vector<INTs> & aap_list = buf.aap_list;
+	Vector<INTs> & aap_begin = buf.aap_begin;
+	Vector<int>  & word_encodes = buf.word_encodes;
+	Vector<int>  & taap = buf.taap;
+	double aa1_cutoff = param.aa1_cutoff;
+	double aa2_cutoff = param.aas_cutoff;
+	double aan_cutoff = param.aan_cutoff;
 
-  char *seqi = seq->data;
-  int j, k, j1, len = seq->size;
-  int flag = 0;
-  int frag_size = options.frag_size;
-  int & aln_cover_flag = param.aln_cover_flag;
-  int & required_aa1 = param.required_aa1;
-  int & required_aa2 = param.required_aas;
-  int & required_aan = param.required_aan;
-  int & min_aln_lenS = param.min_aln_lenS;
-  int & min_aln_lenL = param.min_aln_lenL;
+	char *seqi = seq->data;
+	int j, k, j1, len = seq->size;
+	int flag = 0;
+	int frag_size = options.frag_size;
+	int & aln_cover_flag = param.aln_cover_flag;
+	int & required_aa1 = param.required_aa1;
+	int & required_aa2 = param.required_aas;
+	int & required_aan = param.required_aan;
+	int & min_aln_lenS = param.min_aln_lenS;
+	int & min_aln_lenL = param.min_aln_lenL;
 
-  int NAA = options.NAA;
-  int S = table.sequences.size();
+	int NAA = options.NAA;
+	int S = table.sequences.size();
 
-  param.ControlShortCoverage( len, options );
-  param.ComputeRequiredBases( options.NAA, 2 );
+	param.ControlShortCoverage( len, options );
+	param.ComputeRequiredBases( options.NAA, 2 );
 
-  buf.EncodeWords( seq, options.NAA, false );
+	buf.EncodeWords( seq, options.NAA, false );
 
-  // if minimal alignment length > len, return
-  // I can not return earlier, because I need to calc the word_encodes etc
-  if (options.min_control>len) return 0; // return flag=0
+	// if minimal alignment length > len, return
+	// I can not return earlier, because I need to calc the word_encodes etc
+	if (options.min_control>len) return 0; // return flag=0
 
-  // lookup_aan
-  if( frag_size )
-    for (j=0; j<table.frag_count; j++) look_and_count[j]=0;
-  else
-    for (j=0; j<S; j++) look_and_count[j]=0;
+	// lookup_aan
+	int aan_no = len - options.NAA + 1;
+#define New
+#ifdef New
+	int M = frag_size ? table.frag_count : S;
+	memset( look_and_count3.items, 0, ((M>>CBIT3)+1)*sizeof(uint8_t) );
+	table.CountWords(aan_no, word_encodes, word_encodes_no, look_and_count,look_and_count1,look_and_count2,look_and_count3);
+#else
+	if( frag_size )
+		for (j=0; j<table.frag_count; j++) look_and_count[j]=0;
+	else
+		for (j=0; j<S; j++) look_and_count[j]=0;
 
-  int aan_no = len - options.NAA + 1;
-  table.CountWords(aan_no, word_encodes, word_encodes_no, look_and_count);
+	table.CountWords(aan_no, word_encodes, word_encodes_no, look_and_count);
+#endif
 
-  // contained_in_old_lib()
-  int len_upper_bound = param.len_upper_bound;
-  int len_lower_bound = param.len_lower_bound;
-  int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
-  int tiden_no;
-  int talign_info[5];
-  int best1, sum;
-  INTs *lookptr;
-  char *seqj;
-  int frg2 = frag_size ? (len - NAA + options.band_width ) / frag_size + 1 + 1 : 0;
-  int lens;
-  int has_aa2 = 0;
-  for (j=0; j<S; j++) {
-    if ( frag_size ==0 && look_and_count[j] < required_aan ) continue;
+	// contained_in_old_lib()
+	int len_upper_bound = param.len_upper_bound;
+	int len_lower_bound = param.len_lower_bound;
+	int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
+	int tiden_no;
+	int talign_info[5];
+	int best1, sum;
+	INTs *lookptr;
+	char *seqj;
+	int frg2 = frag_size ? (len - NAA + options.band_width ) / frag_size + 1 + 1 : 0;
+	int lens;
+	int has_aa2 = 0;
 
-    Sequence *rep = table.sequences[j];
-    len2 = rep->size;
-    if (len2 > len_upper_bound ) continue;
-    if (options.has2D && len2 < len_lower_bound ) continue;
-    if ( frag_size ){
-      k = (len2 - NAA) / frag_size + 1;
-      lookptr = & look_and_count[ rep->fragment ];
+#ifdef New
 
-      if ( frg2 >= k ) {
-        best1=0;
-        for (j1=0; j1<k; j1++) best1 += lookptr[j1];
-      } else {
-        sum = 0;
-        for (j1=0; j1<frg2; j1++) sum += lookptr[j1];
-        best1 = sum;
-        for (j1=frg2; j1<k; j1++) {
-          sum += lookptr[j1] - lookptr[j1-frg2];
-          if (sum > best1) best1 = sum;
-        }
-      }
+	uint32_t *lc1 = look_and_count1.items;
+	uint32_t *lc2 = look_and_count2.items;
+	uint8_t *lc3 = look_and_count3.items;
+	INTs *lc = look_and_count.items;
+	unsigned char ix0, ix1, ix2, ix3;
+	unsigned char S2 = (S>>CBIT2)+1;
+	unsigned char S3 = (S>>CBIT3)+1;
+	if( frag_size ) goto WithFrag;
+	if( S2 > CHUNK1 ) S2 = CHUNK1;
+	j = 0;
+	for(ix3=0; ix3<S3; ix3++ , lc3 += 1){
+		if( *lc3 ==0 ){ j += CHUNK3; lc += CHUNK3; lc1 += CHUNK2; lc2 += CHUNK1; continue; }
+		*lc3 = 0;
+		for(ix2=0; ix2<S2; ix2++ , lc2 += 1){
+			if( *lc2 < required_aan ){ j += CHUNK2; lc += CHUNK2; lc1 += CHUNK1; continue; }
+			*lc2 = 0;
+			for(ix1=0; ix1<CHUNK1; ix1++, lc1 += 1){
+				if( *lc1 < required_aan ){ j += CHUNK1; lc += CHUNK1; continue; }
+				*lc1 = 0;
+				//if( j >= S ) goto Break;
+				for(ix0=0; ix0<CHUNK1; ix0++, j += 1, lc += 1){
+					unsigned int count = *lc;
+					*lc = 0;
+					if ( count < required_aan ) continue;
+					//j = O1 + ix0;
+					if( j >= S ) goto Break;
 
-      if ( best1 < required_aan ) continue;
-    }
+					Sequence *rep = table.sequences[j];
+					len2 = rep->size;
+					if (len2 > len_upper_bound ) continue;
+					if (options.has2D && len2 < len_lower_bound ) continue;
+					if ( frag_size ){
+						k = (len2 - NAA) / frag_size + 1;
+						lookptr = & look_and_count[ rep->fragment ];
 
-    param.ControlLongCoverage( len2, options );
+						if ( frg2 >= k ) {
+							best1=0;
+							for (j1=0; j1<k; j1++) best1 += lookptr[j1];
+						} else {
+							sum = 0;
+							for (j1=0; j1<frg2; j1++) sum += lookptr[j1];
+							best1 = sum;
+							for (j1=frg2; j1<k; j1++) {
+								sum += lookptr[j1] - lookptr[j1-frg2];
+								if (sum > best1) best1 = sum;
+							}
+						}
 
-    if ( has_aa2 == 0 )  { // calculate AAP array
-      buf.ComputeAAP( seqi, seq->size );
-      has_aa2 = 1;
-    }
-    seqj = rep->data; //NR_seq[NR90_idx[j]];
+						if ( best1 < required_aan ) continue;
+					}
 
-    band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
-    diag_test_aapn(NAA1, seqj, len, len2, buf, best_sum,
-        band_width1, band_left, band_right, required_aa1-1);
-    if ( best_sum < required_aa2 ) continue;
+					param.ControlLongCoverage( len2, options );
 
-    if (options.print || aln_cover_flag) //return overlap region
-      local_band_align2(seqi, seqj, len, len2, mat,
-                        best_score, tiden_no, band_left, band_right,
-                        talign_info[1],talign_info[2],
-                        talign_info[3],talign_info[4],alnln);
-    else
-      local_band_align(seqi, seqj, len, len2, mat,
-                             best_score, tiden_no, band_left, band_right);
-    if ( tiden_no < required_aa1 ) continue;
-    lens = len;
-    if( options.has2D && len > len2 ) lens = len2;
-    len_eff1 = (options.global_identity == 0) ? alnln : lens;
-    tiden_no = (tiden_no * 100) / len_eff1;
-    if (tiden_no < options.cluster_thd100) continue;
-    if (tiden_no <= seq->identity) continue; // existing iden_no
-    if (aln_cover_flag) {
-      if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
-      if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
-    }
-    if( options.has2D ) seq->state |= IS_REDUNDANT ;
-    flag = 1; seq->identity = tiden_no; seq->cluster_id = rep->cluster_id;
-    seq->coverage[0] = talign_info[1] +1;
-    seq->coverage[1] = talign_info[2] +1;
-    seq->coverage[2] = talign_info[3] +1;
-    seq->coverage[3] = talign_info[4] +1;
-    if (not options.cluster_best) break;
-    update_aax_cutoff(aa1_cutoff, aa2_cutoff, aan_cutoff,
-        options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_no);
-    param.ComputeRequiredBases( options.NAA, 2 );
-  }
-  if (flag == 1) { // if similar to old one delete it
-    if (! options.cluster_best) {
-      seq->Clear();
-      seq->state |= IS_REDUNDANT ;
-    }
-  }
-  return flag;
+					if ( has_aa2 == 0 )  { // calculate AAP array
+						buf.ComputeAAP( seqi, seq->size );
+						has_aa2 = 1;
+					}
+					seqj = rep->data; //NR_seq[NR90_idx[j]];
+
+					band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
+					diag_test_aapn(NAA1, seqj, len, len2, buf, best_sum,
+							band_width1, band_left, band_right, required_aa1-1);
+					if ( best_sum < required_aa2 ) continue;
+
+					if (options.print || aln_cover_flag) //return overlap region
+						local_band_align2(seqi, seqj, len, len2, mat,
+								best_score, tiden_no, band_left, band_right,
+								talign_info[1],talign_info[2],
+								talign_info[3],talign_info[4],alnln,buf);
+					else
+						local_band_align(seqi, seqj, len, len2, mat,
+								best_score, tiden_no, band_left, band_right, buf);
+					if ( tiden_no < required_aa1 ) continue;
+					lens = len;
+					if( options.has2D && len > len2 ) lens = len2;
+					len_eff1 = (options.global_identity == 0) ? alnln : lens;
+					tiden_no = (tiden_no * 100) / len_eff1;
+					if (tiden_no < options.cluster_thd100) continue;
+					if (tiden_no <= seq->identity) continue; // existing iden_no
+					if (aln_cover_flag) {
+						if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
+						if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
+					}
+					if( options.has2D ) seq->state |= IS_REDUNDANT ;
+					flag = 1; seq->identity = tiden_no; seq->cluster_id = rep->cluster_id;
+					seq->coverage[0] = talign_info[1] +1;
+					seq->coverage[1] = talign_info[2] +1;
+					seq->coverage[2] = talign_info[3] +1;
+					seq->coverage[3] = talign_info[4] +1;
+					if (not options.cluster_best) goto Break;
+					update_aax_cutoff(aa1_cutoff, aa2_cutoff, aan_cutoff,
+							options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_no);
+					param.ComputeRequiredBases( options.NAA, 2 );
+				}
+			}
+		}
+Break:
+		break;
+	}
+	if (flag == 1) { // if similar to old one delete it
+		if (! options.cluster_best) {
+			seq->Clear();
+			seq->state |= IS_REDUNDANT ;
+		}
+	}
+	return flag;
+#endif
+
+WithFrag:
+
+	for (j=0; j<S; j++) {
+		if ( frag_size ==0 && look_and_count[j] < required_aan ) continue;
+
+		Sequence *rep = table.sequences[j];
+		len2 = rep->size;
+		if (len2 > len_upper_bound ) continue;
+		if (options.has2D && len2 < len_lower_bound ) continue;
+		if ( frag_size ){
+			k = (len2 - NAA) / frag_size + 1;
+			lookptr = & look_and_count[ rep->fragment ];
+
+			if ( frg2 >= k ) {
+				best1=0;
+				for (j1=0; j1<k; j1++) best1 += lookptr[j1];
+			} else {
+				sum = 0;
+				for (j1=0; j1<frg2; j1++) sum += lookptr[j1];
+				best1 = sum;
+				for (j1=frg2; j1<k; j1++) {
+					sum += lookptr[j1] - lookptr[j1-frg2];
+					if (sum > best1) best1 = sum;
+				}
+			}
+
+			if ( best1 < required_aan ) continue;
+		}
+
+		param.ControlLongCoverage( len2, options );
+
+		if ( has_aa2 == 0 )  { // calculate AAP array
+			buf.ComputeAAP( seqi, seq->size );
+			has_aa2 = 1;
+		}
+		seqj = rep->data; //NR_seq[NR90_idx[j]];
+
+		band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
+		diag_test_aapn(NAA1, seqj, len, len2, buf, best_sum,
+				band_width1, band_left, band_right, required_aa1-1);
+		if ( best_sum < required_aa2 ) continue;
+
+		if (options.print || aln_cover_flag) //return overlap region
+			local_band_align2(seqi, seqj, len, len2, mat,
+					best_score, tiden_no, band_left, band_right,
+					talign_info[1],talign_info[2],
+					talign_info[3],talign_info[4],alnln,buf);
+		else
+			local_band_align(seqi, seqj, len, len2, mat,
+					best_score, tiden_no, band_left, band_right, buf);
+		if ( tiden_no < required_aa1 ) continue;
+		lens = len;
+		if( options.has2D && len > len2 ) lens = len2;
+		len_eff1 = (options.global_identity == 0) ? alnln : lens;
+		tiden_no = (tiden_no * 100) / len_eff1;
+		if (tiden_no < options.cluster_thd100) continue;
+		if (tiden_no <= seq->identity) continue; // existing iden_no
+		if (aln_cover_flag) {
+			if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
+			if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
+		}
+		if( options.has2D ) seq->state |= IS_REDUNDANT ;
+		flag = 1; seq->identity = tiden_no; seq->cluster_id = rep->cluster_id;
+		seq->coverage[0] = talign_info[1] +1;
+		seq->coverage[1] = talign_info[2] +1;
+		seq->coverage[2] = talign_info[3] +1;
+		seq->coverage[3] = talign_info[4] +1;
+		if (not options.cluster_best) break;
+		update_aax_cutoff(aa1_cutoff, aa2_cutoff, aan_cutoff,
+				options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_no);
+		param.ComputeRequiredBases( options.NAA, 2 );
+	}
+	if (flag == 1) { // if similar to old one delete it
+		if (! options.cluster_best) {
+			seq->Clear();
+			seq->state |= IS_REDUNDANT ;
+		}
+	}
+	return flag;
 }
 int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & param, WorkingBuffer & buf, const Options & options )
 {
-  Vector<INTs> & look_and_count = buf.look_and_count;
+  NVector<INTs> & look_and_count = buf.look_and_count;
+  NVector<uint32_t> & look_and_count1 = buf.look_and_count1;
+  NVector<uint32_t> & look_and_count2 = buf.look_and_count2;
+  NVector<uint8_t> & look_and_count3 = buf.look_and_count3;
   Vector<INTs> & word_encodes_no = buf.word_encodes_no;
   Vector<INTs> & aap_list = buf.aap_list;
   Vector<INTs> & aap_begin = buf.aap_begin;
@@ -2096,6 +2392,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
   param.ComputeRequiredBases( options.NAA, 4 );
   int skip = buf.EncodeWords( seq, options.NAA, true );
   required_aan -= skip;
+  if( required_aan <= 0 ) required_aan = 1;
 
   // if minimal alignment length > len, return
   // I can not return earlier, because I need to calc the word_encodes etc
@@ -2113,82 +2410,118 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
   char *seqj;
 
   for(comp=0; comp<2; comp++){
-    if( comp ){
-      for (j0=0; j0<aan_no; j0++) {
-        j = word_encodes[j0];
-        if ( j<0 ) aan_list_comp[j0] = j;
-        else       aan_list_comp[j0] = Comp_AAN_idx[j];
-      }
-      make_comp_iseq(len, seqi_comp, seqi);
-      seqi = seqi_comp;
-    }
-    int has_aas = 0;
-    for (j=0; j<S; j++) look_and_count[j]=0;
-    if( comp ){
-      table.CountWords(aan_no, aan_list_comp, word_encodes_no, look_and_count, true);
-    }else{
-      table.CountWords(aan_no, word_encodes, word_encodes_no, look_and_count, true);
-    }
-    for (j=0; j<S; j++){
-      //printf( "1: %4i %4i %3i\n", look_and_count[j], required_aan, seq->xletter );
-      if ( look_and_count[j] < required_aan ) continue;
+	  if( comp ){
+		  for (j0=0; j0<aan_no; j0++) {
+			  j = word_encodes[j0];
+			  if ( j<0 ) aan_list_comp[j0] = j;
+			  else       aan_list_comp[j0] = Comp_AAN_idx[j];
+		  }
+		  make_comp_iseq(len, seqi_comp, seqi);
+		  seqi = seqi_comp;
+	  }
+	  int has_aas = 0;
+	  memset( look_and_count3.items, 0, ((S>>CBIT3)+1)*sizeof(uint8_t) );
 
-      Sequence *rep = table.sequences[j];
-      len2 = rep->size;
-      if (len2 > len_upper_bound ) continue;
-      if (options.has2D && len2 < len_lower_bound ) continue;
-      seqj = rep->data;
+	  if( comp ){
+		  table.CountWords(aan_no, aan_list_comp, word_encodes_no, look_and_count, 
+				  look_and_count1, look_and_count2, look_and_count3, true);
+	  }else{
+		  table.CountWords(aan_no, word_encodes, word_encodes_no, look_and_count, 
+				  look_and_count1, look_and_count2, look_and_count3, true);
+	  }
+	  //int sum = 0;
+	  //for (j=0; j<S; j++) sum += look_and_count[j] !=0;
+	  //printf( "%6i: %6i\n", S, sum );
+	  //printf( "%6i: %6i\n", S, look_and_count.Size() );
 
-      param.ControlLongCoverage( len2, options );
+	  uint32_t *lc1 = look_and_count1.items;
+	  uint32_t *lc2 = look_and_count2.items;
+	  uint8_t *lc3 = look_and_count3.items;
+	  INTs *lc = look_and_count.items;
+	  unsigned char ix0, ix1, ix2, ix3;
+	  unsigned char S2 = (S>>CBIT2)+1;
+	  unsigned char S3 = (S>>CBIT3)+1; /* make sure S < 255*128*128*128 */
+	  j = 0;
+	  if( S2 > CHUNK1 ) S2 = CHUNK1;
+	  for(ix3=0; ix3<S3; ix3++ , lc3 += 1){
+		  if( *lc3 ==0 ){ j += CHUNK3; lc += CHUNK3; lc1 += CHUNK2; lc2 += CHUNK1; continue; }
+		  *lc3 = 0;
+		  for(ix2=0; ix2<S2; ix2++ , lc2 += 1){
+			  if( *lc2 < required_aan ){ j += CHUNK2; lc += CHUNK2; lc1 += CHUNK1; continue; }
+			  *lc2 = 0;
+			  for(ix1=0; ix1<CHUNK1; ix1++, lc1 += 1){
+				  if( *lc1 < required_aan ){ j += CHUNK1; lc += CHUNK1; continue; }
+				  *lc1 = 0;
+				  //if( j >= S ) goto Break;
+				  for(ix0=0; ix0<CHUNK1; ix0++, j += 1, lc += 1){
+					  unsigned int count = *lc;
+					  *lc = 0;
+					  if ( count < required_aan ) continue;
+					  //j = O1 + ix0;
+					  if( j >= S ) goto Break;
+					  Sequence *rep = table.sequences[j];
 
-      if ( has_aas == 0 )  { // calculate AAP array
-        buf.ComputeAAP2( seqi, seq->size );
-        has_aas = 1;
-      }
+					  len2 = rep->size;
+					  if (len2 > len_upper_bound ) continue;
+					  if (options.has2D && len2 < len_lower_bound ) continue;
 
-      band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
-      diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
-          band_width1, band_left, band_right, required_aa1-3);
-      if ( best_sum < required_aas ) continue;
+					  seqj = rep->data;
 
-      if (options.print || aln_cover_flag){ //return overlap region
-        local_band_align2(seqi, seqj, len, len2, mat,
-            best_score, tiden_no, band_left, band_right,
-            talign_info[1],talign_info[2],
-            talign_info[3],talign_info[4],alnln);
-        if( comp ){
-          talign_info[1] = len - talign_info[1] - 1;
-          talign_info[2] = len - talign_info[2] - 1;
-        }
-      }else{
-        local_band_align(seqi, seqj, len, len2, mat,
-            best_score, tiden_no, band_left, band_right);
-      }
-      if ( tiden_no < required_aa1 ) continue;
-      len_eff1 = (options.global_identity == 0) ? alnln : len;
-      tiden_no = (tiden_no * 100) / len_eff1;
-      if (tiden_no < options.cluster_thd100) continue;
-      if (options.cluster_best and tiden_no < seq->identity) continue; // existing iden_no
-      if (aln_cover_flag) {
-        if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
-        if( comp ){
-          if ( talign_info[1]-talign_info[2]+1 < min_aln_lenS) continue;
-        }else{
-          if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
-        }
-      }
-      if( options.cluster_best and tiden_no == seq->identity and rep->cluster_id >= seq->cluster_id ) continue;
-      if( (not options.cluster_best) and flag !=0 and rep->cluster_id >= seq->cluster_id ) continue;
-      flag = comp ? -1 : 1;
-      seq->identity = tiden_no;
-      seq->cluster_id = rep->cluster_id;
-      seq->coverage[0] = talign_info[1] +1;
-      seq->coverage[1] = talign_info[2] +1;
-      seq->coverage[2] = talign_info[3] +1;
-      seq->coverage[3] = talign_info[4] +1;
-      if (not options.cluster_best) break;
-    }
-    if (not options.option_r ) break;
+					  param.ControlLongCoverage( len2, options );
+
+					  if ( has_aas == 0 )  { // calculate AAP array
+						  buf.ComputeAAP2( seqi, seq->size );
+						  has_aas = 1;
+					  }
+
+					  band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
+					  diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
+							  band_width1, band_left, band_right, required_aa1-3);
+					  if ( best_sum < required_aas ) continue;
+					  //if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
+
+					  if (options.print || aln_cover_flag){ //return overlap region
+						  local_band_align2(seqi, seqj, len, len2, mat,
+								  best_score, tiden_no, band_left, band_right,
+								  talign_info[1],talign_info[2],
+								  talign_info[3],talign_info[4],alnln,buf);
+						  if( comp ){
+							  talign_info[1] = len - talign_info[1] - 1;
+							  talign_info[2] = len - talign_info[2] - 1;
+						  }
+					  }else{
+						  local_band_align(seqi, seqj, len, len2, mat,
+								  best_score, tiden_no, band_left, band_right, buf);
+					  }
+					  if ( tiden_no < required_aa1 ) continue;
+					  len_eff1 = (options.global_identity == 0) ? alnln : len;
+					  tiden_no = (tiden_no * 100) / len_eff1;
+					  if (tiden_no < options.cluster_thd100) continue;
+					  if (options.cluster_best and tiden_no < seq->identity) continue; // existing iden_no
+					  if (aln_cover_flag) {
+						  if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
+						  if( comp ){
+							  if ( talign_info[1]-talign_info[2]+1 < min_aln_lenS) continue;
+						  }else{
+							  if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
+						  }
+					  }
+					  if( options.cluster_best and tiden_no == seq->identity and rep->cluster_id >= seq->cluster_id ) continue;
+					  if( (not options.cluster_best) and flag !=0 and rep->cluster_id >= seq->cluster_id ) continue;
+					  flag = comp ? -1 : 1;
+					  seq->identity = tiden_no;
+					  seq->cluster_id = rep->cluster_id;
+					  seq->coverage[0] = talign_info[1] +1;
+					  seq->coverage[1] = talign_info[2] +1;
+					  seq->coverage[2] = talign_info[3] +1;
+					  seq->coverage[3] = talign_info[4] +1;
+					  if (not options.cluster_best) goto Break;
+				  }
+			  }
+		  }
+	  }
+Break:
+	  if (not options.option_r ) break;
   }
   if ((flag == 1) || (flag == -1)) { // if similar to old one delete it
     if (! options.cluster_best) {
@@ -2243,7 +2576,7 @@ void SequenceDB::DoClustering( const Options & options )
   for(i=0; i<N; ){
     size_t sum = 0;
     int m = i;
-    while( m < N && sum < mem_limit ){
+    while( m < N && sum < mem_limit && m < (i + 255*CHUNK3) ){
       Sequence *seq = sequences[m];
       if( ! (seq->state & IS_REDUNDANT) ){
         if ( options.store_disk ) seq->SwapIn();
@@ -2339,7 +2672,7 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
   for(i=0; i<N; ){
     size_t sum = 0;
     int m = i;
-    while( m < N && sum < mem_limit ){
+    while( m < N && sum < mem_limit && m < (i + 255*CHUNK3) ){
       Sequence *seq = other.sequences[m];
       if( ! (seq->state & IS_REDUNDANT) ){
         if ( options.store_disk ) seq->SwapIn();
