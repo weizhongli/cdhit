@@ -5,7 +5,7 @@
 using namespace std;
 
 // information
-char cd_hit_ver[]  = "\t\t\t====== CD-HIT version 4.2 ======";
+char cd_hit_ver[]  = "\t\t\t====== CD-HIT version 4.2.1 ======";
 char cd_hit_ref1[] = "\"Clustering of highly homologous sequences to reduce thesize of large protein database\", Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics, (2001) 17:282-283";
 char cd_hit_ref2[] = "\"Tolerating some redundancy significantly speeds up clustering of large protein databases\", Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics, (2002) 18:77-82";
 char cd_hit_ref3[] = "\"Cd-hit: a fast program for clustering and comparing large sets of protein or nucleotide sequences\", Weizhong Li & Adam Godzik. Bioinformatics, (2006) 22:1658-1659";

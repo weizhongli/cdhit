@@ -156,49 +156,6 @@ class NVector
 typedef NVector<int>      VectorInt;
 typedef Vector<VectorInt> MatrixInt;
 
-template<class TYPE>
-class CountArray
-{
-	public:
-		TYPE   *items;
-		int     size;
-		int     capacity;
-
-		CountArray(){ size = capacity = 0; items = NULL; }
-		CountArray( int n, const TYPE & v=TYPE() ){ 
-			size = capacity = 0; items = NULL; 
-			Resize( n, v );
-		}
-
-		~CountArray(){ if( items ) free( items ); }
-
-		int  Size()const{ return size; }
-		void Reset(){
-		}
-
-		void Resize( int n, const TYPE & value=TYPE() ){
-			if( n == size && capacity > 0 ) return;
-			int i;
-			// When resize() is called, probably this is the intended size,
-			// and will not be changed frequently.
-			if( n != capacity ){
-				capacity = n;
-				items = (TYPE*)realloc( items, (capacity+1)*sizeof(TYPE) );
-			}
-			for(i=size; i<n; i++ ) items[i] = value;
-			size = n;
-		}
-		bool Next( int & index, TYPE & value ){
-		}
-
-		TYPE& operator[]( const int i ){
-			return items[i];
-		}
-		TYPE& operator[]( const int i )const{
-			return items[i];
-		}
-};
-
 ////////// Class definition //////////
 class ScoreMatrix { //Matrix
 	private:
@@ -278,11 +235,17 @@ class WordTable
 		int CountWords(int aan_no, Vector<int> & aan_list,
 				Vector<INTs> & aan_list_no, NVector<INTs> & look_and_count, bool est=false);
 		int CountWords(int aan_no, Vector<int> & aan_list, Vector<INTs> & aan_list_no, 
-				NVector<INTs> & look_and_count, 
-				NVector<uint32_t> & look_and_count1, 
-				NVector<uint32_t> & look_and_count2, 
-				NVector<uint8_t> & look_and_count3, 
-				bool est=false);
+				NVector<IndexCount> & lookCounts, NVector<uint32_t> & indexMapping,
+				NVector<INTs> &look_and_count, 
+				NVector<uint32_t> &look_and_count1, 
+				NVector<uint32_t> &look_and_count2, 
+				bool est=false, int min=0);
+		int CountWords(int aan_no, Vector<int> & aan_list, Vector<INTs> & aan_list_no, 
+				NVector<IndexCount> & lookCounts, NVector<IndexCount*> & lookCounts2,
+				NVector<INTs> &look_and_count, 
+				NVector<uint32_t> &look_and_count1, 
+				NVector<uint32_t> &look_and_count2, 
+				bool est=false, int min=0);
 		void PrintAll();
 }; // END class INDEX_TBL
 struct Options
@@ -477,8 +440,10 @@ struct WorkingBuffer
 	NVector<INTs> look_and_count;
 	NVector<uint32_t> look_and_count1;
 	NVector<uint32_t> look_and_count2;
-	NVector<uint8_t> look_and_count3;
 	Vector<IndexCount>  indexCounts;
+	NVector<IndexCount>  lookCounts;
+	NVector<IndexCount*>  lookCounts2;
+	NVector<uint32_t>    indexMapping;
 	MatrixInt  score_mat;
 	MatrixInt  iden_mat;
 	MatrixInt  from1_mat;
@@ -502,10 +467,12 @@ struct WorkingBuffer
 		word_encodes.resize( MAX_SEQ );
 		word_encodes_no.resize( MAX_SEQ );
 		word_encodes_backup.resize( MAX_SEQ );
-		look_and_count.Resize( frag + CHUNK1 );
+		lookCounts.Resize( frag + CHUNK1 );
+		lookCounts2.Resize( frag + CHUNK1 );
+		indexMapping.Resize( frag + CHUNK1 );
+		look_and_count.Resize( frag + CHUNK2 );
 		look_and_count1.Resize( (frag>>CBIT1) + CHUNK1 );
 		look_and_count2.Resize( (frag>>CBIT2) + CHUNK1 );
-		look_and_count3.Resize( (frag>>CBIT3) + CHUNK1 );
 		diag_score.resize( MAX_DIAG );
 		diag_score2.resize( MAX_DIAG );
 		aan_list_comp.resize( MAX_SEQ );
