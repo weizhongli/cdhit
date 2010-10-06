@@ -213,9 +213,11 @@ bool Options::SetOptionEST( const char *flag, const char *value )
   else return false;
   return true;
 }
+extern char cd_hit_ver[];
 bool Options::SetOptions( int argc, char *argv[], bool twod, bool est )
 {
   int i;
+  printf( "%s\n\n", cd_hit_ver );
   has2D = twod;
   isEST = est;
   for (i=1; i+1<argc; i+=2) if ( SetOption( argv[i], argv[i+1] ) == 0) return false;
@@ -2166,8 +2168,8 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					}
 					if( self_stop && tid ==1 ){
 						float p = (100.0*j)/N;
-						if( p > p0+1E-2 ){ // print only if the percentage changed
-							printf( "\r%5.2f%%", p );
+						if( p > p0+1E-1 ){ // print only if the percentage changed
+							printf( "\r%4.1f%%", p );
 							fflush( stdout );
 							p0 = p;
 						}
@@ -2636,8 +2638,8 @@ void SequenceDB::DoClustering( const Options & options )
         break;
       }
       float p = (100.0*j)/N;
-      if( p > p0+1E-2 ){ // print only if the percentage changed
-        printf( "\r%5.2f%%", p );
+      if( p > p0+1E-1 ){ // print only if the percentage changed
+        printf( "\r%4.1f%%", p );
         fflush( stdout );
         p0 = p;
       }
@@ -2760,8 +2762,8 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
           if( flag == -1 ) seq->state |= IS_MINUS_STRAND; // for EST only
         }
         float p = (100.0*j)/N;
-        if( p > p0+1E-2 ){ // print only if the percentage changed
-          printf( "\r%5.2f%%", p );
+        if( p > p0+1E-1 ){ // print only if the percentage changed
+          printf( "\r%4.1f%%", p );
           fflush( stdout );
           p0 = p;
         }
@@ -2795,8 +2797,8 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
           if( flag == -1 ) seq->state |= IS_MINUS_STRAND; // for EST only
         }
         float p = (100.0*j)/N;
-        if( p > p0+1E-2 ){ // print only if the percentage changed
-          printf( "\r%5.2f%%", p );
+        if( p > p0+1E-1 ){ // print only if the percentage changed
+          printf( "\r%4.1f%%", p );
           fflush( stdout );
           p0 = p;
         }
