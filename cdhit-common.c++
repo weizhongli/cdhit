@@ -2144,7 +2144,8 @@ void SequenceDB::DoClustering( int T, const Options & options )
 						total_letters -= seq->size;
 						if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 						if( may_stop ) break;
-						if( word_table.sequences.size() >= 255*CHUNK2 ) break;
+						if( word_table.sequences.size() >= 255*CHUNK2 
+								or word_table.frag_count >= 255*CHUNK2 ) break;
 					}
 					self_stop = 1;
 				}else{
@@ -2199,7 +2200,8 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					ClusterOne( seq, ks, word_table, param, buffer, options );
 					total_letters -= seq->size;
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-					if( word_table.sequences.size() >= 255*CHUNK2 ){
+					if( word_table.sequences.size() >= 255*CHUNK2
+							or word_table.frag_count >= 255*CHUNK2 ){
 						mm = ks + 1;
 						m = ks + 1;
 						break;
@@ -2614,7 +2616,7 @@ void SequenceDB::DoClustering( const Options & options )
       ClusterOne( seq, ks, word_table, param, buffer, options );
       total_letters -= seq->size;
       if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-	  if( word_table.sequences.size() >= 255*CHUNK2 ){
+	  if( word_table.sequences.size() >= 255*CHUNK2 or word_table.frag_count >= 255*CHUNK2 ){
 		  m = ks + 1;
 		  break;
 	  }
