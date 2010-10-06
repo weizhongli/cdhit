@@ -467,6 +467,8 @@ struct WorkingBuffer
 		word_encodes.resize( MAX_SEQ );
 		word_encodes_no.resize( MAX_SEQ );
 		word_encodes_backup.resize( MAX_SEQ );
+		/* each table can not contain more than 255*CHUNK2 representatives or fragments! */
+		if( frag > 255*CHUNK2 ) frag = 255*CHUNK2;
 		lookCounts.Resize( frag + CHUNK1 );
 		lookCounts2.Resize( frag + CHUNK1 );
 		indexMapping.Resize( frag + CHUNK1 );
