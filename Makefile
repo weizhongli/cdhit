@@ -24,7 +24,7 @@ endif
 #LDFLAGS = -static -o
 LDFLAGS = -o
 
-PROGS = cdhit cdhit-est cdhit-2d cdhit-est-2d cdhit-div
+PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div
 
 .c++.o:
 	$(CC) $(CCFLAGS) -c $<
@@ -36,20 +36,20 @@ clean:
 
 # programs
 
-cdhit: cdhit-common.o cdhit-utility.o cdhit.o
-	$(CC) $(CCFLAGS) cdhit.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cdhit
+cd-hit: cdhit-common.o cdhit-utility.o cdhit.o
+	$(CC) $(CCFLAGS) cdhit.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit
 
-cdhit-2d: cdhit-common.o cdhit-utility.o cdhit-2d.o
-	$(CC) $(CCFLAGS) cdhit-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cdhit-2d
+cd-hit-2d: cdhit-common.o cdhit-utility.o cdhit-2d.o
+	$(CC) $(CCFLAGS) cdhit-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-2d
 
-cdhit-est: cdhit-common.o cdhit-utility.o cdhit-est.o
-	$(CC) $(CCFLAGS) cdhit-est.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cdhit-est
+cd-hit-est: cdhit-common.o cdhit-utility.o cdhit-est.o
+	$(CC) $(CCFLAGS) cdhit-est.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est
 
-cdhit-est-2d: cdhit-common.o cdhit-utility.o cdhit-est-2d.o
-	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cdhit-est-2d
+cd-hit-est-2d: cdhit-common.o cdhit-utility.o cdhit-est-2d.o
+	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est-2d
 
-cdhit-div: cdhit-common.o cdhit-utility.o cdhit-div.o
-	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cdhit-div
+cd-hit-div: cdhit-common.o cdhit-utility.o cdhit-div.o
+	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-div
 
 # objects
 cdhit-common.o: cdhit-common.c++ cdhit-common.h
