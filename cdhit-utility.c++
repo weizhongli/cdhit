@@ -23,7 +23,7 @@ char txt_option_i2[] = "\tinput filename for db2 in fasta format, required\n";
 char txt_option_o[] = "\toutput filename, required\n";
 char txt_option_c[] = 
 "\tsequence identity threshold, default 0.9\n \
-\tthis is the default cd-hit's \"global sequence identity\" calculated as :\n \
+\tthis is the default cd-hit's \"global sequence identity\" calculated as:\n \
 \tnumber of identical amino acids in alignment\n \
 \tdivided by the full length of the shorter sequence\n";
 char txt_option_G[] = 
@@ -41,8 +41,7 @@ char txt_option_g[] =
 \t(accurate but slow mode)\n \
 \tbut either 1 or 0 won't change the representatives of final clusters\n";
 char txt_option_b[] = "\tband_width of alignment, default 20\n";
-char txt_option_M[] = "\tmemory limit of each word table, default 800 (in MB);\n \
-\ttwo tables are used if -T>1, otherwise only one table is used\n";
+char txt_option_M[] = "\tmemory limit (in MB) for the program, default 800; 0 for unlimitted;\n";
 char txt_option_n[] = "\tword_length, default 5, see user's guide for choosing it\n";
 char txt_option_n_est[] = "\tword_length, default 8, see user's guide for choosing it\n";
 char txt_option_l[] = "\tlength of throw_away_sequences, default 10\n";

@@ -39,6 +39,8 @@
 #include<vector>
 #include<map>
 
+#define CDHIT_VERSION  "4.3-beta"
+
 #define MAX_AA 23
 #define MAX_NA 6
 #define MAX_UAA 21
@@ -130,7 +132,7 @@ class NVector
 			// and will not be changed frequently.
 			if( n != capacity ){
 				capacity = n;
-				items = (TYPE*)realloc( items, (capacity+1)*sizeof(TYPE) );
+				items = (TYPE*)realloc( items, capacity*sizeof(TYPE) );
 			}
 			for(i=size; i<n; i++ ) items[i] = value;
 			size = n;
@@ -138,7 +140,7 @@ class NVector
 		void Append( const TYPE & item ){
 			if( size + 1 >= capacity ){
 				capacity = size + size/5 + 1;
-				items = (TYPE*)realloc( items, (capacity+1)*sizeof(TYPE) );
+				items = (TYPE*)realloc( items, capacity*sizeof(TYPE) );
 			}
 			items[size] = item;
 			size ++;
@@ -278,8 +280,11 @@ struct Options
 	int     option_r;
 	int     threads;
 
+	int     max_length;
+	int     max_entries;
 	size_t  mem_limit;
 	size_t  total_letters;
+	size_t  total_desc;
 
 	bool    has2D;
 	bool    isEST;
@@ -315,8 +320,11 @@ struct Options
 		frag_size = 0;
 		des_len = 20;
 		threads = 1;
+		max_length = 0;
+		max_entries = 0;
 		mem_limit = 100000000;
 		total_letters = 0;
+		total_desc = 0;
 	};
 
 	bool SetOptionCommon( const char *flag, const char *value );
@@ -429,6 +437,8 @@ struct WorkingParam
 #define CHUNK2  (1<<CBIT2)
 #define CHUNK3  (1<<CBIT3)
 
+#define MAXNUM 255
+
 struct WorkingBuffer
 {
 	Vector<int>  taap;
@@ -440,7 +450,7 @@ struct WorkingBuffer
 	NVector<INTs> look_and_count;
 	NVector<uint32_t> look_and_count1;
 	NVector<uint32_t> look_and_count2;
-	Vector<IndexCount>  indexCounts;
+	//Vector<IndexCount>  indexCounts;
 	NVector<IndexCount>  lookCounts;
 	NVector<IndexCount*>  lookCounts2;
 	NVector<uint32_t>    indexMapping;
@@ -453,31 +463,54 @@ struct WorkingBuffer
 	Vector<int>  diag_score2;
 	Vector<int> aan_list_comp;
 	char seqi_comp[MAX_SEQ];
+	int total_bytes;
 
-	WorkingBuffer( int frag=0, bool est=false ){
-		Set( frag, est );
+	WorkingBuffer( int frag=0, const Options & options=Options() ){
+		Set( frag, options );
 	}
-	void Set( int frag, bool est=false ){
+	void Set( int frag, const Options & options ){
+		bool est = options.isEST;
 		int m = MAX_UAA*MAX_UAA;
+		int max_len = options.max_length;
+		int band = max_len*max_len;
 		if( est ) m = m * m;
+		if( band > options.band_width ) band = options.band_width;
 		taap.resize( m );
-		aap_list.resize( MAX_SEQ );
+		aap_list.resize( max_len );
 		aap_begin.resize( m );
-		indexCounts.resize( MAX_SEQ );
-		word_encodes.resize( MAX_SEQ );
-		word_encodes_no.resize( MAX_SEQ );
-		word_encodes_backup.resize( MAX_SEQ );
+		//indexCounts.resize( max_len );
+		word_encodes.resize( max_len );
+		word_encodes_no.resize( max_len );
+		word_encodes_backup.resize( max_len );
 		/* each table can not contain more than 255*CHUNK2 representatives or fragments! */
-		if( frag > 255*CHUNK2 ) frag = 255*CHUNK2;
+		if( frag > MAXNUM*CHUNK2 ) frag = MAXNUM*CHUNK2;
 		lookCounts.Resize( frag + CHUNK1 );
-		lookCounts2.Resize( frag + CHUNK1 );
+		//lookCounts2.Resize( frag + CHUNK1 );
 		indexMapping.Resize( frag + CHUNK1 );
 		look_and_count.Resize( frag + CHUNK2 );
 		look_and_count1.Resize( (frag>>CBIT1) + CHUNK1 );
 		look_and_count2.Resize( (frag>>CBIT2) + CHUNK1 );
 		diag_score.resize( MAX_DIAG );
 		diag_score2.resize( MAX_DIAG );
-		aan_list_comp.resize( MAX_SEQ );
+		aan_list_comp.resize( max_len );
+		total_bytes = max_len;
+		total_bytes += taap.size()*sizeof(int);
+		total_bytes += word_encodes.size()*sizeof(int);
+		total_bytes += word_encodes_backup.size()*sizeof(int);
+		total_bytes += diag_score.size()*sizeof(int);
+		total_bytes += diag_score2.size()*sizeof(int);
+		total_bytes += aan_list_comp.size()*sizeof(int);
+		total_bytes += word_encodes_no.size()*sizeof(INTs);
+		total_bytes += aap_list.size()*sizeof(INTs);
+		total_bytes += aap_begin.size()*sizeof(INTs);
+		total_bytes += look_and_count.Size()*sizeof(INTs);
+		total_bytes += look_and_count1.Size()*sizeof(uint32_t);
+		total_bytes += look_and_count2.Size()*sizeof(uint32_t);
+		total_bytes += indexMapping.Size()*sizeof(uint32_t);
+		//total_bytes += indexCounts.size()*sizeof(IndexCount);
+		total_bytes += lookCounts.Size()*sizeof(IndexCount);
+		//total_bytes += lookCounts2.Size()*sizeof(IndexCount*);
+		total_bytes += 5*max_len*(band*sizeof(int)+sizeof(NVector<int>));
 	}
 
 	int EncodeWords( Sequence *seq, int NA, bool est = false );
@@ -516,6 +549,8 @@ class SequenceDB
 		//void Sort( int first, int last );
 		void SortDivide( Options & options, bool sort=true );
 		void MakeWordTable( const Options & optioins );
+
+		size_t MinimalMemory( int frag_no, int bsize, int T, const Options & options );
 
 		void ClusterOne( Sequence *seq, int id, WordTable & table,
 				WorkingParam & param, WorkingBuffer & buf, const Options & options );
