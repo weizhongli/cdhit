@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.3-beta"
+#define CDHIT_VERSION  "4.3-beta2"
 
 #define MAX_AA 23
 #define MAX_NA 6

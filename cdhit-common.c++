@@ -2194,6 +2194,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 				if ( options.store_disk ) seq->SwapIn();
 				sum += (size_t)(seq->size * redundancy);
 			}
+			if( i ==0 and (m > 1E6 or sum > 1E8) ) break;
 			m ++;
 		}
 		if( m >= N ){
@@ -2278,9 +2279,9 @@ void SequenceDB::DoClustering( int T, const Options & options )
 				int kk, mm = k, sum = 0;
 				while( mm < m && sum < 1E5 ){
 					if( ! (sequences[mm]->state & IS_REDUNDANT) ) sum += sequences[mm]->size;
-					mm += T;
+					mm += 1;
 				}
-				if( mm < k + 100*T ) mm = k + 100*T;
+				if( mm < k + 1000 ) mm = k + 1000;
 				if( mm > m ) mm = m;
 				#pragma omp parallel for schedule( dynamic, 1 )
 				for(kk=k; kk<mm; kk++){
