@@ -2164,8 +2164,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	size_t mem_limit = (options.max_memory - mem_need) / sizeof(IndexCount);
 	size_t mem_limit2 = mem_limit / 50;
 
-	size_t total_letters = options.total_letters;
-	letters = 0;
 	if( mem_limit2 > 1E7 ) mem_limit2 = (size_t)1E7;
 
 	printf( "Table limit with the given memory limit:\n" );
@@ -2177,15 +2175,11 @@ void SequenceDB::DoClustering( int T, const Options & options )
 
 	omp_set_num_threads(T);
 	for(i=0; i<N; ){
-		for(j=0; j<T; j++) total_letters -= letters[j];
-		letters = 0;
-
 		int start = i;
 		int m = i;
 		size_t sum = 0;
 		size_t lim = mem_limit;
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
-		assert( total_letters );
 		if( i ==0 ) lim /= 8; // first SCB with small size
 		if( lim < mem_limit2 ) lim = (lim + mem_limit2) / 2; // SCB size has lower limit
 		while( m < N && sum < lim ){
@@ -2237,7 +2231,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 						i = ks + 1;
 						if (seq->state & IS_REDUNDANT) continue;
 						ClusterOne( seq, ks, word_table, params[tid], buffers[tid], options );
-						total_letters -= seq->size;
 						if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 						if( may_stop and ks > (ks0+1000) ) break;
 						if( word_table.size >= mem_limit ) break;
@@ -2253,7 +2246,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 						seq->SwapIn();
 					}
 					CheckOne( seq, last_table, params[tid], buffers[tid], options );
-					letters[tid] -= (seq->state & IS_REDUNDANT) ? seq->size : 0;
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 					if( min > params[tid].len_upper_bound ){
 						may_stop = 1;
@@ -2289,7 +2281,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					if (seq->state & IS_REDUNDANT) continue;
 					int tid = omp_get_thread_num();
 					CheckOne( seq, word_table, params[tid], buffers[tid], options );
-					letters[tid] -= (seq->state & IS_REDUNDANT) ? seq->size : 0;
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 				}
 				bool bk = false;
@@ -2298,7 +2289,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					i = k = ks + 1;
 					if (seq->state & IS_REDUNDANT) continue;
 					ClusterOne( seq, ks, word_table, params[0], buffers[0], options );
-					total_letters -= seq->size;
 					bk = true;
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 					if( word_table.size >= mem_limit ) break;
@@ -2311,6 +2301,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		}else if( i < m ){
 			printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		}
+		printf( "---------- new table with %8i representatives\n", word_table.sequences.size() );
 		if( (last_table.size + word_table.size) > tabsize )
 			tabsize = last_table.size + word_table.size;
 		last_table.Clear();

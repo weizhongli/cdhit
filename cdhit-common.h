@@ -437,7 +437,7 @@ struct WorkingParam
 #define CHUNK2  (1<<CBIT2)
 #define CHUNK3  (1<<CBIT3)
 
-#define MAXNUM 255
+#define MAXNUM 254
 
 struct WorkingBuffer
 {
