@@ -823,6 +823,8 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 				end1 = i;
 				end2 = j;
 			}
+			count += match;
+			count2 += match;
 			if( score < smin ){
 				count2 = 0;
 				smin = score;
@@ -830,8 +832,6 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 				begin1 = i + (match == 0);
 				begin2 = j + (match == 0);
 			}
-			count += match;
-			count2 += match;
 			break;
 		default : printf( "%i\n", back ); break;
 		}
