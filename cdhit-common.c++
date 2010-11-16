@@ -815,6 +815,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 			score = score_mat[i][j1];
 			i -= 1;
 			j -= 1;
+			match = iseq1[i] == iseq2[j];
 			if( score > smax ){
 				count = 0;
 				smax = score;
@@ -825,11 +826,10 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 			if( score < smin ){
 				count2 = 0;
 				smin = score;
-				posmin = pos;
-				begin1 = i + 1;
-				begin2 = j + 1;
+				posmin = pos  + (match == 0);
+				begin1 = i + (match == 0);
+				begin2 = j + (match == 0);
 			}
-			match = iseq1[i] == iseq2[j];
 			count += match;
 			count2 += match;
 			break;
@@ -840,7 +840,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 		back = back_mat[i][j1];
 	}
 	iden_no = count - count2;
-	alnln = posmin - posmax;
+	alnln = posmin - posmax + 1;
 	if( alninfo ){
 		alninfo[0] = begin1;
 		alninfo[1] = end1;
