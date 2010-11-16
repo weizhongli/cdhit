@@ -262,7 +262,6 @@ struct Options
 	bool    global_identity; // -G:
 	bool    store_disk; // -B:
 	int     band_width; // -b: 20
-	int     cluster_thd100;
 	double  cluster_thd; // -c
 	double  diff_cutoff; // -s: 0.0
 	double  diff_cutoff2; // -s2: 1.0
@@ -372,7 +371,7 @@ struct Sequence
 	short xletter; // number of un-encoded letters
 	int   cluster_id;
 	int   fragment; // the first fragment, for representatives only
-	int   identity;
+	float identity;
 	int   coverage[4];
 
 	Sequence();

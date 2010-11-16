@@ -249,7 +249,6 @@ bool Options::SetOptions( int argc, char *argv[], bool twod, bool est )
 	isEST = est;
 	for (i=1; i+1<argc; i+=2) if ( SetOption( argv[i], argv[i+1] ) == 0) return false;
 	if( i < argc ) return false;
-	cluster_thd100 = (int)(cluster_thd * 100);
 
 	atexit( CleanUpTempFiles );
 	return true;
@@ -315,7 +314,6 @@ void Options::Print()
 	printf( "cluster_best = %i\n", cluster_best );
 	printf( "global_identity = %i\n", global_identity );
 	printf( "cluster_thd = %g\n", cluster_thd );
-	printf( "cluster_thd100 = %i\n", cluster_thd100 );
 	printf( "diff_cutoff = %g\n", diff_cutoff );
 	printf( "diff_cutoff_aa = %i\n", diff_cutoff_aa );
 	printf( "tolerance = %i\n", tolerance );
@@ -777,7 +775,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	}
 	j1 = j - i - band_left;
 	best_score = score_mat[i][j1];
-#define PRINT
+//#define PRINT
 #ifdef PRINT
 	printf( "%i %i\n", best_score, score_mat[i][j1] );
 	printf( "%i %i\n", band_left, band_right );
@@ -1505,7 +1503,7 @@ void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options
 		fprintf( fout, " at " );
 		if (print) fprintf( fout, "%i:%i:%i:%i/", c[0], c[1], c[2], c[3] );
 		if (strand) fprintf( fout, "%c/", (state & IS_MINUS_STRAND) ? '-' : '+' );
-		fprintf( fout, "%i%%\n", identity );
+		fprintf( fout, "%.2f%%\n", identity*100 );
 	}else{
 		fprintf( fout, " *\n" );
 	}
@@ -1919,10 +1917,8 @@ void cal_aax_cutoff(double &aa1_cutoff, double &aa2_cutoff, double &aan_cutoff,
 
 void update_aax_cutoff(double &aa1_cutoff, double &aa2_cutoff, double &aan_cutoff,
 		int tolerance, int naa_stat_start_percent,
-		int naa_stat[5][61][4], int NAA, int iden)
+		int naa_stat[5][61][4], int NAA, double cluster_thd)
 {
-	double cluster_thd;
-	cluster_thd = ((double)(iden)) / 100.0;
 	if (cluster_thd > 1.0) cluster_thd = 1.00;
 
 	double aa1_t, aa2_t, aan_t;
@@ -2387,6 +2383,7 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	int len_lower_bound = param.len_lower_bound;
 	int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
 	int tiden_no;
+	float tiden_pc;
 	int talign_info[5];
 	int best1, sum;
 	INTs *lookptr;
@@ -2467,22 +2464,22 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 				lens = len;
 				if( options.has2D && len > len2 ) lens = len2;
 				len_eff1 = (options.global_identity == 0) ? alnln : lens;
-				tiden_no = (tiden_no * 100) / len_eff1;
-				if (tiden_no < options.cluster_thd100) continue;
-				if (tiden_no <= seq->identity) continue; // existing iden_no
+				tiden_pc = tiden_no / (float) len_eff1;
+				if (tiden_pc < options.cluster_thd) continue;
+				if (tiden_pc <= seq->identity) continue; // existing iden_no
 				if (aln_cover_flag) {
 					if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
 					if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
 				}
 				if( options.has2D ) seq->state |= IS_REDUNDANT ;
-				flag = 1; seq->identity = tiden_no; seq->cluster_id = rep->cluster_id;
+				flag = 1; seq->identity = tiden_pc; seq->cluster_id = rep->cluster_id;
 				seq->coverage[0] = talign_info[1] +1;
 				seq->coverage[1] = talign_info[2] +1;
 				seq->coverage[2] = talign_info[3] +1;
 				seq->coverage[3] = talign_info[4] +1;
 				if (not options.cluster_best) goto Break;
 				update_aax_cutoff(aa1_cutoff, aa2_cutoff, aan_cutoff,
-						options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_no);
+						options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_pc);
 				param.ComputeRequiredBases( options.NAA, 2, options );
 			}
 		}
@@ -2542,6 +2539,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	int len_lower_bound = param.len_lower_bound;
 	int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
 	int tiden_no;
+	float tiden_pc;
 	int talign_info[5];
 	int j0, comp;
 	char *seqj;
@@ -2626,10 +2624,10 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 					//printf( "%i  %i  %i\n", best_score, tiden_no, required_aa1 );
 					if ( tiden_no < required_aa1 ) continue;
 					len_eff1 = (options.global_identity == 0) ? alnln : len;
-					tiden_no = (tiden_no * 100) / len_eff1;
+					tiden_pc = tiden_no / (float)len_eff1;
 					//printf( "%i %i\n", tiden_no, options.cluster_thd100 );
-					if (tiden_no < options.cluster_thd100) continue;
-					if (options.cluster_best and tiden_no < seq->identity) continue; // existing iden_no
+					if (tiden_pc < options.cluster_thd) continue;
+					if (options.cluster_best and tiden_pc < seq->identity) continue; // existing iden_no
 					if (aln_cover_flag) {
 						if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
 						if( comp ){
@@ -2638,10 +2636,10 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 							if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
 						}
 					}
-					if( options.cluster_best and tiden_no == seq->identity and rep->cluster_id >= seq->cluster_id ) continue;
+					if( options.cluster_best and fabs(tiden_pc - seq->identity) < 1E-9 and rep->cluster_id >= seq->cluster_id ) continue;
 					if( (not options.cluster_best) and flag !=0 and rep->cluster_id >= seq->cluster_id ) continue;
 					flag = comp ? -1 : 1;
-					seq->identity = tiden_no;
+					seq->identity = tiden_pc;
 					seq->cluster_id = rep->cluster_id;
 					seq->coverage[0] = talign_info[1] +1;
 					seq->coverage[1] = talign_info[2] +1;
