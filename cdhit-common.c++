@@ -786,10 +786,12 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	const char *letters = "ACGTN";
 	int back = back_mat[i][j1];
 	int last = back;
-	int count = 0;
-	int begin1 = 0, begin2 = 0;
-	int end1 = len1-1, end2 = len2-1;
-	int alen = 0;
+	int count = 0, count2 = 0;
+	int begin1, begin2, end1, end2;
+	int match, score, smin = best_score, smax = best_score;
+	int posmin, posmax, pos = 0;
+	posmin = posmax = len1 + len2;
+	begin1 = begin2 = end1 = end2 = 0;
 	while( back != DP_BACK_NONE ){
 		switch( back ){
 		case DP_BACK_TOP  :
@@ -798,9 +800,6 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 #endif
 			i -= 1;
 			j1 += 1;
-			begin1 += (j == 0);
-			end1 -= (j == len2);
-			alen += (j != 0) & (j != len2);
 			break;
 		case DP_BACK_LEFT :
 #ifdef PRINT
@@ -808,26 +807,40 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 #endif
 			j1 -= 1;
 			j -= 1;
-			begin2 += (i == 0);
-			end2 -= (i == len1);
-			alen += (i != 0) & (i != len1);
 			break;
 		case DP_BACK_LEFT_TOP :
 #ifdef PRINT
 			printf( "%c %c %9i\n", letters[ iseq1[i-1] ], letters[ iseq2[j-1] ], score_mat[i][j1] );
 #endif
+			score = score_mat[i][j1];
 			i -= 1;
 			j -= 1;
-			alen += 1;
-			count += iseq1[i] == iseq2[j];
+			if( score > smax ){
+				count = 0;
+				smax = score;
+				posmax = pos;
+				end1 = i;
+				end2 = j;
+			}
+			if( score < smin ){
+				count2 = 0;
+				smin = score;
+				posmin = pos;
+				begin1 = i + 1;
+				begin2 = j + 1;
+			}
+			match = iseq1[i] == iseq2[j];
+			count += match;
+			count2 += match;
 			break;
 		default : printf( "%i\n", back ); break;
 		}
+		pos += 1;
 		last = back;
 		back = back_mat[i][j1];
 	}
-	iden_no = count;
-	alnln = alen;
+	iden_no = count - count2;
+	alnln = posmin - posmax;
 	if( alninfo ){
 		alninfo[0] = begin1;
 		alninfo[1] = end1;
@@ -835,7 +848,9 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 		alninfo[3] = end2;
 	}
 #ifdef PRINT
-	printf( "%6i %6i:  %4i %4i %4i %4i\n", alen, iden_no, begin1, end1, begin2, end2 );
+	printf( "%6i %6i:  %4i %4i %4i %4i\n", alnln, iden_no, begin1, end1, begin2, end2 );
+	printf( "%6i %6i:  %4i %4i\n", posmin, posmax, posmin - posmax, count - count2 );
+	printf( "smin = %9i, smax = %9i\n", smin, smax );
 #endif
 
 	return OK_FUNC;
