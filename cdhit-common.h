@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.3"
+#define CDHIT_VERSION  "4.5-beta"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -427,7 +427,7 @@ struct WorkingParam
 
 	void ControlShortCoverage( int len, const Options & option );
 	void ControlLongCoverage( int len, const Options & option );
-	void ComputeRequiredBases( int NAA, int ss=2 );
+	void ComputeRequiredBases( int NAA, int ss, const Options & option );
 };
 
 #define CBIT1   7
@@ -438,6 +438,8 @@ struct WorkingParam
 #define CHUNK3  (1<<CBIT3)
 
 #define MAXNUM 254
+
+enum { DP_BACK_NONE, DP_BACK_LEFT_TOP, DP_BACK_LEFT, DP_BACK_TOP };
 
 struct WorkingBuffer
 {
@@ -455,10 +457,7 @@ struct WorkingBuffer
 	NVector<IndexCount*>  lookCounts2;
 	NVector<uint32_t>    indexMapping;
 	MatrixInt  score_mat;
-	MatrixInt  iden_mat;
-	MatrixInt  from1_mat;
-	MatrixInt  from2_mat;
-	MatrixInt  alnln_mat;
+	MatrixInt  back_mat;
 	Vector<int>  diag_score;
 	Vector<int>  diag_score2;
 	Vector<int> aan_list_comp;
@@ -510,7 +509,7 @@ struct WorkingBuffer
 		//total_bytes += indexCounts.size()*sizeof(IndexCount);
 		total_bytes += lookCounts.Size()*sizeof(IndexCount);
 		//total_bytes += lookCounts2.Size()*sizeof(IndexCount*);
-		total_bytes += 5*max_len*(band*sizeof(int)+sizeof(NVector<int>));
+		total_bytes += 2*max_len*(band*sizeof(int)+sizeof(NVector<int>));
 	}
 
 	int EncodeWords( Sequence *seq, int NA, bool est = false );
@@ -580,12 +579,8 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2,
 		WorkingBuffer & buffer, int &best_sum,
 		int band_width, int &band_left, int &band_right, int required_aa1);
 int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
-		ScoreMatrix &mat, int &best_score, int &iden_no,
+		ScoreMatrix &mat, int &best_score, int &iden_no, int &alnln, int *alninfo,
 		int band_left, int band_right, WorkingBuffer & buffer);
-int local_band_align2(char iseq1[], char iseq2[], int len1, int len2,
-		ScoreMatrix &mat, int &best_score, int &iden_no,
-		int band_left, int band_right,
-		int &from1, int &end1, int &from2, int &end2, int &alnln, WorkingBuffer & buffer);
 
 int print_usage_2d (char *arg);
 int print_usage_est (char *arg);
