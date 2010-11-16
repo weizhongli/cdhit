@@ -777,7 +777,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	}
 	j1 = j - i - band_left;
 	best_score = score_mat[i][j1];
-//#define PRINT
+#define PRINT
 #ifdef PRINT
 	printf( "%i %i\n", best_score, score_mat[i][j1] );
 	printf( "%i %i\n", band_left, band_right );
