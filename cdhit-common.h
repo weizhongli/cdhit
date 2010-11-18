@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5-beta"
+#define CDHIT_VERSION  "4.5-beta2"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -438,7 +438,7 @@ struct WorkingParam
 
 #define MAXNUM 254
 
-enum { DP_BACK_NONE, DP_BACK_LEFT_TOP, DP_BACK_LEFT, DP_BACK_TOP };
+enum { DP_BACK_NONE=0, DP_BACK_LEFT_TOP=1, DP_BACK_LEFT=2, DP_BACK_TOP=3 };
 
 struct WorkingBuffer
 {
@@ -573,13 +573,13 @@ void bomb_warning(const char *message, const char *message2);
 void format_seq(char *seq);
 int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, 
 		WorkingBuffer & buffer, int &best_sum,
-		int band_width, int &band_left, int &band_right, int required_aa1);
+		int band_width, int &band_left, int &band_center, int &band_right, int required_aa1);
 int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, 
 		WorkingBuffer & buffer, int &best_sum,
-		int band_width, int &band_left, int &band_right, int required_aa1);
+		int band_width, int &band_left, int &band_center, int &band_right, int required_aa1);
 int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 		ScoreMatrix &mat, int &best_score, int &iden_no, int &alnln, int *alninfo,
-		int band_left, int band_right, WorkingBuffer & buffer);
+		int band_left, int band_center, int band_right, WorkingBuffer & buffer);
 
 int print_usage_2d (char *arg);
 int print_usage_est (char *arg);

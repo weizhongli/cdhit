@@ -383,7 +383,7 @@ void format_seq(char *seq)
 ////              XXXXXXXXXXXXXXX   band = -(len1-1)             seq1
 ////index of diag_score = band+len1-1;
 int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & buffer,
-		int &best_sum, int band_width, int &band_left, int &band_right, int required_aa1)
+		int &best_sum, int band_width, int &band_left, int &band_center, int &band_right, int required_aa1)
 {
 	int i, i1, j, k;
 	int *pp;
@@ -469,8 +469,9 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
 	}
 
 	//  delete [] diag_score;
-	band_left = from-len1+1; 
-	band_right= end-len1+1;
+	band_left = from - len1 + 1; 
+	band_right= end - len1 + 1;
+	band_center = imax_diag - len1 + 1;
 	best_sum = best_score;
 	return OK_FUNC;
 }
@@ -478,7 +479,7 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
  
 
 int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & buffer, 
-        int &best_sum, int band_width, int &band_left, int &band_right, int required_aa1)
+        int &best_sum, int band_width, int &band_left, int &band_center, int &band_right, int required_aa1)
 {
 	int i, i1, j, k;
 	int *pp, *pp2;
@@ -593,6 +594,7 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
 
 	band_left = from-len1+1; 
 	band_right= end-len1+1;
+	band_center = imax_diag - len1 + 1;
 	best_sum = best_score;
 #if 0
 	printf( "max=%3i  imax=%3i; band:  %3i  %3i  %i\n", mmax, immax, band_b, band_e, band_m );
@@ -642,7 +644,7 @@ mat is matrix, return ALN_PAIR class
 
 int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 		ScoreMatrix &mat, int &best_score, int &iden_no, int &alnln, int *alninfo,
-		int band_left, int band_right, WorkingBuffer & buffer)
+		int band_left, int band_center, int band_right, WorkingBuffer & buffer)
 {
 	int i, j, k, j1;
 	int jj, kk;
@@ -719,6 +721,8 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	}
 
 	int gap_open[2] = { mat.gap, mat.ext_gap };
+	int max_diag = band_center - band_left;
+	int extra_score[4] = { 4, 3, 2, 1 };
 	for (i=1; i<=len1; i++) {
 		int J0 = 1 - band_left - i;
 		int J1 = len2 - band_left - i;
@@ -727,31 +731,36 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 		for (j1=J0; j1<=J1; j1++){
 			j = j1+i+band_left;
 
+			int extra = extra_score[ abs(j1 - max_diag) & 3 ]; // max distance 3
+
 			int ci = iseq1[i-1];
 			int cj = iseq2[j-1];
 			int sij = mat.matrix[ci][cj];
 			//int iden_ij = (ci == cj);
 			int s1, k0, back;
 
+			if( sij >0 ) sij += extra;
+
 			back = DP_BACK_LEFT_TOP;
 			best_score1 = score_mat[i-1][j1] + sij;
 			int gap0 = gap_open[ (i == len1) | (j == len2) ];
 			int gap = 0;
+			int score;
 
 			if( j1 > 0 ){
 				gap = gap0;
 				if( back_mat[i][j1-1] == DP_BACK_LEFT ) gap = mat.ext_gap;
-				if( (score_mat[i][j1-1] + gap) > best_score1 ){
-					best_score1 = score_mat[i][j1-1] + gap;
+				if( (score = score_mat[i][j1-1] + gap) > best_score1 ){
 					back = DP_BACK_LEFT;
+					best_score1 = score;
 				}
 			}
 			if(j1+1<band_width){
 				gap = gap0;
 				if( back_mat[i-1][j1+1] == DP_BACK_TOP ) gap = mat.ext_gap;
-				if( (score_mat[i-1][j1+1] + gap) > best_score1 ){
-					best_score1 = score_mat[i-1][j1+1] + gap;
+				if( (score = score_mat[i-1][j1+1] + gap) > best_score1 ){
 					back = DP_BACK_TOP;
+					best_score1 = score;
 				}
 			}
 
@@ -778,7 +787,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 //#define PRINT
 #ifdef PRINT
 	printf( "%i %i\n", best_score, score_mat[i][j1] );
-	printf( "%i %i\n", band_left, band_right );
+	printf( "%i %i %i\n", band_left, band_center, band_right );
 	printf( "%i %i %i %i\n", i, j, j1, len2 );
 #endif
 	const char *letters = "ACGTN";
@@ -786,29 +795,29 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	int last = back;
 	int count = 0, count2 = 0;
 	int begin1, begin2, end1, end2;
-	int match, score, smin = best_score, smax = best_score;
+	int match, score, smin = best_score, smax = best_score - 1;
 	int posmin, posmax, pos = 0;
-	posmin = posmax = len1 + len2;
+	posmin = posmax = 0;
 	begin1 = begin2 = end1 = end2 = 0;
 	while( back != DP_BACK_NONE ){
 		switch( back ){
 		case DP_BACK_TOP  :
 #ifdef PRINT
-			printf( "%c %c %9i\n", letters[ iseq1[i-1] ], '|', score_mat[i][j1] );
+			printf( "%5i: %c %c %9i\n", pos, letters[ iseq1[i-1] ], '|', score_mat[i][j1] );
 #endif
 			i -= 1;
 			j1 += 1;
 			break;
 		case DP_BACK_LEFT :
 #ifdef PRINT
-			printf( "%c %c %9i\n", '|', letters[ iseq2[j-1] ], score_mat[i][j1] );
+			printf( "%5i: %c %c %9i\n", pos, '|', letters[ iseq2[j-1] ], score_mat[i][j1] );
 #endif
 			j1 -= 1;
 			j -= 1;
 			break;
 		case DP_BACK_LEFT_TOP :
 #ifdef PRINT
-			printf( "%c %c %9i\n", letters[ iseq1[i-1] ], letters[ iseq2[j-1] ], score_mat[i][j1] );
+			printf( "%5i: %c %c %9i\n", pos, letters[ iseq1[i-1] ], letters[ iseq2[j-1] ], score_mat[i][j1] );
 #endif
 			score = score_mat[i][j1];
 			i -= 1;
@@ -826,9 +835,9 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 			if( score < smin ){
 				count2 = 0;
 				smin = score;
-				posmin = pos  + (match == 0);
-				begin1 = i + (match == 0);
-				begin2 = j + (match == 0);
+				posmin = pos;
+				begin1 = i + 1;
+				begin2 = j + 1;
 			}
 			break;
 		default : printf( "%i\n", back ); break;
@@ -838,7 +847,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 		back = back_mat[i][j1];
 	}
 	iden_no = count - count2;
-	alnln = posmin - posmax + 1;
+	alnln = posmin - posmax;
 	if( alninfo ){
 		alninfo[0] = begin1;
 		alninfo[1] = end1;
@@ -933,7 +942,8 @@ void ScoreMatrix::init()
 void ScoreMatrix::set_gap(int gap1, int ext_gap1)
 {
 	int i;
-	gap = gap1; ext_gap = ext_gap1;
+	gap = 10 * gap1;
+	ext_gap = 10 * ext_gap1;
 	for (i=0; i<MAX_GAP; i++)  gap_array[i] = gap + i * ext_gap;
 }
 
@@ -943,7 +953,7 @@ void ScoreMatrix::set_matrix(int *mat1)
 	k = 0;
 	for ( i=0; i<MAX_AA; i++)
 		for ( j=0; j<=i; j++)
-			matrix[j][i] = matrix[i][j] = mat1[ k++ ];
+			matrix[j][i] = matrix[i][j] = 10 * mat1[ k++ ];
 }
 
 void ScoreMatrix::set_to_na()
@@ -2382,7 +2392,7 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	int len_upper_bound = param.len_upper_bound;
 	int len_lower_bound = param.len_lower_bound;
 	int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
-	int tiden_no;
+	int tiden_no, band_center;
 	float tiden_pc;
 	int talign_info[5];
 	int best1, sum;
@@ -2450,16 +2460,16 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 
 				band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
 				diag_test_aapn(NAA1, seqj, len, len2, buf, best_sum,
-						band_width1, band_left, band_right, required_aa1);
+						band_width1, band_left, band_center, band_right, required_aa1);
 				if ( best_sum < required_aa2 ) continue;
 
 				if (options.print || aln_cover_flag) //return overlap region
 					local_band_align(seqi, seqj, len, len2, mat,
 							best_score, tiden_no, alnln, talign_info+1,
-							band_left, band_right, buf);
+							band_left, band_center, band_right, buf);
 				else
 					local_band_align(seqi, seqj, len, len2, mat,
-							best_score, tiden_no, alnln, NULL, band_left, band_right, buf);
+							best_score, tiden_no, alnln, NULL, band_left, band_center, band_right, buf);
 				if ( tiden_no < required_aa1 ) continue;
 				lens = len;
 				if( options.has2D && len > len2 ) lens = len2;
@@ -2538,7 +2548,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	int len_upper_bound = param.len_upper_bound;
 	int len_lower_bound = param.len_lower_bound;
 	int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
-	int tiden_no;
+	int tiden_no, band_center;
 	float tiden_pc;
 	int talign_info[5];
 	int j0, comp;
@@ -2602,7 +2612,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 
 					band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
 					diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
-							band_width1, band_left, band_right, required_aa1);
+							band_width1, band_left, band_center, band_right, required_aa1);
 					//printf( "%i %i\n", best_sum, required_aas );
 					if ( best_sum < required_aas ) continue;
 					//if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
@@ -2610,7 +2620,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 					if (options.print || aln_cover_flag){ //return overlap region
 						local_band_align(seqi, seqj, len, len2, mat,
 								best_score, tiden_no, alnln, talign_info+1,
-								band_left, band_right, buf);
+								band_left, band_center, band_right, buf);
 						if( comp ){
 							talign_info[1] = len - talign_info[1] - 1;
 							talign_info[2] = len - talign_info[2] - 1;
@@ -2619,7 +2629,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 						//printf( "%5i %5i %5i %5i\n", band_width1, band_right-band_left, band_left, band_right );
 						local_band_align(seqi, seqj, len, len2, mat,
 								best_score, tiden_no, alnln, talign_info+1,
-								band_left, band_right, buf);
+								band_left, band_center, band_right, buf);
 					}
 					//printf( "%i  %i  %i\n", best_score, tiden_no, required_aa1 );
 					if ( tiden_no < required_aa1 ) continue;
