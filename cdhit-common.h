@@ -263,6 +263,7 @@ struct Options
 	bool    store_disk; // -B:
 	int     band_width; // -b: 20
 	double  cluster_thd; // -c
+	double  distance_thd; // -D
 	double  diff_cutoff; // -s: 0.0
 	double  diff_cutoff2; // -s2: 1.0
 	int     diff_cutoff_aa; // -S: 999999
@@ -287,17 +288,20 @@ struct Options
 
 	bool    has2D;
 	bool    isEST;
+	bool    byDistance;
 
 	string  input;
 	string  input2;
 	string  output;
 
 	Options(){
+		byDistance = false;
 		has2D = false;
 		isEST = false;
 		NAA = 5;
 		NAA_top_limit = 5;
 		cluster_thd = 0.9;
+		distance_thd = 0.0;
 		max_memory = 800000000;
 		min_length = 10;
 		cluster_best = false;
@@ -372,6 +376,7 @@ struct Sequence
 	int   cluster_id;
 	int   fragment; // the first fragment, for representatives only
 	float identity;
+	float distance;
 	int   coverage[4];
 
 	Sequence();
@@ -577,8 +582,8 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2,
 int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, 
 		WorkingBuffer & buffer, int &best_sum,
 		int band_width, int &band_left, int &band_center, int &band_right, int required_aa1);
-int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
-		ScoreMatrix &mat, int &best_score, int &iden_no, int &alnln, int *alninfo,
+int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix &mat, 
+		int &best_score, int &iden_no, int &alnln, float &dist, int *alninfo,
 		int band_left, int band_center, int band_right, WorkingBuffer & buffer);
 
 int print_usage_2d (char *arg);

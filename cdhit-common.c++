@@ -158,6 +158,7 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-M" ) == 0) max_memory  = atoll(value) * 1000000;
 	else if (strcmp(flag, "-l" ) == 0) min_length  = intval;
 	else if (strcmp(flag, "-c" ) == 0) cluster_thd  = atof(value);
+	else if (strcmp(flag, "-D" ) == 0) distance_thd  = atof(value), byDistance = true;
 	else if (strcmp(flag, "-b" ) == 0) band_width  = intval;
 	else if (strcmp(flag, "-n" ) == 0) NAA       = intval;
 	else if (strcmp(flag, "-d" ) == 0) des_len   = intval;
@@ -260,6 +261,12 @@ void Options::Validate()
 	}else{
 		if ((cluster_thd > 1.0) || (cluster_thd < 0.4)) bomb_error("invalid clstr");
 	}
+	if ((distance_thd > 1.0) || (distance_thd < 0.0)) bomb_error("invalid distance threshold");
+	if( cluster_thd > (1.0 - distance_thd) )
+		bomb_error( "identity threshold -c is too high for the distance threshold -D" );
+	if( cluster_thd > (1.0 - 2*distance_thd) )
+		bomb_warning( "identity threshold -c is probably too high for the distance threshold -D" );
+
 	if (band_width < 1 ) bomb_error("invalid band width");
 	if (NAA < 2 || NAA > NAA_top_limit) bomb_error("invalid word length");
 	if (des_len < 0 ) bomb_error("too short description, not enough to identify sequences");
@@ -642,8 +649,8 @@ mat is matrix, return ALN_PAIR class
 
 */
 
-int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
-		ScoreMatrix &mat, int &best_score, int &iden_no, int &alnln, int *alninfo,
+int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix &mat, 
+		int &best_score, int &iden_no, int &alnln, float &dist, int *alninfo,
 		int band_left, int band_center, int band_right, WorkingBuffer & buffer)
 {
 	int i, j, k, j1;
@@ -797,6 +804,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	int begin1, begin2, end1, end2;
 	int match, score, smin = best_score, smax = best_score - 1;
 	int posmin, posmax, pos = 0;
+	int bl, dlen = 0, dcount = 0;
 	posmin = posmax = 0;
 	begin1 = begin2 = end1 = end2 = 0;
 	while( back != DP_BACK_NONE ){
@@ -805,6 +813,9 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 #ifdef PRINT
 			printf( "%5i: %c %c %9i\n", pos, letters[ iseq1[i-1] ], '|', score_mat[i][j1] );
 #endif
+			bl = (last != back) & (j != 1) & (j != len2);
+			dlen += bl;
+			dcount += bl;
 			i -= 1;
 			j1 += 1;
 			break;
@@ -812,6 +823,9 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 #ifdef PRINT
 			printf( "%5i: %c %c %9i\n", pos, '|', letters[ iseq2[j-1] ], score_mat[i][j1] );
 #endif
+			bl = (last != back) & (i != 1) & (i != len1);
+			dlen += bl;
+			dcount += bl;
 			j1 -= 1;
 			j -= 1;
 			break;
@@ -823,6 +837,8 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 			i -= 1;
 			j -= 1;
 			match = iseq1[i] == iseq2[j];
+			dlen += 1;
+			dcount += ! match;
 			if( score > smax ){
 				count = 0;
 				smax = score;
@@ -848,6 +864,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	}
 	iden_no = count - count2;
 	alnln = posmin - posmax;
+	dist = dcount/(float)dlen;
 	if( alninfo ){
 		alninfo[0] = begin1;
 		alninfo[1] = end1;
@@ -858,6 +875,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2,
 	printf( "%6i %6i:  %4i %4i %4i %4i\n", alnln, iden_no, begin1, end1, begin2, end2 );
 	printf( "%6i %6i:  %4i %4i\n", posmin, posmax, posmin - posmax, count - count2 );
 	printf( "smin = %9i, smax = %9i\n", smin, smax );
+	printf( "dlen = %5i, dcount = %5i, dist = %.3f\n", dlen, dcount, dcount/(float)dlen );
 #endif
 
 	return OK_FUNC;
@@ -1341,12 +1359,14 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 Sequence::Sequence()
 {
 	memset( this, 0, sizeof( Sequence ) );
+	distance = 2.0;
 }
 Sequence::Sequence( const Sequence & other )
 {
 	int i;
 	//printf( "new: %p  %p\n", this, & other );
 	memcpy( this, & other, sizeof( Sequence ) );
+	distance = 2.0;
 	if( other.data ){
 		size = bufsize = other.size;
 		data = new char[size+1];
@@ -1513,7 +1533,9 @@ void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options
 		fprintf( fout, " at " );
 		if (print) fprintf( fout, "%i:%i:%i:%i/", c[0], c[1], c[2], c[3] );
 		if (strand) fprintf( fout, "%c/", (state & IS_MINUS_STRAND) ? '-' : '+' );
-		fprintf( fout, "%.2f%%\n", identity*100 );
+		fprintf( fout, "%.2f%%", identity*100 );
+		if( options.byDistance ) fprintf( fout, "/%.2f%%", distance*100 );
+		fprintf( fout, "\n" );
 	}else{
 		fprintf( fout, " *\n" );
 	}
@@ -2393,7 +2415,7 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	int len_lower_bound = param.len_lower_bound;
 	int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
 	int tiden_no, band_center;
-	float tiden_pc;
+	float tiden_pc, distance=0;
 	int talign_info[5];
 	int best1, sum;
 	INTs *lookptr;
@@ -2465,24 +2487,31 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 
 				if (options.print || aln_cover_flag) //return overlap region
 					local_band_align(seqi, seqj, len, len2, mat,
-							best_score, tiden_no, alnln, talign_info+1,
+							best_score, tiden_no, alnln, distance, talign_info+1,
 							band_left, band_center, band_right, buf);
 				else
 					local_band_align(seqi, seqj, len, len2, mat,
-							best_score, tiden_no, alnln, NULL, band_left, band_center, band_right, buf);
+							best_score, tiden_no, alnln, distance, NULL, 
+							band_left, band_center, band_right, buf);
 				if ( tiden_no < required_aa1 ) continue;
 				lens = len;
 				if( options.has2D && len > len2 ) lens = len2;
 				len_eff1 = (options.global_identity == 0) ? alnln : lens;
 				tiden_pc = tiden_no / (float) len_eff1;
-				if (tiden_pc < options.cluster_thd) continue;
-				if (tiden_pc <= seq->identity) continue; // existing iden_no
+				if( options.byDistance ){
+					if (distance > options.distance_thd ) continue;
+					if (distance >= seq->distance) continue; // existing distance
+				}else{
+					if (tiden_pc < options.cluster_thd) continue;
+					if (tiden_pc <= seq->identity) continue; // existing iden_no
+				}
 				if (aln_cover_flag) {
 					if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
 					if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
 				}
 				if( options.has2D ) seq->state |= IS_REDUNDANT ;
 				flag = 1; seq->identity = tiden_pc; seq->cluster_id = rep->cluster_id;
+				seq->distance = distance;
 				seq->coverage[0] = talign_info[1] +1;
 				seq->coverage[1] = talign_info[2] +1;
 				seq->coverage[2] = talign_info[3] +1;
@@ -2549,7 +2578,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	int len_lower_bound = param.len_lower_bound;
 	int band_left, band_right, best_score, band_width1, best_sum, len2, alnln, len_eff1;
 	int tiden_no, band_center;
-	float tiden_pc;
+	float tiden_pc, distance=0;
 	int talign_info[5];
 	int j0, comp;
 	char *seqj;
@@ -2619,7 +2648,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 
 					if (options.print || aln_cover_flag){ //return overlap region
 						local_band_align(seqi, seqj, len, len2, mat,
-								best_score, tiden_no, alnln, talign_info+1,
+								best_score, tiden_no, alnln, distance, talign_info+1,
 								band_left, band_center, band_right, buf);
 						if( comp ){
 							talign_info[1] = len - talign_info[1] - 1;
@@ -2628,7 +2657,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 					}else{
 						//printf( "%5i %5i %5i %5i\n", band_width1, band_right-band_left, band_left, band_right );
 						local_band_align(seqi, seqj, len, len2, mat,
-								best_score, tiden_no, alnln, talign_info+1,
+								best_score, tiden_no, alnln, distance, talign_info+1,
 								band_left, band_center, band_right, buf);
 					}
 					//printf( "%i  %i  %i\n", best_score, tiden_no, required_aa1 );
@@ -2636,8 +2665,13 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 					len_eff1 = (options.global_identity == 0) ? alnln : len;
 					tiden_pc = tiden_no / (float)len_eff1;
 					//printf( "%i %i\n", tiden_no, options.cluster_thd100 );
-					if (tiden_pc < options.cluster_thd) continue;
-					if (options.cluster_best and tiden_pc < seq->identity) continue; // existing iden_no
+					if( options.byDistance ){
+						if (distance > options.distance_thd ) continue;
+						if (options.cluster_best and distance >= seq->distance) continue; // existing distance
+					}else{
+						if (tiden_pc < options.cluster_thd) continue;
+						if (options.cluster_best and tiden_pc < seq->identity) continue; // existing iden_no
+					}
 					if (aln_cover_flag) {
 						if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
 						if( comp ){
@@ -2650,6 +2684,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 					if( (not options.cluster_best) and flag !=0 and rep->cluster_id >= seq->cluster_id ) continue;
 					flag = comp ? -1 : 1;
 					seq->identity = tiden_pc;
+					seq->distance = distance;
 					seq->cluster_id = rep->cluster_id;
 					seq->coverage[0] = talign_info[1] +1;
 					seq->coverage[1] = talign_info[2] +1;
