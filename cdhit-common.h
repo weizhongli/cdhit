@@ -288,14 +288,16 @@ struct Options
 
 	bool    has2D;
 	bool    isEST;
-	bool    byDistance;
+	bool    useIdentity;
+	bool    useDistance;
 
 	string  input;
 	string  input2;
 	string  output;
 
 	Options(){
-		byDistance = false;
+		useIdentity = false;
+		useDistance = false;
 		has2D = false;
 		isEST = false;
 		NAA = 5;
@@ -561,6 +563,7 @@ class SequenceDB
 		//void SelfComparing( int start, int end, WordTable & table, 
 		//    WorkingParam & param, WorkingBuffer & buf, const Options & options );
 
+		void ComputeDistance( const Options & options );
 		void DoClustering( const Options & options );
 		void DoClustering( int T, const Options & options );
 		void ClusterTo( SequenceDB & other, const Options & optioins );
@@ -582,7 +585,7 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2,
 int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, 
 		WorkingBuffer & buffer, int &best_sum,
 		int band_width, int &band_left, int &band_center, int &band_right, int required_aa1);
-int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix &mat, 
+int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat, 
 		int &best_score, int &iden_no, int &alnln, float &dist, int *alninfo,
 		int band_left, int band_center, int band_right, WorkingBuffer & buffer);
 

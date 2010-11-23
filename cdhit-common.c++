@@ -157,8 +157,8 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-o" ) == 0) output = value;
 	else if (strcmp(flag, "-M" ) == 0) max_memory  = atoll(value) * 1000000;
 	else if (strcmp(flag, "-l" ) == 0) min_length  = intval;
-	else if (strcmp(flag, "-c" ) == 0) cluster_thd  = atof(value);
-	else if (strcmp(flag, "-D" ) == 0) distance_thd  = atof(value), byDistance = true;
+	else if (strcmp(flag, "-c" ) == 0) cluster_thd  = atof(value), useIdentity = true;
+	else if (strcmp(flag, "-D" ) == 0) distance_thd  = atof(value), useDistance = true;
 	else if (strcmp(flag, "-b" ) == 0) band_width  = intval;
 	else if (strcmp(flag, "-n" ) == 0) NAA       = intval;
 	else if (strcmp(flag, "-d" ) == 0) des_len   = intval;
@@ -256,16 +256,14 @@ bool Options::SetOptions( int argc, char *argv[], bool twod, bool est )
 }
 void Options::Validate()
 {
-	if( isEST ){
+	if( useIdentity and useDistance ) bomb_error( "can not use both identity cutoff and distance cutoff" );
+	if( useDistance ){
+		if ((distance_thd > 1.0) || (distance_thd < 0.0)) bomb_error("invalid distance threshold");
+	}else if( isEST ){
 		if ((cluster_thd > 1.0) || (cluster_thd < 0.8)) bomb_error("invalid clstr threshold, should >=0.8");
 	}else{
 		if ((cluster_thd > 1.0) || (cluster_thd < 0.4)) bomb_error("invalid clstr");
 	}
-	if ((distance_thd > 1.0) || (distance_thd < 0.0)) bomb_error("invalid distance threshold");
-	if( cluster_thd > (1.0 - distance_thd) )
-		bomb_error( "identity threshold -c is too high for the distance threshold -D" );
-	if( cluster_thd > (1.0 - 2*distance_thd) )
-		bomb_warning( "identity threshold -c is probably too high for the distance threshold -D" );
 
 	if (band_width < 1 ) bomb_error("invalid band width");
 	if (NAA < 2 || NAA > NAA_top_limit) bomb_error("invalid word length");
@@ -649,10 +647,14 @@ mat is matrix, return ALN_PAIR class
 
 */
 
-int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix &mat, 
+int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat, 
 		int &best_score, int &iden_no, int &alnln, float &dist, int *alninfo,
 		int band_left, int band_center, int band_right, WorkingBuffer & buffer)
 {
+	char *iseq1 = seq1->data;
+	char *iseq2 = seq2->data;
+	int len1 = seq1->size;
+	int len2 = seq2->size;
 	int i, j, k, j1;
 	int jj, kk;
 	int best_score1, iden_no1;
@@ -791,13 +793,9 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix
 	}
 	j1 = j - i - band_left;
 	best_score = score_mat[i][j1];
-//#define PRINT
-#ifdef PRINT
-	printf( "%i %i\n", best_score, score_mat[i][j1] );
-	printf( "%i %i %i\n", band_left, band_center, band_right );
-	printf( "%i %i %i %i\n", i, j, j1, len2 );
-#endif
-	const char *letters = "ACGTN";
+
+	const char *letters = "acgtn";
+	const char *letters2 = "ACGTN";
 	int back = back_mat[i][j1];
 	int last = back;
 	int count = 0, count2 = 0;
@@ -807,11 +805,37 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix
 	int bl, dlen = 0, dcount = 0;
 	posmin = posmax = 0;
 	begin1 = begin2 = end1 = end2 = 0;
+
+#ifdef PRINT
+#define PRINT
+	printf( "%i %i\n", best_score, score_mat[i][j1] );
+	printf( "%i %i %i\n", band_left, band_center, band_right );
+	printf( "%i %i %i %i\n", i, j, j1, len2 );
+#endif
+#ifdef MAKEALIGN
+#define MAKEALIGN
+	char AA[ MAX_SEQ ], BB[ MAX_SEQ ];
+	int NN = 0;
+	int IA, IB;
+	for(IA=len1;IA>i;IA--){
+		AA[NN] = letters[ iseq1[IA-1] ];
+		BB[NN++] = '-';
+	}
+	for(IB=len2;IB>j;IB--){
+		AA[NN] = '-';
+		BB[NN++] = letters[ iseq2[IB-1] ];
+	}
+#endif
+
 	while( back != DP_BACK_NONE ){
 		switch( back ){
 		case DP_BACK_TOP  :
 #ifdef PRINT
 			printf( "%5i: %c %c %9i\n", pos, letters[ iseq1[i-1] ], '|', score_mat[i][j1] );
+#endif
+#ifdef MAKEALIGN
+			AA[NN] = letters[ iseq1[i-1] ];
+			BB[NN++] = '-';
 #endif
 			bl = (last != back) & (j != 1) & (j != len2);
 			dlen += bl;
@@ -823,6 +847,10 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix
 #ifdef PRINT
 			printf( "%5i: %c %c %9i\n", pos, '|', letters[ iseq2[j-1] ], score_mat[i][j1] );
 #endif
+#ifdef MAKEALIGN
+			AA[NN] = '-';
+			BB[NN++] = letters[ iseq2[j-1] ];
+#endif
 			bl = (last != back) & (i != 1) & (i != len1);
 			dlen += bl;
 			dcount += bl;
@@ -831,7 +859,20 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix
 			break;
 		case DP_BACK_LEFT_TOP :
 #ifdef PRINT
-			printf( "%5i: %c %c %9i\n", pos, letters[ iseq1[i-1] ], letters[ iseq2[j-1] ], score_mat[i][j1] );
+			if( iseq1[i-1] == iseq2[j-1] ){
+				printf( "%5i: %c %c %9i\n", pos, letters2[ iseq1[i-1] ], letters2[ iseq2[j-1] ], score_mat[i][j1] );
+			}else{
+				printf( "%5i: %c %c %9i\n", pos, letters[ iseq1[i-1] ], letters[ iseq2[j-1] ], score_mat[i][j1] );
+			}
+#endif
+#ifdef MAKEALIGN
+			if( iseq1[i-1] == iseq2[j-1] ){
+				AA[NN] = letters2[ iseq1[i-1] ];
+				BB[NN++] = letters2[ iseq2[j-1] ];
+			}else{
+				AA[NN] = letters[ iseq1[i-1] ];
+				BB[NN++] = letters[ iseq2[j-1] ];
+			}
 #endif
 			score = score_mat[i][j1];
 			i -= 1;
@@ -865,6 +906,7 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix
 	iden_no = count - count2;
 	alnln = posmin - posmax;
 	dist = dcount/(float)dlen;
+	//dist = - 0.75 * log( 1.0 - dist * 4.0 / 3.0 );
 	if( alninfo ){
 		alninfo[0] = begin1;
 		alninfo[1] = end1;
@@ -876,6 +918,51 @@ int local_band_align(char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix
 	printf( "%6i %6i:  %4i %4i\n", posmin, posmax, posmin - posmax, count - count2 );
 	printf( "smin = %9i, smax = %9i\n", smin, smax );
 	printf( "dlen = %5i, dcount = %5i, dist = %.3f\n", dlen, dcount, dcount/(float)dlen );
+#endif
+#ifdef MAKEALIGN
+	while(i--){
+		AA[NN] = letters[ iseq1[i-1] ];
+		BB[NN++] = '-';
+	}
+	while(j--){
+		AA[NN] = '-';
+		BB[NN++] = letters[ iseq2[j-1] ];
+	}
+	AA[NN] = '\0';
+	BB[NN] = '\0';
+	for(i=0; i<NN/2; i++){
+		char aa = AA[i], bb = BB[i];
+		AA[i] = AA[NN-i-1];
+		BB[i] = BB[NN-i-1];
+		AA[NN-i-1] = aa;
+		BB[NN-i-1] = bb;
+	}
+	static int fcount = 0;
+	fcount += 1;
+	char fname[100];
+	sprintf( fname, "alignments/pair%06i.txt", fcount );
+	FILE *fout = fopen( fname, "w+" );
+	fprintf( fout, "# %g\n", dist );
+#if 1
+	fprintf( fout, "%i %s\n", seq1->index, AA );
+	fprintf( fout, "%i %s\n", seq2->index, BB );
+#else
+	bool printaa = true;
+	IA = IB = 0;
+	fprintf( fout, "\n\nX " );
+	while( IB < NN ){
+		if( printaa ){
+			fprintf( fout, "%c", AA[IA] );
+			IA += 1;
+			if( IA % 75 ==0 or IA == NN ) printaa = false, fprintf( fout, "\nY " );
+		}else{
+			fprintf( fout, "%c", BB[IB] );
+			IB += 1;
+			if( IB % 75 ==0 ) printaa = true, fprintf( fout, "\n\nX " );
+		}
+	}
+#endif
+	fclose( fout );
 #endif
 
 	return OK_FUNC;
@@ -1534,7 +1621,7 @@ void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options
 		if (print) fprintf( fout, "%i:%i:%i:%i/", c[0], c[1], c[2], c[3] );
 		if (strand) fprintf( fout, "%c/", (state & IS_MINUS_STRAND) ? '-' : '+' );
 		fprintf( fout, "%.2f%%", identity*100 );
-		if( options.byDistance ) fprintf( fout, "/%.2f%%", distance*100 );
+		if( options.useDistance ) fprintf( fout, "/%.2f%%", distance*100 );
 		fprintf( fout, "\n" );
 	}else{
 		fprintf( fout, " *\n" );
@@ -1964,6 +2051,42 @@ void update_aax_cutoff(double &aa1_cutoff, double &aa2_cutoff, double &aan_cutof
 
 void WorkingParam::ComputeRequiredBases( int NAA, int ss, const Options & option )
 {
+	// d: distance, fraction of errors;
+	// e: number of errors;
+	// g: length of the maximum gap;
+	// m: word length;
+	// n: sequence length;
+	// alignment length = n - g + 1;
+	// d = e / (n - g + 1);
+	// e >= 1, so that, g <= n + 1 - 1/d
+	// word count = (n - g - m + 1) - (e - 1)*m;
+	//            = (n - g - m + 1) - (d*(n - g + 1) - 1)*m
+	//            = (n - g + 1) - d*m*(n - g + 1)
+	//            = (n - g + 1)*(1 - d*m)
+	// minimum word count is reached when g == n + 1 - 1/d
+	// so, minimum word count = 1/d - m.
+	// if g == band_width: word count = (n - band + 1)*(1 - d*m);
+	if( options.useDistance ){
+		int band = options.band_width + 1;
+		int invd = int( 1.0 / (options.distance_thd + 1E-9) );
+		int k = len_eff < invd ? len_eff : invd;
+		int ks = len_eff - ss + 1;
+		int kn = len_eff - NAA + 1;
+		int ks2 = invd - ss;
+		int kn2= invd - NAA;
+		int ks3 = int((len_eff - band + 1.0)*(1.0 - options.distance_thd * ss));
+		int kn3 = int((len_eff - band + 1.0)*(1.0 - options.distance_thd * NAA));
+		//if( ks3 > ks2 ) ks2 = ks3;
+		//if( kn3 > kn2 ) kn2 = kn3;
+		required_aa1 = required_aas = (ks2 < ks ? ks2 : ks);
+		required_aan = kn2 < kn ? kn2 : kn;
+		if( required_aa1 <=0 ) required_aa1 = required_aas = 1;
+		if( required_aan <=0 ) required_aan = 1;
+		//required_aa1 = required_aas = required_aan = 0;
+		return;
+	}
+#if 0
+#endif
 #if 1
 	// (N-K)-K*(1-C)*N = C*K*N-(K-1)*N-K = (C*K-K+1)*N-K
 	//required_aa1 = int((ss*aa1_cutoff-ss+1)*len_eff) - ss;
@@ -2486,11 +2609,11 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 				if ( best_sum < required_aa2 ) continue;
 
 				if (options.print || aln_cover_flag) //return overlap region
-					local_band_align(seqi, seqj, len, len2, mat,
+					local_band_align(seq, rep, mat,
 							best_score, tiden_no, alnln, distance, talign_info+1,
 							band_left, band_center, band_right, buf);
 				else
-					local_band_align(seqi, seqj, len, len2, mat,
+					local_band_align(seq, rep, mat,
 							best_score, tiden_no, alnln, distance, NULL, 
 							band_left, band_center, band_right, buf);
 				if ( tiden_no < required_aa1 ) continue;
@@ -2498,7 +2621,7 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 				if( options.has2D && len > len2 ) lens = len2;
 				len_eff1 = (options.global_identity == 0) ? alnln : lens;
 				tiden_pc = tiden_no / (float) len_eff1;
-				if( options.byDistance ){
+				if( options.useDistance ){
 					if (distance > options.distance_thd ) continue;
 					if (distance >= seq->distance) continue; // existing distance
 				}else{
@@ -2647,7 +2770,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 					//if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
 
 					if (options.print || aln_cover_flag){ //return overlap region
-						local_band_align(seqi, seqj, len, len2, mat,
+						local_band_align(seq, rep, mat,
 								best_score, tiden_no, alnln, distance, talign_info+1,
 								band_left, band_center, band_right, buf);
 						if( comp ){
@@ -2656,7 +2779,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 						}
 					}else{
 						//printf( "%5i %5i %5i %5i\n", band_width1, band_right-band_left, band_left, band_right );
-						local_band_align(seqi, seqj, len, len2, mat,
+						local_band_align(seq, rep, mat,
 								best_score, tiden_no, alnln, distance, talign_info+1,
 								band_left, band_center, band_right, buf);
 					}
@@ -2665,7 +2788,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 					len_eff1 = (options.global_identity == 0) ? alnln : len;
 					tiden_pc = tiden_no / (float)len_eff1;
 					//printf( "%i %i\n", tiden_no, options.cluster_thd100 );
-					if( options.byDistance ){
+					if( options.useDistance ){
 						if (distance > options.distance_thd ) continue;
 						if (options.cluster_best and distance >= seq->distance) continue; // existing distance
 					}else{
@@ -2709,6 +2832,73 @@ Break:
 	}
 	return flag;
 }
+void SequenceDB::ComputeDistance( const Options & options )
+{
+	int i, j, N = sequences.size();
+	int best_score, best_sum;
+	int band_width1, band_left, band_center, band_right, required_aa1;
+	int tiden_no, alnln;
+	int talign_info[5];
+	float distance;
+	WorkingBuffer buf( N, options );
+
+	Vector<NVector<float> > dists( N, NVector<float>(N) );
+
+	Sequence comseq( *sequences[0] );
+
+	for(i=0; i<N; i++){
+		Sequence *seq = sequences[i];
+		char *seqi = seq->data;
+		int len = seq->size;
+		buf.EncodeWords( seq, options.NAA, false );
+		buf.ComputeAAP2( seqi, seq->size );
+		dists[i][i] = 0.0;
+		if((i+1)%1000 ==0) printf( "%9i\n", (i+1) );
+		for(j=0; j<i; j++){
+			Sequence *rep = sequences[j];
+			char *seqj = rep->data;
+			int len2 = rep->size;
+			band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
+			diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
+					band_width1, band_left, band_center, band_right, 0);
+			local_band_align(seq, rep, mat,
+					best_score, tiden_no, alnln, distance, talign_info+1,
+					band_left, band_center, band_right, buf);
+			dists[seq->index][rep->index] = dists[rep->index][seq->index] = distance;
+		}
+		if (not options.option_r ) break;
+		comseq.index = seq->index;
+		comseq.size = len;
+		for(j=0; j<len; j++) comseq.data[i] = seq->data[len-i-1];
+		seqi = comseq.data;
+		buf.EncodeWords( &comseq, options.NAA, false );
+		buf.ComputeAAP2( seqi, seq->size );
+		for(j=0; j<i; j++){
+			Sequence *rep = sequences[j];
+			char *seqj = rep->data;
+			int len2 = rep->size;
+			band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
+			diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
+					band_width1, band_left, band_center, band_right, 0);
+			local_band_align(&comseq, rep, mat,
+					best_score, tiden_no, alnln, distance, talign_info+1,
+					band_left, band_center, band_right, buf);
+			if( distance < dists[seq->index][rep->index] )
+				dists[seq->index][rep->index] = dists[rep->index][seq->index] = distance;
+		}
+	}
+	std::string output = options.output + ".dist";
+	FILE *fout = fopen( output.c_str(), "w+" );
+	fprintf( fout, "1" );
+	for(i=1; i<N; i++) fprintf( fout, "\t%i", i+1 );
+	fprintf( fout, "\n" );
+	for(i=0; i<N; i++){
+		fprintf( fout, "%g", dists[i][0] );
+		for(j=1; j<N; j++) fprintf( fout, "\t%g", dists[i][j] );
+		fprintf( fout, "\n" );
+	}
+	fclose( fout );
+}
 void SequenceDB::DoClustering( const Options & options )
 {
 	int i;
@@ -2721,6 +2911,11 @@ void SequenceDB::DoClustering( const Options & options )
 	int frag_size = options.frag_size;
 	int len, len_bound;
 	int flag;
+
+#if 0
+	ComputeDistance( options );
+	return;
+#endif
 
 	if( options.threads > 1 ){
 		DoClustering( options.threads, options );
