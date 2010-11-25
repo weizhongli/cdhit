@@ -443,7 +443,8 @@ struct WorkingParam
 #define CHUNK2  (1<<CBIT2)
 #define CHUNK3  (1<<CBIT3)
 
-#define MAXNUM 254
+// maximum possible value is 254, a smaller value could be faster
+#define MAXNUM 126
 
 enum { DP_BACK_NONE=0, DP_BACK_LEFT_TOP=1, DP_BACK_LEFT=2, DP_BACK_TOP=3 };
 

@@ -282,6 +282,18 @@ void Options::Validate()
 		bomb_error("You are using local identity, but no -aS -aL -A option");
 	if (frag_size < 0) bomb_error("invalid fragment size");
 
+#if 0
+	if( useDistance ){
+		/* when required_aan becomes zero */
+		if( distance_thd * NAA >= 1 )
+			bomb_warning( "word length is too long for the distance cutoff" );
+	}else{
+		/* when required_aan becomes zero */
+		if( cluster_thd <= 1.0 - 1.0 / NAA )
+			bomb_warning( "word length is too long for the identity cutoff" );
+	}
+#endif
+
 	const char *message = "Your word length is %i, using %i may be faster!\n";
 	if ( not isEST && tolerance ) {
 		int i, clstr_idx = (int) (cluster_thd * 100) - naa_stat_start_percent;
@@ -748,8 +760,6 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 			//int iden_ij = (ci == cj);
 			int s1, k0, back;
 
-			if( sij >0 ) sij += extra;
-
 			back = DP_BACK_LEFT_TOP;
 			best_score1 = score_mat[i-1][j1] + sij;
 			int gap0 = gap_open[ (i == len1) | (j == len2) ];
@@ -772,6 +782,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 					best_score1 = score;
 				}
 			}
+			if( sij >0 and back != DP_BACK_LEFT_TOP ) best_score1 += extra;
 
 			score_mat[i][j1] = best_score1;
 			back_mat[i][j1]  = back;
@@ -1344,14 +1355,7 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 		IndexCount *ic = one.items;
 
 		for (k=0; k<k1; k++, ic++){
-			/* http://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-			If you know that INT_MIN <= x - y <= INT_MAX, then you can use the following,
-			which are faster because (x - y) only needs to be evaluated once.
-			r = y + ((x - y) & ((x - y) >> (sizeof(int) * CHAR_BIT - 1))); // min(x, y)
-			r = x - ((x - y) & ((x - y) >> (sizeof(int) * CHAR_BIT - 1))); // max(x, y)
-			*/
-			//int c = ic->count < j1 ? ic->count : j1;
-			int c = j1 + ((ic->count - j1) & ((ic->count - j1) >> (sizeof(int) * CHAR_BIT - 1)));
+			int c = ic->count < j1 ? ic->count : j1;
 			uint32_t *idm = indexMapping.items + ic->index;
 			if( *idm ==0 ){
 				IndexCount *ic2 = lookCounts.items + lookCounts.size;
@@ -1380,7 +1384,7 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 		if( c > *lc2 ) *lc2 = c;
 		//look_and_count1[ id>>CBIT1 ] += c;
 		//look_and_count2[ id>>CBIT2 ] += c;
-		test += 1;
+		//test += 1;
 	}
 	//printf( "%9i %9i %3i\n", lookCounts.size, test, min );
 	lookCounts.size = 0;
@@ -2097,6 +2101,15 @@ void WorkingParam::ComputeRequiredBases( int NAA, int ss, const Options & option
 	required_aan = (len_eff - NAA) - int(NAA * ceil( (1.0 - aa1_cutoff) * len_eff ));
 	//printf( "%i %i\n", required_aa1, required_aan );
 	if( required_aan < 0 ) required_aan = 0;
+#if 0
+	if( required_aan ){
+		int part = NAA + required_aan - 1;
+		int len_eff2 = len_eff - part;
+		required_aa1 = (part - ss + 1) + (len_eff2 - ss) - int(ss * ceil( (1.0 - aa1_cutoff) * len_eff2 ));
+		if( required_aa1 < 0 ) required_aa1 = 0;
+		required_aas = required_aa1;
+	}
+#endif
 
 	int aa1_old = int (aa1_cutoff* (double) len_eff) - ss + 1;
 	int aas_old = int (aas_cutoff* (double) len_eff);
@@ -2138,9 +2151,10 @@ int WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
 	int skip = 0;
 	unsigned char k, k1;
 	for (j=0; j<aan_no; j++) {
-		word_encodes[j] = 0;
-		for (k=0, k1=NAA-1; k<NAA; k++, k1--) word_encodes[j] += seqi[j+k] * NAAN_array[k1];
-		word_encodes_backup[j] = word_encodes[j];
+		char *word = seqi + j;
+		int encode = 0;
+		for (k=0, k1=NAA-1; k<NAA; k++, k1--) encode += word[k] * NAAN_array[k1];
+		word_encodes[j] = word_encodes_backup[j] = encode;
 	}
 
 	if( est ){
@@ -2237,11 +2251,11 @@ void SequenceDB::ClusterOne( Sequence *seq, int id, WordTable & table,
 			table.sequences.Append( seq );
 		}
 	}
-	if ( (id+1) % 100 == 0 ) {
+	if ( (id+1) % 1000 == 0 ) {
 		int size = rep_seqs.size();
 		printf( "." );
 		fflush( stdout );
-		if ( (id+1) % 1000 == 0 ) printf( "\r..........%9i  finished  %9i  clusters\n", id+1, size );
+		if ( (id+1) % 10000 == 0 ) printf( "\r..........%9i  finished  %9i  clusters\n", id+1, size );
 	}
 }
 #include<assert.h>
@@ -2333,7 +2347,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	printf( "Table limit with the given memory limit:\n" );
 	printf( "Max number of representatives: %i\n", MAXNUM*CHUNK2 );
 	if( options.max_memory )
-		printf( "Max number of word counting entries: %i\n", mem_limit );
+		printf( "Max number of word counting entries: %li\n", mem_limit );
 	else mem_limit = options.max_entries;
 	printf( "\n" );
 
@@ -2948,7 +2962,7 @@ void SequenceDB::DoClustering( const Options & options )
 	printf( "Table limit with the given memory limit:\n" );
 	printf( "Max number of representatives: %i\n", MAXNUM*CHUNK2 );
 	if( options.max_memory )
-		printf( "Max number of word counting entries: %i\n", mem_limit );
+		printf( "Max number of word counting entries: %li\n", mem_limit );
 	else mem_limit = options.max_entries;
 	printf( "\n" );
 
@@ -3082,10 +3096,10 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 			word_table.sequences.Append( seq );
 			seq->cluster_id = ks;
 			seq->state |= IS_REP;
-			if ( (ks+1) % 100 == 0 ) {
+			if ( (ks+1) % 1000 == 0 ) {
 				printf( "." );
 				fflush( stdout );
-				if ( (ks+1) % 1000 == 0 ) printf( "%9i  finished\n", ks+1 );
+				if ( (ks+1) % 10000 == 0 ) printf( "%9i  finished\n", ks+1 );
 			}  
 		}
 		float p0 = 0;
