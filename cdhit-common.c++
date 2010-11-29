@@ -752,13 +752,15 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 		for (j1=J0; j1<=J1; j1++){
 			j = j1+i+band_left;
 
-			int extra = extra_score[ abs(j1 - max_diag) & 3 ]; // max distance 3
-
 			int ci = iseq1[i-1];
 			int cj = iseq2[j-1];
 			int sij = mat.matrix[ci][cj];
 			//int iden_ij = (ci == cj);
 			int s1, k0, back;
+
+			/* extra score according to the distance to the best diagonal */
+			int extra = extra_score[ abs(j1 - max_diag) & 3 ]; // max distance 3
+			sij += extra * (sij>0);
 
 			back = DP_BACK_LEFT_TOP;
 			best_score1 = score_mat[i-1][j1] + sij;
@@ -782,8 +784,6 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 					best_score1 = score;
 				}
 			}
-			if( sij >0 and back != DP_BACK_LEFT_TOP ) best_score1 += extra;
-
 			score_mat[i][j1] = best_score1;
 			back_mat[i][j1]  = back;
 			//printf( "%2i(%2i) ", best_score1, iden_no1 );
@@ -809,7 +809,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 	const char *letters2 = "ACGTN";
 	int back = back_mat[i][j1];
 	int last = back;
-	int count = 0, count2 = 0;
+	int count = 0, count2 = 0, count3 = 0;
 	int begin1, begin2, end1, end2;
 	int match, score, smin = best_score, smax = best_score - 1;
 	int posmin, posmax, pos = 0;
@@ -851,6 +851,14 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 			bl = (last != back) & (j != 1) & (j != len2);
 			dlen += bl;
 			dcount += bl;
+			score = score_mat[i][j1];
+			if( score < smin ){
+				count2 = 0;
+				smin = score;
+				posmin = pos;
+				begin1 = i;
+				begin2 = j;
+			}
 			i -= 1;
 			j1 += 1;
 			break;
@@ -865,6 +873,14 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 			bl = (last != back) & (i != 1) & (i != len1);
 			dlen += bl;
 			dcount += bl;
+			score = score_mat[i][j1];
+			if( score < smin ){
+				count2 = 0;
+				smin = score;
+				posmin = pos;
+				begin1 = i;
+				begin2 = j;
+			}
 			j1 -= 1;
 			j -= 1;
 			break;
@@ -900,6 +916,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 			}
 			count += match;
 			count2 += match;
+			//count3 += match;
 			if( score < smin ){
 				count2 = 0;
 				smin = score;
@@ -1058,8 +1075,8 @@ void ScoreMatrix::init()
 void ScoreMatrix::set_gap(int gap1, int ext_gap1)
 {
 	int i;
-	gap = 10 * gap1;
-	ext_gap = 10 * ext_gap1;
+	gap = MAX_SEQ * gap1;
+	ext_gap = MAX_SEQ * ext_gap1;
 	for (i=0; i<MAX_GAP; i++)  gap_array[i] = gap + i * ext_gap;
 }
 
@@ -1069,7 +1086,7 @@ void ScoreMatrix::set_matrix(int *mat1)
 	k = 0;
 	for ( i=0; i<MAX_AA; i++)
 		for ( j=0; j<=i; j++)
-			matrix[j][i] = matrix[i][j] = 10 * mat1[ k++ ];
+			matrix[j][i] = matrix[i][j] = MAX_SEQ * mat1[ k++ ];
 }
 
 void ScoreMatrix::set_to_na()
