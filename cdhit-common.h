@@ -158,6 +158,9 @@ class NVector
 typedef NVector<int>      VectorInt;
 typedef Vector<VectorInt> MatrixInt;
 
+typedef NVector<int64_t>   VectorInt64;
+typedef Vector<VectorInt64> MatrixInt64;
+
 ////////// Class definition //////////
 class ScoreMatrix { //Matrix
 	private:
@@ -165,7 +168,7 @@ class ScoreMatrix { //Matrix
 	public:
 		int matrix[MAX_AA][MAX_AA];
 		int gap, ext_gap;
-		VectorInt gap_array;
+		VectorInt64 gap_array;
 
 		ScoreMatrix();
 		void init();
@@ -463,8 +466,8 @@ struct WorkingBuffer
 	NVector<IndexCount>  lookCounts;
 	NVector<IndexCount*>  lookCounts2;
 	NVector<uint32_t>    indexMapping;
-	MatrixInt  score_mat;
-	MatrixInt  back_mat;
+	MatrixInt64  score_mat;
+	MatrixInt    back_mat;
 	Vector<int>  diag_score;
 	Vector<int>  diag_score2;
 	Vector<int> aan_list_comp;
@@ -516,7 +519,8 @@ struct WorkingBuffer
 		//total_bytes += indexCounts.size()*sizeof(IndexCount);
 		total_bytes += lookCounts.Size()*sizeof(IndexCount);
 		//total_bytes += lookCounts2.Size()*sizeof(IndexCount*);
-		total_bytes += 2*max_len*(band*sizeof(int)+sizeof(NVector<int>));
+		total_bytes += max_len*(band*sizeof(int)+sizeof(VectorInt));
+		total_bytes += max_len*(band*sizeof(int)+sizeof(VectorInt64));
 	}
 
 	int EncodeWords( Sequence *seq, int NA, bool est = false );

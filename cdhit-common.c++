@@ -669,7 +669,8 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 	int len2 = seq2->size;
 	int i, j, k, j1;
 	int jj, kk;
-	int best_score1, iden_no1;
+	int iden_no1;
+	int64_t best_score1;
 	iden_no = 0;
 
 	if ( (band_right >= len2 ) ||
@@ -680,15 +681,16 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 	int band_width = band_right - band_left + 1;
 	int band_width1 = band_width + 1;
 
-	MatrixInt & score_mat = buffer.score_mat;
-	MatrixInt & back_mat = buffer.back_mat;
+	MatrixInt64 & score_mat = buffer.score_mat;
+	MatrixInt   & back_mat = buffer.back_mat;
 
 	//printf( "%i  %i\n", band_right, band_left );
 
 	if( score_mat.size() <= len1 ){
-		VectorInt row( band_width1, 0 );
+		VectorInt   row( band_width1, 0 );
+		VectorInt64 row2( band_width1, 0 );
 		while( score_mat.size() <= len1 ){
-			score_mat.Append( row );
+			score_mat.Append( row2 );
 			back_mat.Append( row );
 		}
 	}
@@ -697,7 +699,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 		if( back_mat[i].Size() < band_width1 ) back_mat[i].Resize( band_width1 );
 	}
 
-	VectorInt & gap_array  = mat.gap_array;
+	VectorInt64 & gap_array  = mat.gap_array;
 	best_score = 0;
 	/*
 	   seq2 len2 = 17            seq2 len2 = 17      seq2 len2 = 17
@@ -766,7 +768,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 			best_score1 = score_mat[i-1][j1] + sij;
 			int gap0 = gap_open[ (i == len1) | (j == len2) ];
 			int gap = 0;
-			int score;
+			int64_t score;
 
 			if( j1 > 0 ){
 				gap = gap0;
@@ -804,14 +806,20 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 	}
 	j1 = j - i - band_left;
 	best_score = score_mat[i][j1];
+	best_score1 = score_mat[i][j1];
 
+#if 1
 	const char *letters = "acgtn";
 	const char *letters2 = "ACGTN";
+#else
+	const char *letters = "arndcqeghilkmfpstwyvbzx";
+	const char *letters2 = "ARNDCQEGHILKMFPSTWYVBZX";
+#endif
 	int back = back_mat[i][j1];
 	int last = back;
 	int count = 0, count2 = 0, count3 = 0;
-	int begin1, begin2, end1, end2;
-	int match, score, smin = best_score, smax = best_score - 1;
+	int match, begin1, begin2, end1, end2;
+	int64_t score, smin = best_score1, smax = best_score1 - 1;
 	int posmin, posmax, pos = 0;
 	int bl, dlen = 0, dcount = 0;
 	posmin = posmax = 0;
@@ -1825,6 +1833,7 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 		cout << "Sequences have been sorted" << endl;
 		// END sort them from long to short
 	}
+	if( options.max_memory ==0 && options.max_entries > 2E8 ) options.max_entries = 2E8;
 }// END sort_seqs_divide_segs
 
 void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Options & options )
