@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5-beta2"
+#define CDHIT_VERSION  "4.5-beta3"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -52,6 +52,7 @@
 #define MAX_FILE_NAME 1280
 #define MAX_SEG 50
 #define MAX_BIN_SWAP 2E9
+#define MAX_TABLE_SIZE 200000000
 #define CLOCK_TICKS 100
 #define FAILED_FUNC 1
 #define OK_FUNC 0

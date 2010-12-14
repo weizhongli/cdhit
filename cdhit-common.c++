@@ -1833,7 +1833,6 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 		cout << "Sequences have been sorted" << endl;
 		// END sort them from long to short
 	}
-	if( options.max_memory ==0 && options.max_entries > 2E8 ) options.max_entries = 2E8;
 }// END sort_seqs_divide_segs
 
 void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Options & options )
@@ -2372,9 +2371,12 @@ void SequenceDB::DoClustering( int T, const Options & options )
 
 	printf( "Table limit with the given memory limit:\n" );
 	printf( "Max number of representatives: %i\n", MAXNUM*CHUNK2 );
-	if( options.max_memory )
+	if( options.max_memory ){
 		printf( "Max number of word counting entries: %li\n", mem_limit );
-	else mem_limit = options.max_entries;
+	}else{
+		mem_limit = options.max_entries;
+		if( mem_limit > T * MAX_TABLE_SIZE ) mem_limit = T * MAX_TABLE_SIZE;
+	}
 	printf( "\n" );
 
 	omp_set_num_threads(T);
@@ -2987,9 +2989,12 @@ void SequenceDB::DoClustering( const Options & options )
 
 	printf( "Table limit with the given memory limit:\n" );
 	printf( "Max number of representatives: %i\n", MAXNUM*CHUNK2 );
-	if( options.max_memory )
+	if( options.max_memory ){
 		printf( "Max number of word counting entries: %li\n", mem_limit );
-	else mem_limit = options.max_entries;
+	}else{
+		mem_limit = options.max_entries;
+		if( mem_limit > MAX_TABLE_SIZE ) mem_limit = MAX_TABLE_SIZE;
+	}
 	printf( "\n" );
 
 	for(i=0; i<N; ){
