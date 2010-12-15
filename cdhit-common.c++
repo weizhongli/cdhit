@@ -924,7 +924,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 			}
 			count += match;
 			count2 += match;
-			//count3 += match;
+			count3 += match;
 			if( score < smin ){
 				count2 = 0;
 				smin = score;
@@ -939,7 +939,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 		last = back;
 		back = back_mat[i][j1];
 	}
-	iden_no = count - count2;
+	iden_no = options.global_identity ? count3 : count - count2;
 	alnln = posmin - posmax;
 	dist = dcount/(float)dlen;
 	//dist = - 0.75 * log( 1.0 - dist * 4.0 / 3.0 );
@@ -948,6 +948,10 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 		alninfo[1] = end1;
 		alninfo[2] = begin2;
 		alninfo[3] = end2;
+		if( options.global_identity ){
+			alninfo[0] = 0;
+			alninfo[1] = len1 - 1;
+		}
 	}
 #ifdef PRINT
 	printf( "%6i %6i:  %4i %4i %4i %4i\n", alnln, iden_no, begin1, end1, begin2, end2 );
