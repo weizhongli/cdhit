@@ -983,7 +983,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 	sprintf( fname, "alignments/pair%06i.txt", fcount );
 	FILE *fout = fopen( fname, "w+" );
 	fprintf( fout, "# %g\n", dist );
-#if 1
+#if 0
 	fprintf( fout, "%i %s\n", seq1->index, AA );
 	fprintf( fout, "%i %s\n", seq2->index, BB );
 #else
