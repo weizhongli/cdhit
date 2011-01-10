@@ -983,7 +983,7 @@ int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat,
 	sprintf( fname, "alignments/pair%06i.txt", fcount );
 	FILE *fout = fopen( fname, "w+" );
 	fprintf( fout, "# %g\n", dist );
-#if 1
+#if 0
 	fprintf( fout, "%i %s\n", seq1->index, AA );
 	fprintf( fout, "%i %s\n", seq2->index, BB );
 #else
@@ -1255,71 +1255,6 @@ void WordTable::PrintAll()
 	cout << "total cols: " << cols << " total words: " << total_words << endl;
 }
 
-int WordTable::CountWords( NVector<IndexCount> & counts, NVector<INTs> & look_and_count, bool est)
-{
-	int aan_no = counts.Size();
-	int  j, k, j0, j1, k1;
-
-	for (j0=0; j0<aan_no; j0++) {
-		IndexCount & ec = counts[j0];
-		if ( (j1=ec.count) ) {
-			j = ec.index;
-			if (est && j<0) continue; // if met short word has 'N'
-			NVector<IndexCount> & one = indexCounts[j];
-			k1 = one.Size();
-			for (k=0; k<k1; k++){
-				IndexCount & ic = one[k];
-				look_and_count[ ic.index ] += ( j1 < ic.count ) ? j1 : ic.count ;
-			}
-		}
-	}
-
-	return OK_FUNC;
-}
-int WordTable::CountWords(int aan_no, Vector<int> & word_encodes,
-                           Vector<INTs> & word_encodes_no, NVector<INTs> &look_and_count, bool est)
-{
-	int  j, k, j0, j1, k1;
-
-	//j0 = 0;
-	//if( est ) while( word_encodes[j0] <0 ) ++ j0; // if met short word has 'N'
-	for (j0=0; j0<aan_no; j0++) {
-		if ( (j1=word_encodes_no[j0]) ) {
-			j = word_encodes[j0];
-			if (est && j<0) continue; // if met short word has 'N'
-			NVector<IndexCount> & one = indexCounts[j];
-			k1 = one.Size();
-			for (k=0; k<k1; k++){
-				IndexCount & ic = one[k];
-				look_and_count[ ic.index ] += ( j1 < ic.count ) ? j1 : ic.count ;
-			}
-		}
-	}
-
-	return OK_FUNC;
-}
-
-void InitArray( NVector<INTs> &look_and_count, NVector<uint32_t> &look_and_count1,
-		NVector<uint32_t> &look_and_count2, int S )
-{
-	uint32_t *lc1 = look_and_count1.items;
-	uint32_t *lc2 = look_and_count2.items;
-	INTs *lc = look_and_count.items;
-	unsigned char ix0, ix1, ix2;
-	unsigned char S2 = (S>>CBIT2)+1;
-	int j = 0;
-	for(ix2=0; ix2<S2; ix2++, lc2 += 1){
-		if( *lc2 ==0 ){ j += CHUNK2; lc += CHUNK2; lc1 += CHUNK1; continue; }
-		*lc2 = 0;
-		if( j > S ) break;
-		for(ix1=0; ix1<CHUNK1; ix1++, lc1 += 1, j += CHUNK1, lc += CHUNK1){
-			if( *lc1 ==0 ) continue;
-			*lc1 = 0;
-			if( j > S ) break;
-			memset( lc, 0, CHUNK1*sizeof(INTs) );
-		}
-	}
-}
 
 /* Quick Sort.
  * Adam Drozdek: Data Structures and Algorithms in C++, 2nd Edition.
@@ -1355,9 +1290,6 @@ void PartialQuickSort( IndexCount *data, int first, int last, int partial )
 }
 int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> & word_encodes_no,
     NVector<IndexCount> &lookCounts, NVector<uint32_t> & indexMapping, 
-	NVector<INTs> &look_and_count, 
-	NVector<uint32_t> &look_and_count1, 
-	NVector<uint32_t> &look_and_count2, 
 	bool est, int min)
 {
 	int S = frag_count ? frag_count : sequences.size();
@@ -1398,81 +1330,6 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 		}
 	}
 	//printf( "\n\n" );
-	int test = 0;
-	InitArray( look_and_count, look_and_count1, look_and_count2, S );
-	ic = lookCounts.items;
-	for(j=0; j<lookCounts.size; j++, ic++){
-		uint32_t c = ic->count;
-		uint32_t id = ic->index;
-		indexMapping[ ic->index ] = 0;
-		if( c < min ) continue;
-		uint32_t *lc1 = look_and_count1.items + (id>>CBIT1);
-		uint32_t *lc2 = look_and_count2.items + (id>>CBIT2);
-		look_and_count[ id ] = c;
-		if( c > *lc1 ) *lc1 = c;
-		if( c > *lc2 ) *lc2 = c;
-		//look_and_count1[ id>>CBIT1 ] += c;
-		//look_and_count2[ id>>CBIT2 ] += c;
-		//test += 1;
-	}
-	//printf( "%9i %9i %3i\n", lookCounts.size, test, min );
-	lookCounts.size = 0;
-	return OK_FUNC;
-}
-int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> & word_encodes_no,
-    NVector<IndexCount> &lookCounts, NVector<IndexCount*> & lookCounts2, 
-    NVector<INTs> &look_and_count, 
-    NVector<uint32_t> &look_and_count1, 
-    NVector<uint32_t> &look_and_count2, 
-	bool est, int min)
-{
-	int S = frag_count ? frag_count : sequences.size();
-	int  j, k, j0, j1, k1, m;
-	int ix1, ix2, ix3, ix4;
-	IndexCount tmp;
-
-	IndexCount *ic = lookCounts.items;
-	for(j=0; j<lookCounts.size; j++, ic++) lookCounts2[ ic->index ] = NULL;
-	lookCounts.size = 0;
-
-	int *we = & word_encodes[0];
-	j0 = 0;
-	if( est ) while( *we <0 ) j0++, we++; // if met short word has 'N'
-	INTs *wen = & word_encodes_no[j0];
-	for (; j0<aan_no; j0++, we++, wen++) {
-		j  = *we;
-		j1 = *wen;
-		if( j1==0 ) continue;
-		NVector<IndexCount> & one = indexCounts[j];
-		k1 = one.Size();
-		IndexCount *ic = one.items;
-		for (k=0; k<k1; k++, ic++){
-			int c = j1 + ((ic->count - j1) & ((ic->count - j1) >> (sizeof(int) * CHAR_BIT - 1)));
-			IndexCount *lc = lookCounts2[ ic->index ];
-			if( lc == NULL ){
-				lc = lookCounts2[ ic->index ] = lookCounts.items + lookCounts.size;
-				lookCounts.size += 1;
-				lc->index = ic->index;
-				lc->count = c;
-			}else{
-				lc->count += c;
-			}
-		}
-	}
-	InitArray( look_and_count, look_and_count1, look_and_count2, S );
-	ic = lookCounts.items;
-	for(j=0; j<lookCounts.size; j++, ic++){
-		uint32_t c = ic->count;
-		if( c < min ) continue;
-		uint32_t id = ic->index;
-		uint32_t *lc1 = look_and_count1.items + (id>>CBIT1);
-		uint32_t *lc2 = look_and_count2.items + (id>>CBIT2);
-		look_and_count[ id ] = c;
-		if( c > *lc1 ) *lc1 = c;
-		if( c > *lc2 ) *lc2 = c;
-		//look_and_count1[ id>>CBIT1 ] += c;
-		//look_and_count2[ id>>CBIT2 ] += c;
-	}
 	return OK_FUNC;
 }
 
@@ -2536,11 +2393,7 @@ int SequenceDB::CheckOne( Sequence *seq, WordTable & table, WorkingParam & param
 }
 int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & param, WorkingBuffer & buf, const Options & options )
 {
-	NVector<INTs> & look_and_count = buf.look_and_count;
-	NVector<uint32_t> & look_and_count1 = buf.look_and_count1;
-	NVector<uint32_t> & look_and_count2 = buf.look_and_count2;
 	NVector<IndexCount> & lookCounts = buf.lookCounts;
-	NVector<IndexCount*> & lookCounts2 = buf.lookCounts2;
 	NVector<uint32_t> & indexMapping = buf.indexMapping;
 	Vector<INTs> & word_encodes_no = buf.word_encodes_no;
 	Vector<INTs> & aap_list = buf.aap_list;
@@ -2577,7 +2430,7 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	// lookup_aan
 	int aan_no = len - options.NAA + 1;
 	int M = frag_size ? table.frag_count : S;
-	table.CountWords(aan_no, word_encodes, word_encodes_no, lookCounts, indexMapping, look_and_count,look_and_count1,look_and_count2, false, required_aan);
+	table.CountWords(aan_no, word_encodes, word_encodes_no, lookCounts, indexMapping, false, required_aan);
 
 	// contained_in_old_lib()
 	int len_upper_bound = param.len_upper_bound;
@@ -2593,106 +2446,100 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	int lens;
 	int has_aa2 = 0;
 
-	uint32_t *lc1 = look_and_count1.items;
-	uint32_t *lc2 = look_and_count2.items;
-	INTs *lc = look_and_count.items;
-	unsigned char ix0, ix1, ix2;
-	unsigned char S2 = (S>>CBIT2)+1;
 	IndexCount *ic = lookCounts.items;
-	j = 0;
-	for(ix2=0; ix2<S2; ix2++, lc2 += 1){
-		if( *lc2 < required_aan ){ j += CHUNK2; lc += CHUNK2; lc1 += CHUNK1; continue; }
-		for(ix1=0; ix1<CHUNK1; ix1++, lc1 += 1){
-			if( *lc1 < required_aan ){ j += CHUNK1; lc += CHUNK1; continue; }
-			for(ix0=0; ix0<CHUNK1; ix0++, j += 1, lc += 1){
-				unsigned int count = *lc;
-				if( frag_size ==0 && count < required_aan ) continue;
-				if( j >= S ) goto Break;
+	ic = lookCounts.items;
+	for(j=0; j<lookCounts.size; j++, ic++){
+		uint32_t count = ic->count;
+		uint32_t id = ic->index;
+		indexMapping[ ic->index ] = 0;
+		if ( count < required_aan ) continue;
+		Sequence *rep = table.sequences[id];
 
-				Sequence *rep = table.sequences[j];
+		len2 = rep->size;
+		if (len2 > len_upper_bound ) continue;
+		if (options.has2D && len2 < len_lower_bound ) continue;
 #if 0
-				for( j=0; j<lookCounts.size; j++, ic++)
-					unsigned int count = ic->count;
-				if ( count < required_aan ) continue;
-				if( ic->index >= S ) break;
-				Sequence *rep = table.sequences[ic->index];
+		XXX
+		if ( frag_size ){
+			k = (len2 - NAA) / frag_size + 1;
+			lookptr = & look_and_count[ rep->fragment ];
+
+			if ( frg2 >= k ) {
+				best1=0;
+				for (j1=0; j1<k; j1++) best1 += lookptr[j1];
+			} else {
+				sum = 0;
+				for (j1=0; j1<frg2; j1++) sum += lookptr[j1];
+				best1 = sum;
+				for (j1=frg2; j1<k; j1++) {
+					sum += lookptr[j1] - lookptr[j1-frg2];
+					if (sum > best1) best1 = sum;
+				}
+			}
+
+			if ( best1 < required_aan ) continue;
+		}
 #endif
 
-				len2 = rep->size;
-				if (len2 > len_upper_bound ) continue;
-				if (options.has2D && len2 < len_lower_bound ) continue;
-				if ( frag_size ){
-					k = (len2 - NAA) / frag_size + 1;
-					lookptr = & look_and_count[ rep->fragment ];
+		param.ControlLongCoverage( len2, options );
 
-					if ( frg2 >= k ) {
-						best1=0;
-						for (j1=0; j1<k; j1++) best1 += lookptr[j1];
-					} else {
-						sum = 0;
-						for (j1=0; j1<frg2; j1++) sum += lookptr[j1];
-						best1 = sum;
-						for (j1=frg2; j1<k; j1++) {
-							sum += lookptr[j1] - lookptr[j1-frg2];
-							if (sum > best1) best1 = sum;
-						}
-					}
-
-					if ( best1 < required_aan ) continue;
-				}
-
-				param.ControlLongCoverage( len2, options );
-
-				if ( has_aa2 == 0 )  { // calculate AAP array
-					buf.ComputeAAP( seqi, seq->size );
-					has_aa2 = 1;
-				}
-				seqj = rep->data; //NR_seq[NR90_idx[j]];
-
-				band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
-				diag_test_aapn(NAA1, seqj, len, len2, buf, best_sum,
-						band_width1, band_left, band_center, band_right, required_aa1);
-				if ( best_sum < required_aa2 ) continue;
-
-				if (options.print || aln_cover_flag) //return overlap region
-					local_band_align(seq, rep, mat,
-							best_score, tiden_no, alnln, distance, talign_info+1,
-							band_left, band_center, band_right, buf);
-				else
-					local_band_align(seq, rep, mat,
-							best_score, tiden_no, alnln, distance, NULL, 
-							band_left, band_center, band_right, buf);
-				if ( tiden_no < required_aa1 ) continue;
-				lens = len;
-				if( options.has2D && len > len2 ) lens = len2;
-				len_eff1 = (options.global_identity == 0) ? alnln : lens;
-				tiden_pc = tiden_no / (float) len_eff1;
-				if( options.useDistance ){
-					if (distance > options.distance_thd ) continue;
-					if (distance >= seq->distance) continue; // existing distance
-				}else{
-					if (tiden_pc < options.cluster_thd) continue;
-					if (tiden_pc <= seq->identity) continue; // existing iden_no
-				}
-				if (aln_cover_flag) {
-					if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
-					if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
-				}
-				if( options.has2D ) seq->state |= IS_REDUNDANT ;
-				flag = 1; seq->identity = tiden_pc; seq->cluster_id = rep->cluster_id;
-				seq->distance = distance;
-				seq->coverage[0] = talign_info[1] +1;
-				seq->coverage[1] = talign_info[2] +1;
-				seq->coverage[2] = talign_info[3] +1;
-				seq->coverage[3] = talign_info[4] +1;
-				if (not options.cluster_best) goto Break;
-				update_aax_cutoff(aa1_cutoff, aa2_cutoff, aan_cutoff,
-						options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_pc);
-				param.ComputeRequiredBases( options.NAA, 2, options );
-			}
+		if ( has_aa2 == 0 )  { // calculate AAP array
+			buf.ComputeAAP( seqi, seq->size );
+			has_aa2 = 1;
 		}
+		seqj = rep->data; //NR_seq[NR90_idx[j]];
+
+		band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
+		diag_test_aapn(NAA1, seqj, len, len2, buf, best_sum,
+				band_width1, band_left, band_center, band_right, required_aa1);
+		if ( best_sum < required_aa2 ) continue;
+
+		if (options.print || aln_cover_flag) //return overlap region
+			local_band_align(seq, rep, mat,
+					best_score, tiden_no, alnln, distance, talign_info+1,
+					band_left, band_center, band_right, buf);
+		else
+			local_band_align(seq, rep, mat,
+					best_score, tiden_no, alnln, distance, NULL, 
+					band_left, band_center, band_right, buf);
+		if ( tiden_no < required_aa1 ) continue;
+		lens = len;
+		if( options.has2D && len > len2 ) lens = len2;
+		len_eff1 = (options.global_identity == 0) ? alnln : lens;
+		tiden_pc = tiden_no / (float) len_eff1;
+		if( options.useDistance ){
+			if (distance > options.distance_thd ) continue;
+			if (distance >= seq->distance) continue; // existing distance
+		}else{
+			if (tiden_pc < options.cluster_thd) continue;
+			if (tiden_pc <= seq->identity) continue; // existing iden_no
+		}
+		if (aln_cover_flag) {
+			if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
+			if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
+		}
+		if( options.has2D ) seq->state |= IS_REDUNDANT ;
+		flag = 1; seq->identity = tiden_pc; seq->cluster_id = rep->cluster_id;
+		seq->distance = distance;
+		seq->coverage[0] = talign_info[1] +1;
+		seq->coverage[1] = talign_info[2] +1;
+		seq->coverage[2] = talign_info[3] +1;
+		seq->coverage[3] = talign_info[4] +1;
+		if (not options.cluster_best) break;
+		update_aax_cutoff(aa1_cutoff, aa2_cutoff, aan_cutoff,
+				options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_pc);
+		param.ComputeRequiredBases( options.NAA, 2, options );
 	}
-Break:
+	j += 1;
+	ic += 1;
+	while( j < lookCounts.size ){
+		uint32_t count = ic->count;
+		uint32_t id = ic->index;
+		indexMapping[ ic->index ] = 0;
+		j += 1;
+		ic += 1;
+	}
+	lookCounts.size = 0;
 	if (flag == 1) { // if similar to old one delete it
 		if (! options.cluster_best) {
 			seq->Clear();
@@ -2704,11 +2551,7 @@ Break:
 }
 int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & param, WorkingBuffer & buf, const Options & options )
 {
-	NVector<INTs> & look_and_count = buf.look_and_count;
-	NVector<uint32_t> & look_and_count1 = buf.look_and_count1;
-	NVector<uint32_t> & look_and_count2 = buf.look_and_count2;
 	NVector<IndexCount> & lookCounts = buf.lookCounts;
-	NVector<IndexCount*> & lookCounts2 = buf.lookCounts2;
 	NVector<uint32_t> & indexMapping = buf.indexMapping;
 	Vector<INTs> & word_encodes_no = buf.word_encodes_no;
 	Vector<INTs> & aap_list = buf.aap_list;
@@ -2765,105 +2608,96 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 		int has_aas = 0;
 
 		if( comp ){
-			table.CountWords(aan_no, aan_list_comp, word_encodes_no, lookCounts, indexMapping, look_and_count, look_and_count1, look_and_count2, true, required_aan );
+			table.CountWords(aan_no, aan_list_comp, word_encodes_no, lookCounts, indexMapping, true, required_aan );
 		}else{
-			table.CountWords(aan_no, word_encodes, word_encodes_no, lookCounts, indexMapping, look_and_count, look_and_count1, look_and_count2, true, required_aan ); 
+			table.CountWords(aan_no, word_encodes, word_encodes_no, lookCounts, indexMapping, true, required_aan ); 
 		}
 
-		uint32_t *lc1 = look_and_count1.items;
-		uint32_t *lc2 = look_and_count2.items;
-		INTs *lc = look_and_count.items;
-		unsigned char ix0, ix1, ix2;
-		unsigned char S2 = (S>>CBIT2)+1;
-		j = 0;
-		for(ix2=0; ix2<S2; ix2++, lc2 += 1){
-			if( *lc2 < required_aan ){ j += CHUNK2; lc += CHUNK2; lc1 += CHUNK1; continue; }
-			for(ix1=0; ix1<CHUNK1; ix1++, lc1 += 1){
-				if( *lc1 < required_aan ){ j += CHUNK1; lc += CHUNK1; continue; }
-				for(ix0=0; ix0<CHUNK1; ix0++, j += 1, lc += 1){
-					unsigned int count = *lc;
-#if 0
-					IndexCount *ic = lookCounts.items;
-					for( j=0; j<lookCounts.size; j++, ic++)
-						unsigned int count = ic->count;
-					if ( count < required_aan ) continue;
-					if( ic->index >= S ) goto Break;
-					Sequence *rep = table.sequences[ic->index];
-#else
-					if ( count < required_aan ) continue;
-					if( j >= S ) goto Break;
-					Sequence *rep = table.sequences[j];
-#endif
+		IndexCount *ic = lookCounts.items;
+		ic = lookCounts.items;
+		for(j=0; j<lookCounts.size; j++, ic++){
+			uint32_t count = ic->count;
+			uint32_t id = ic->index;
+			indexMapping[ ic->index ] = 0;
+			if ( count < required_aan ) continue;
+			Sequence *rep = table.sequences[id];
 
-					len2 = rep->size;
-					if (len2 > len_upper_bound ) continue;
-					if (options.has2D && len2 < len_lower_bound ) continue;
+			len2 = rep->size;
+			if (len2 > len_upper_bound ) continue;
+			if (options.has2D && len2 < len_lower_bound ) continue;
 
-					seqj = rep->data;
+			seqj = rep->data;
 
-					param.ControlLongCoverage( len2, options );
+			param.ControlLongCoverage( len2, options );
 
-					if ( has_aas == 0 )  { // calculate AAP array
-						buf.ComputeAAP2( seqi, seq->size );
-						has_aas = 1;
-					}
+			if ( has_aas == 0 )  { // calculate AAP array
+				buf.ComputeAAP2( seqi, seq->size );
+				has_aas = 1;
+			}
 
-					band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
-					diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
-							band_width1, band_left, band_center, band_right, required_aa1);
-					//printf( "%i %i\n", best_sum, required_aas );
-					if ( best_sum < required_aas ) continue;
-					//if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
+			band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
+			diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
+					band_width1, band_left, band_center, band_right, required_aa1);
+			//printf( "%i %i\n", best_sum, required_aas );
+			if ( best_sum < required_aas ) continue;
+			//if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
 
-					if (options.print || aln_cover_flag){ //return overlap region
-						local_band_align(seq, rep, mat,
-								best_score, tiden_no, alnln, distance, talign_info+1,
-								band_left, band_center, band_right, buf);
-						if( comp ){
-							talign_info[1] = len - talign_info[1] - 1;
-							talign_info[2] = len - talign_info[2] - 1;
-						}
-					}else{
-						//printf( "%5i %5i %5i %5i\n", band_width1, band_right-band_left, band_left, band_right );
-						local_band_align(seq, rep, mat,
-								best_score, tiden_no, alnln, distance, talign_info+1,
-								band_left, band_center, band_right, buf);
-					}
-					//printf( "%i  %i  %i\n", best_score, tiden_no, required_aa1 );
-					if ( tiden_no < required_aa1 ) continue;
-					len_eff1 = (options.global_identity == 0) ? alnln : len;
-					tiden_pc = tiden_no / (float)len_eff1;
-					//printf( "%i %i\n", tiden_no, options.cluster_thd100 );
-					if( options.useDistance ){
-						if (distance > options.distance_thd ) continue;
-						if (options.cluster_best and distance >= seq->distance) continue; // existing distance
-					}else{
-						if (tiden_pc < options.cluster_thd) continue;
-						if (options.cluster_best and tiden_pc < seq->identity) continue; // existing iden_no
-					}
-					if (aln_cover_flag) {
-						if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
-						if( comp ){
-							if ( talign_info[1]-talign_info[2]+1 < min_aln_lenS) continue;
-						}else{
-							if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
-						}
-					}
-					if( options.cluster_best and fabs(tiden_pc - seq->identity) < 1E-9 and rep->cluster_id >= seq->cluster_id ) continue;
-					if( (not options.cluster_best) and flag !=0 and rep->cluster_id >= seq->cluster_id ) continue;
-					flag = comp ? -1 : 1;
-					seq->identity = tiden_pc;
-					seq->distance = distance;
-					seq->cluster_id = rep->cluster_id;
-					seq->coverage[0] = talign_info[1] +1;
-					seq->coverage[1] = talign_info[2] +1;
-					seq->coverage[2] = talign_info[3] +1;
-					seq->coverage[3] = talign_info[4] +1;
-					if (not options.cluster_best) goto Break;
+			if (options.print || aln_cover_flag){ //return overlap region
+				local_band_align(seq, rep, mat,
+						best_score, tiden_no, alnln, distance, talign_info+1,
+						band_left, band_center, band_right, buf);
+				if( comp ){
+					talign_info[1] = len - talign_info[1] - 1;
+					talign_info[2] = len - talign_info[2] - 1;
+				}
+			}else{
+				//printf( "%5i %5i %5i %5i\n", band_width1, band_right-band_left, band_left, band_right );
+				local_band_align(seq, rep, mat,
+						best_score, tiden_no, alnln, distance, talign_info+1,
+						band_left, band_center, band_right, buf);
+			}
+			//printf( "%i  %i  %i\n", best_score, tiden_no, required_aa1 );
+			if ( tiden_no < required_aa1 ) continue;
+			len_eff1 = (options.global_identity == 0) ? alnln : len;
+			tiden_pc = tiden_no / (float)len_eff1;
+			//printf( "%i %i\n", tiden_no, options.cluster_thd100 );
+			if( options.useDistance ){
+				if (distance > options.distance_thd ) continue;
+				if (options.cluster_best and distance >= seq->distance) continue; // existing distance
+			}else{
+				if (tiden_pc < options.cluster_thd) continue;
+				if (options.cluster_best and tiden_pc < seq->identity) continue; // existing iden_no
+			}
+			if (aln_cover_flag) {
+				if ( talign_info[4]-talign_info[3]+1 < min_aln_lenL) continue;
+				if( comp ){
+					if ( talign_info[1]-talign_info[2]+1 < min_aln_lenS) continue;
+				}else{
+					if ( talign_info[2]-talign_info[1]+1 < min_aln_lenS) continue;
 				}
 			}
+			if( options.cluster_best and fabs(tiden_pc - seq->identity) < 1E-9 and rep->cluster_id >= seq->cluster_id ) continue;
+			if( (not options.cluster_best) and flag !=0 and rep->cluster_id >= seq->cluster_id ) continue;
+			flag = comp ? -1 : 1;
+			seq->identity = tiden_pc;
+			seq->distance = distance;
+			seq->cluster_id = rep->cluster_id;
+			seq->coverage[0] = talign_info[1] +1;
+			seq->coverage[1] = talign_info[2] +1;
+			seq->coverage[2] = talign_info[3] +1;
+			seq->coverage[3] = talign_info[4] +1;
+			if (not options.cluster_best) break;
 		}
-Break:
+		j += 1;
+		ic += 1;
+		while( j < lookCounts.size ){
+			uint32_t count = ic->count;
+			uint32_t id = ic->index;
+			indexMapping[ ic->index ] = 0;
+			j += 1;
+			ic += 1;
+		}
+		lookCounts.size = 0;
 		if (not options.option_r ) break;
 	}
 	if ((flag == 1) || (flag == -1)) { // if similar to old one delete it

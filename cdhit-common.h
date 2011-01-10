@@ -232,25 +232,13 @@ class WordTable
 		void SetDNA();
 		int  AddWordCounts( NVector<IndexCount> & counts, Sequence *seq, bool skipN=false);
 		int  AddWordCountsFrag( NVector<IndexCount> & counts, int frag, int frag_size, int repfrag );
-		int  CountWords( NVector<IndexCount> & counts, NVector<INTs> & look_and_count, bool est=false);
 
 		int  AddWordCounts(int aan_no, Vector<int> & word_encodes, 
 				Vector<INTs> & word_encodes_no, int idx, bool skipN=false);
 		int AddWordCountsFrag( int aan_no, Vector<int> & word_encodes, 
 				Vector<INTs> & word_encodes_no, int frag, int frag_size );
-		int CountWords(int aan_no, Vector<int> & aan_list,
-				Vector<INTs> & aan_list_no, NVector<INTs> & look_and_count, bool est=false);
 		int CountWords(int aan_no, Vector<int> & aan_list, Vector<INTs> & aan_list_no, 
 				NVector<IndexCount> & lookCounts, NVector<uint32_t> & indexMapping,
-				NVector<INTs> &look_and_count, 
-				NVector<uint32_t> &look_and_count1, 
-				NVector<uint32_t> &look_and_count2, 
-				bool est=false, int min=0);
-		int CountWords(int aan_no, Vector<int> & aan_list, Vector<INTs> & aan_list_no, 
-				NVector<IndexCount> & lookCounts, NVector<IndexCount*> & lookCounts2,
-				NVector<INTs> &look_and_count, 
-				NVector<uint32_t> &look_and_count1, 
-				NVector<uint32_t> &look_and_count2, 
 				bool est=false, int min=0);
 		void PrintAll();
 }; // END class INDEX_TBL
@@ -460,9 +448,6 @@ struct WorkingBuffer
 	Vector<INTs> word_encodes_no;
 	Vector<INTs> aap_list;
 	Vector<INTs> aap_begin;
-	NVector<INTs> look_and_count;
-	NVector<uint32_t> look_and_count1;
-	NVector<uint32_t> look_and_count2;
 	//Vector<IndexCount>  indexCounts;
 	NVector<IndexCount>  lookCounts;
 	NVector<IndexCount*>  lookCounts2;
@@ -497,9 +482,6 @@ struct WorkingBuffer
 		lookCounts.Resize( frag + CHUNK1 );
 		//lookCounts2.Resize( frag + CHUNK1 );
 		indexMapping.Resize( frag + CHUNK1 );
-		look_and_count.Resize( frag + CHUNK2 );
-		look_and_count1.Resize( (frag>>CBIT1) + CHUNK1 );
-		look_and_count2.Resize( (frag>>CBIT2) + CHUNK1 );
 		diag_score.resize( MAX_DIAG );
 		diag_score2.resize( MAX_DIAG );
 		aan_list_comp.resize( max_len );
@@ -513,9 +495,6 @@ struct WorkingBuffer
 		total_bytes += word_encodes_no.size()*sizeof(INTs);
 		total_bytes += aap_list.size()*sizeof(INTs);
 		total_bytes += aap_begin.size()*sizeof(INTs);
-		total_bytes += look_and_count.Size()*sizeof(INTs);
-		total_bytes += look_and_count1.Size()*sizeof(uint32_t);
-		total_bytes += look_and_count2.Size()*sizeof(uint32_t);
 		total_bytes += indexMapping.Size()*sizeof(uint32_t);
 		//total_bytes += indexCounts.size()*sizeof(IndexCount);
 		total_bytes += lookCounts.Size()*sizeof(IndexCount);
