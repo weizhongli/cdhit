@@ -2135,6 +2135,10 @@ void SequenceDB::ClusterOne( Sequence *seq, int id, WordTable & table,
 				table.AddWordCounts(aan_no, buffer.word_encodes, buffer.word_encodes_no, table.sequences.size(), options.isEST);
 			}
 			table.sequences.Append( seq );
+			if( frag_size ){
+				while( table.sequences.size() < table.frag_count )
+					table.sequences.Append( seq );
+			}
 		}
 	}
 	if ( (id+1) % 1000 == 0 ) {
@@ -2451,35 +2455,33 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	for(j=0; j<lookCounts.size; j++, ic++){
 		uint32_t count = ic->count;
 		uint32_t id = ic->index;
-		indexMapping[ ic->index ] = 0;
-		if ( count < required_aan ) continue;
-		Sequence *rep = table.sequences[id];
+		if( ! frag_size ){
+			indexMapping[ ic->index ] = 0;
+			if ( count < required_aan ) continue;
+		}
 
+		Sequence *rep = table.sequences[id];
 		len2 = rep->size;
 		if (len2 > len_upper_bound ) continue;
 		if (options.has2D && len2 < len_lower_bound ) continue;
-#if 0
-		XXX
-		if ( frag_size ){
+		if( frag_size ){
+			uint32_t *ims = & indexMapping[id];
 			k = (len2 - NAA) / frag_size + 1;
-			lookptr = & look_and_count[ rep->fragment ];
-
-			if ( frg2 >= k ) {
-				best1=0;
-				for (j1=0; j1<k; j1++) best1 += lookptr[j1];
-			} else {
-				sum = 0;
-				for (j1=0; j1<frg2; j1++) sum += lookptr[j1];
-				best1 = sum;
-				for (j1=frg2; j1<k; j1++) {
-					sum += lookptr[j1] - lookptr[j1-frg2];
-					if (sum > best1) best1 = sum;
-				}
+			sum = 0;
+			for (j1=0; j1<frg2; j1++){
+				uint32_t im = ims[j1];
+				if( im ) sum += lookCounts[im-1].count;
 			}
-
-			if ( best1 < required_aan ) continue;
+			count = sum;
+			for (j1=frg2; j1<k; j1++) {
+				uint32_t im1 = ims[j1];
+				uint32_t im2 = ims[j1-frg2];
+				if( im1 ) sum += lookCounts[im1-1].count;
+				if( im2 ) sum -= lookCounts[im2-1].count;
+				if (sum > count) count = sum;
+			}
+			if ( count < required_aan ) continue;
 		}
-#endif
 
 		param.ControlLongCoverage( len2, options );
 
@@ -2532,6 +2534,10 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	}
 	j += 1;
 	ic += 1;
+	if( frag_size ){
+		j = 0;
+		ic = lookCounts.items;
+	}
 	while( j < lookCounts.size ){
 		uint32_t count = ic->count;
 		uint32_t id = ic->index;
