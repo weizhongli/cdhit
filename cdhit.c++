@@ -4,21 +4,21 @@
 // http://bioinformatics.burnham-inst.org/cd-hi
 //
 // program written by
-//                                      Weizhong Li
-//                                      UCSD, San Diego Supercomputer Center
-//                                      La Jolla, CA, 92093
-//                                      Email liwz@sdsc.edu
+//                    Weizhong Li
+//                    UCSD, San Diego Supercomputer Center
+//                    La Jolla, CA, 92093
+//                    Email liwz@sdsc.edu
 //                 at
-//                                      Adam Godzik's lab
-//                                      The Burnham Institute
-//                                      La Jolla, CA, 92037
-//                                      Email adam@burnham-inst.org
+//                    Adam Godzik's lab
+//                    The Burnham Institute
+//                    La Jolla, CA, 92037
+//                    Email adam@burnham-inst.org
 //
 // Modified by:
-//                                      Limin Fu
-//                                      Center for Research in Biological Systems (CRBS), UCSD
-//                                      La Jolla, CA, 92093
-//                                      Email: l2fu@ucsd.edu, fu@daovm.net
+//                    Limin Fu
+//                    Center for Research in Biological Systems (CRBS), UCSD
+//                    La Jolla, CA, 92093
+//                    Email: l2fu@ucsd.edu, fu@daovm.net
 // =============================================================================
 
 #include "cdhit-common.h"
@@ -31,42 +31,42 @@ struct tms CPU_current, CPU_begin, CPU_end;
 ////////////////////////////////////  MAIN /////////////////////////////////////
 int main(int argc, char *argv[])
 {
-  string db_in;
-  string db_out;
+	string db_in;
+	string db_out;
 
 
-  times(&CPU_begin);
+	times(&CPU_begin);
 
-  // ***********************************    parse command line and open file
-  if (argc < 5) print_usage(argv[0]);
-  if (options.SetOptions( argc, argv ) == 0) print_usage(argv[0]);
-  options.Validate();
+	// ***********************************    parse command line and open file
+	if (argc < 5) print_usage(argv[0]);
+	if (options.SetOptions( argc, argv ) == 0) print_usage(argv[0]);
+	options.Validate();
 
-  db_in = options.input;
-  db_out = options.output;
+	db_in = options.input;
+	db_out = options.output;
 
-  InitNAA( MAX_UAA );
-  options.NAAN = NAAN_array[options.NAA];
-  seq_db.NAAN = NAAN_array[options.NAA];
+	InitNAA( MAX_UAA );
+	options.NAAN = NAAN_array[options.NAA];
+	seq_db.NAAN = NAAN_array[options.NAA];
 
-  //printf( "%i  %i  %i\n", sizeof(NVector<IndexCount>), seq_db.NAAN, sizeof(NVector<IndexCount>) * seq_db.NAAN );
+	//printf( "%i  %i  %i\n", sizeof(NVector<IndexCount>), seq_db.NAAN, sizeof(NVector<IndexCount>) * seq_db.NAAN );
 
-  seq_db.Read( db_in.c_str(), options );
-  cout << "total seq: " << seq_db.sequences.size() << endl;
-  seq_db.SortDivide( options );
+	seq_db.Read( db_in.c_str(), options );
+	cout << "total seq: " << seq_db.sequences.size() << endl;
+	seq_db.SortDivide( options );
 
-  seq_db.DoClustering( options );
+	seq_db.DoClustering( options );
 
-  times(&CPU_end);
-  show_cpu_time(CPU_begin, CPU_end);
+	times(&CPU_end);
+	show_cpu_time(CPU_begin, CPU_end);
 
-  printf( "writing new database\n" );
-  seq_db.WriteClusters( db_in.c_str(), db_out.c_str(), options );
+	printf( "writing new database\n" );
+	seq_db.WriteClusters( db_in.c_str(), db_out.c_str(), options );
 
-  // write a backup clstr file in case next step crashes
-  seq_db.WriteExtra1D( options );
-  cout << "program completed !" << endl << endl;
-  times(&CPU_end);
-  show_cpu_time(CPU_begin, CPU_end);
-  return 0;
+	// write a backup clstr file in case next step crashes
+	seq_db.WriteExtra1D( options );
+	cout << "program completed !" << endl << endl;
+	times(&CPU_end);
+	show_cpu_time(CPU_begin, CPU_end);
+	return 0;
 } // END int main

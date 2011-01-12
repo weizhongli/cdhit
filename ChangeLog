@@ -1,6 +1,10 @@
 
 CD-HIT ChangeLog
 
+CD-HIT-V4.5:
+Remove: multi-level counting;
+Fix: support for "-F" option.
+
 CD-HIT-V4.5-Beta3:
 Change: default word table size for "-M 0";
 Fix: global identity computation.

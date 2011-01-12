@@ -7,22 +7,22 @@
 // This program can remove the high sequence redundance efficiently.
 //
 // program written by
-//                                      Weizhong Li
-//                                      UCSD, San Diego Supercomputer Center
-//                                      La Jolla, CA, 92093
-//                                      Email liwz@sdsc.edu
+//                    Weizhong Li
+//                    UCSD, San Diego Supercomputer Center
+//                    La Jolla, CA, 92093
+//                    Email liwz@sdsc.edu
 //
 //                 at
-//                                      Adam Godzik's lab
-//                                      The Burnham Institute
-//                                      La Jolla, CA, 92037
-//                                      Email adam@burnham-inst.org
+//                    Adam Godzik's lab
+//                    The Burnham Institute
+//                    La Jolla, CA, 92037
+//                    Email adam@burnham-inst.org
 //
 // modified by:
-//                                      Limin Fu
-//                                      Center for Research in Biological Systems (CRBS), UCSD
-//                                      La Jolla, CA, 92093
-//                                      Email: l2fu@ucsd.edu, fu@daovm.net
+//                    Limin Fu
+//                    Center for Research in Biological Systems (CRBS), UCSD
+//                    La Jolla, CA, 92093
+//                    Email: l2fu@ucsd.edu, fu@daovm.net
 // =============================================================================
 
 #include "cdhit-common.h"
@@ -2127,10 +2127,8 @@ void SequenceDB::ClusterOne( Sequence *seq, int id, WordTable & table,
 			seq->state |= IS_REP;
 			if (frag_size){ /* not used for EST */
 				int frg1 = (len - NAA ) / frag_size + 1;
-				seq->fragment = table.frag_count;
 				table.AddWordCountsFrag( aan_no, buffer.word_encodes_backup, 
 						buffer.word_encodes_no, frg1, frag_size );
-				// the first fragment for the representative
 			}else{
 				table.AddWordCounts(aan_no, buffer.word_encodes, buffer.word_encodes_no, table.sequences.size(), options.isEST);
 			}

@@ -7,22 +7,22 @@
 // This program can remove the high sequence redundance efficiently.
 //
 // program written by
-//                                      Weizhong Li
-//                                      UCSD, San Diego Supercomputer Center
-//                                      La Jolla, CA, 92093
-//                                      Email liwz@sdsc.edu
+//                    Weizhong Li
+//                    UCSD, San Diego Supercomputer Center
+//                    La Jolla, CA, 92093
+//                    Email liwz@sdsc.edu
 //
 //                 at
-//                                      Adam Godzik's lab
-//                                      The Burnham Institute
-//                                      La Jolla, CA, 92037
-//                                      Email adam@burnham-inst.org
+//                    Adam Godzik's lab
+//                    The Burnham Institute
+//                    La Jolla, CA, 92037
+//                    Email adam@burnham-inst.org
 //
 // modified by:
-//                                      Limin Fu
-//                                      Center for Research in Biological Systems (CRBS), UCSD
-//                                      La Jolla, CA, 92093
-//                                      Email: l2fu@ucsd.edu, fu@daovm.net
+//                    Limin Fu
+//                    Center for Research in Biological Systems (CRBS), UCSD
+//                    La Jolla, CA, 92093
+//                    Email: l2fu@ucsd.edu, fu@daovm.net
 // =============================================================================
 
 #include<iostream>
@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5-beta3"
+#define CDHIT_VERSION  "4.5"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -366,9 +366,7 @@ struct Sequence
 	// index of the sequence in the original database:
 	int   index;
 	short state;
-	short xletter; // number of un-encoded letters
 	int   cluster_id;
-	int   fragment; // the first fragment, for representatives only
 	float identity;
 	float distance;
 	int   coverage[4];
