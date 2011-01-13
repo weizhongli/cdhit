@@ -426,15 +426,7 @@ struct WorkingParam
 	void ComputeRequiredBases( int NAA, int ss, const Options & option );
 };
 
-#define CBIT1   7
-#define CBIT2   (2*CBIT1)
-#define CBIT3   (3*CBIT1)
-#define CHUNK1  (1<<CBIT1)
-#define CHUNK2  (1<<CBIT2)
-#define CHUNK3  (1<<CBIT3)
-
-// maximum possible value is 254, a smaller value could be faster
-#define MAXNUM 126
+#define MAX_TABLE_SEQ (1<<28)
 
 enum { DP_BACK_NONE=0, DP_BACK_LEFT_TOP=1, DP_BACK_LEFT=2, DP_BACK_TOP=3 };
 
@@ -448,7 +440,6 @@ struct WorkingBuffer
 	Vector<INTs> aap_begin;
 	//Vector<IndexCount>  indexCounts;
 	NVector<IndexCount>  lookCounts;
-	NVector<IndexCount*>  lookCounts2;
 	NVector<uint32_t>    indexMapping;
 	MatrixInt64  score_mat;
 	MatrixInt    back_mat;
@@ -475,11 +466,10 @@ struct WorkingBuffer
 		word_encodes.resize( max_len );
 		word_encodes_no.resize( max_len );
 		word_encodes_backup.resize( max_len );
-		/* each table can not contain more than 255*CHUNK2 representatives or fragments! */
-		if( frag > MAXNUM*CHUNK2 ) frag = MAXNUM*CHUNK2;
-		lookCounts.Resize( frag + CHUNK1 );
-		//lookCounts2.Resize( frag + CHUNK1 );
-		indexMapping.Resize( frag + CHUNK1 );
+		/* each table can not contain more than MAX_TABLE_SEQ representatives or fragments! */
+		if( frag > MAX_TABLE_SEQ ) frag = MAX_TABLE_SEQ;
+		lookCounts.Resize( frag + 2 );
+		indexMapping.Resize( frag + 2 );
 		diag_score.resize( MAX_DIAG );
 		diag_score2.resize( MAX_DIAG );
 		aan_list_comp.resize( max_len );
@@ -496,7 +486,6 @@ struct WorkingBuffer
 		total_bytes += indexMapping.Size()*sizeof(uint32_t);
 		//total_bytes += indexCounts.size()*sizeof(IndexCount);
 		total_bytes += lookCounts.Size()*sizeof(IndexCount);
-		//total_bytes += lookCounts2.Size()*sizeof(IndexCount*);
 		total_bytes += max_len*(band*sizeof(int)+sizeof(VectorInt));
 		total_bytes += max_len*(band*sizeof(int)+sizeof(VectorInt64));
 	}

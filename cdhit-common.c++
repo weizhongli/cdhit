@@ -1329,6 +1329,7 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 			}
 		}
 	}
+	lookCounts[ lookCounts.size ].count = 0;
 	//printf( "\n\n" );
 	return OK_FUNC;
 }
@@ -1651,7 +1652,7 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 	options.total_letters = total_letter;
 	options.total_desc = total_desc;
 	options.max_length = max_len;
-	options.max_entries = max_len * MAXNUM*CHUNK2;
+	options.max_entries = max_len * MAX_TABLE_SEQ;
 	if (max_len >= 65536 and sizeof(INTs) <=2) 
 		bomb_warning("Some seqs longer than 65536, you may define LONG_SEQ");
 	if (max_len > MAX_SEQ ) 
@@ -1680,7 +1681,7 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 		options.max_entries = 0;
 		for (i=0; i<N; i++){
 			sequences[i] = sorting[i];
-			if( i < MAXNUM*CHUNK2 ) options.max_entries += sequences[i]->size;
+			if( i < MAX_TABLE_SEQ ) options.max_entries += sequences[i]->size;
 		}
 #if 0
 		if( options.isEST ){
@@ -2150,7 +2151,7 @@ void SequenceDB::ClusterOne( Sequence *seq, int id, WordTable & table,
 size_t SequenceDB::MinimalMemory( int frag_no, int bsize, int T, const Options & options )
 {
 	int N = sequences.size();
-	int F = frag_no < MAXNUM*CHUNK2 ? frag_no : MAXNUM*CHUNK2;
+	int F = frag_no < MAX_TABLE_SEQ ? frag_no : MAX_TABLE_SEQ;
 	size_t mem_need = 0;
 	size_t mem, mega = 1000000;
 	int table = T > 1 ? 2 : 1;
@@ -2233,7 +2234,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	if( mem_limit2 > 1E7 ) mem_limit2 = (size_t)1E7;
 
 	printf( "Table limit with the given memory limit:\n" );
-	printf( "Max number of representatives: %i\n", MAXNUM*CHUNK2 );
+	printf( "Max number of representatives: %i\n", MAX_TABLE_SEQ );
 	if( options.max_memory ){
 		printf( "Max number of word counting entries: %li\n", mem_limit );
 	}else{
@@ -2303,7 +2304,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 						if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 						if( may_stop and ks > (ks0+1000) ) break;
 						if( word_table.size >= mem_limit ) break;
-						int tmax = MAXNUM*CHUNK2 - (frag_size ? seq->size / frag_size + 1 : 0);
+						int tmax = MAX_TABLE_SEQ - (frag_size ? seq->size / frag_size + 1 : 0);
 						if( word_table.sequences.size() >= tmax or word_table.frag_count >= tmax ) break;
 					}
 					self_stop = 1;
@@ -2361,7 +2362,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					bk = true;
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 					if( word_table.size >= mem_limit ) break;
-					int tmax = MAXNUM*CHUNK2 - (frag_size ? seq->size / frag_size + 1 : 0);
+					int tmax = MAX_TABLE_SEQ - (frag_size ? seq->size / frag_size + 1 : 0);
 					if( word_table.sequences.size() >= tmax or word_table.frag_count >= tmax ) break;
 					bk = false;
 				}
@@ -2450,20 +2451,19 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 
 	IndexCount *ic = lookCounts.items;
 	ic = lookCounts.items;
-	for(j=0; j<lookCounts.size; j++, ic++){
-		uint32_t count = ic->count;
-		uint32_t id = ic->index;
+	for(; ic->count; ic++){
 		if( ! frag_size ){
 			indexMapping[ ic->index ] = 0;
-			if ( count < required_aan ) continue;
+			if ( ic->count < required_aan ) continue;
 		}
 
-		Sequence *rep = table.sequences[id];
+		Sequence *rep = table.sequences[ ic->index ];
 		len2 = rep->size;
 		if (len2 > len_upper_bound ) continue;
 		if (options.has2D && len2 < len_lower_bound ) continue;
 		if( frag_size ){
-			uint32_t *ims = & indexMapping[id];
+			uint32_t count = ic->count;
+			uint32_t *ims = & indexMapping[ ic->index ];
 			k = (len2 - NAA) / frag_size + 1;
 			sum = 0;
 			for (j1=0; j1<frg2; j1++){
@@ -2530,17 +2530,10 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 				options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_pc);
 		param.ComputeRequiredBases( options.NAA, 2, options );
 	}
-	j += 1;
 	ic += 1;
-	if( frag_size ){
-		j = 0;
-		ic = lookCounts.items;
-	}
-	while( j < lookCounts.size ){
-		uint32_t count = ic->count;
-		uint32_t id = ic->index;
+	if( frag_size ) ic = lookCounts.items;
+	while( ic->count ){
 		indexMapping[ ic->index ] = 0;
-		j += 1;
 		ic += 1;
 	}
 	lookCounts.size = 0;
@@ -2619,12 +2612,10 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 
 		IndexCount *ic = lookCounts.items;
 		ic = lookCounts.items;
-		for(j=0; j<lookCounts.size; j++, ic++){
-			uint32_t count = ic->count;
-			uint32_t id = ic->index;
+		for(; ic->count; ic++){
 			indexMapping[ ic->index ] = 0;
-			if ( count < required_aan ) continue;
-			Sequence *rep = table.sequences[id];
+			if ( ic->count < required_aan ) continue;
+			Sequence *rep = table.sequences[ic->index];
 
 			len2 = rep->size;
 			if (len2 > len_upper_bound ) continue;
@@ -2692,13 +2683,9 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			seq->coverage[3] = talign_info[4] +1;
 			if (not options.cluster_best) break;
 		}
-		j += 1;
 		ic += 1;
-		while( j < lookCounts.size ){
-			uint32_t count = ic->count;
-			uint32_t id = ic->index;
+		while( ic->count ){
 			indexMapping[ ic->index ] = 0;
-			j += 1;
 			ic += 1;
 		}
 		lookCounts.size = 0;
@@ -2830,7 +2817,7 @@ void SequenceDB::DoClustering( const Options & options )
 	size_t tabsize = 0;
 
 	printf( "Table limit with the given memory limit:\n" );
-	printf( "Max number of representatives: %i\n", MAXNUM*CHUNK2 );
+	printf( "Max number of representatives: %i\n", MAX_TABLE_SEQ );
 	if( options.max_memory ){
 		printf( "Max number of word counting entries: %li\n", mem_limit );
 	}else{
@@ -2864,7 +2851,7 @@ void SequenceDB::DoClustering( const Options & options )
 			total_letters -= seq->size;
 			if( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 			if( word_table.size >= mem_limit ) break;
-			int tmax = MAXNUM*CHUNK2 - (frag_size ? seq->size / frag_size + 1 : 0);
+			int tmax = MAX_TABLE_SEQ - (frag_size ? seq->size / frag_size + 1 : 0);
 			if( word_table.sequences.size() >= tmax or word_table.frag_count >= tmax ) break;
 		}
 		m = i;
@@ -2950,7 +2937,7 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 	for(i=0; i<N; ){
 		size_t sum = 0;
 		int m = i;
-		while( m < N && sum < mem_limit && m < (i + MAXNUM*CHUNK2) ){
+		while( m < N && sum < mem_limit && m < (i + MAX_TABLE_SEQ) ){
 			Sequence *seq = other.sequences[m];
 			if( ! (seq->state & IS_REDUNDANT) ){
 				if ( options.store_disk ) seq->SwapIn();
