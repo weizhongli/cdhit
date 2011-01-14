@@ -1315,10 +1315,12 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 		k1 = one.Size();
 		IndexCount *ic = one.items;
 
+		int rest = aan_no - j0 + 1;
 		for (k=0; k<k1; k++, ic++){
 			int c = ic->count < j1 ? ic->count : j1;
 			uint32_t *idm = indexMapping.items + ic->index;
 			if( *idm ==0 ){
+				if( rest < min ) continue;
 				IndexCount *ic2 = lookCounts.items + lookCounts.size;
 				lookCounts.size += 1;
 				*idm = lookCounts.size;
@@ -2530,7 +2532,6 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 				options.tolerance, naa_stat_start_percent, naa_stat, NAA, tiden_pc);
 		param.ComputeRequiredBases( options.NAA, 2, options );
 	}
-	ic += 1;
 	if( frag_size ) ic = lookCounts.items;
 	while( ic->count ){
 		indexMapping[ ic->index ] = 0;
@@ -2683,7 +2684,6 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			seq->coverage[3] = talign_info[4] +1;
 			if (not options.cluster_best) break;
 		}
-		ic += 1;
 		while( ic->count ){
 			indexMapping[ ic->index ] = 0;
 			ic += 1;
