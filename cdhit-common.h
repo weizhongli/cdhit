@@ -426,7 +426,7 @@ struct WorkingParam
 	void ComputeRequiredBases( int NAA, int ss, const Options & option );
 };
 
-#define MAX_TABLE_SEQ (1<<28)
+#define MAX_TABLE_SEQ (1<<22)
 
 enum { DP_BACK_NONE=0, DP_BACK_LEFT_TOP=1, DP_BACK_LEFT=2, DP_BACK_TOP=3 };
 
