@@ -659,14 +659,10 @@ mat is matrix, return ALN_PAIR class
 
 */
 
-int local_band_align( Sequence *seq1, Sequence *seq2, ScoreMatrix &mat, 
+int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatrix &mat, 
 		int &best_score, int &iden_no, int &alnln, float &dist, int *alninfo,
 		int band_left, int band_center, int band_right, WorkingBuffer & buffer)
 {
-	char *iseq1 = seq1->data;
-	char *iseq2 = seq2->data;
-	int len1 = seq1->size;
-	int len2 = seq2->size;
 	int i, j, k, j1;
 	int jj, kk;
 	int iden_no1;
@@ -2497,11 +2493,11 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 		if ( best_sum < required_aa2 ) continue;
 
 		if (options.print || aln_cover_flag) //return overlap region
-			local_band_align(seq, rep, mat,
+			local_band_align(seqi, seqj, len, len2, mat,
 					best_score, tiden_no, alnln, distance, talign_info+1,
 					band_left, band_center, band_right, buf);
 		else
-			local_band_align(seq, rep, mat,
+			local_band_align(seqi, seqj, len, len2, mat,
 					best_score, tiden_no, alnln, distance, NULL, 
 					band_left, band_center, band_right, buf);
 		if ( tiden_no < required_aa1 ) continue;
@@ -2639,7 +2635,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			//if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
 
 			if (options.print || aln_cover_flag){ //return overlap region
-				local_band_align(seq, rep, mat,
+				local_band_align(seqi, seqj, len, len2, mat,
 						best_score, tiden_no, alnln, distance, talign_info+1,
 						band_left, band_center, band_right, buf);
 				if( comp ){
@@ -2648,7 +2644,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 				}
 			}else{
 				//printf( "%5i %5i %5i %5i\n", band_width1, band_right-band_left, band_left, band_right );
-				local_band_align(seq, rep, mat,
+				local_band_align(seqi, seqj, len, len2, mat,
 						best_score, tiden_no, alnln, distance, talign_info+1,
 						band_left, band_center, band_right, buf);
 			}
@@ -2732,7 +2728,7 @@ void SequenceDB::ComputeDistance( const Options & options )
 			band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
 			diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
 					band_width1, band_left, band_center, band_right, 0);
-			local_band_align(seq, rep, mat,
+			local_band_align(seqi, seqj, len, len2, mat,
 					best_score, tiden_no, alnln, distance, talign_info+1,
 					band_left, band_center, band_right, buf);
 			dists[seq->index][rep->index] = dists[rep->index][seq->index] = distance;
@@ -2751,7 +2747,7 @@ void SequenceDB::ComputeDistance( const Options & options )
 			band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
 			diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
 					band_width1, band_left, band_center, band_right, 0);
-			local_band_align(&comseq, rep, mat,
+			local_band_align(seqi, seqj, len, len2, mat,
 					best_score, tiden_no, alnln, distance, talign_info+1,
 					band_left, band_center, band_right, buf);
 			if( distance < dists[seq->index][rep->index] )
