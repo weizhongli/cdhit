@@ -936,7 +936,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 		back = back_mat[i][j1];
 	}
 	iden_no = options.global_identity ? count3 : count - count2;
-	alnln = posmin - posmax;
+	alnln = posmin - posmax + 1;
 	dist = dcount/(float)dlen;
 	//dist = - 0.75 * log( 1.0 - dist * 4.0 / 3.0 );
 	if( alninfo ){

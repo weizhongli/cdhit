@@ -1,6 +1,9 @@
 
 CD-HIT ChangeLog
 
+CD-HIT-V4.5.1:
+MinorFix: alignment length for "-G 0".
+
 CD-HIT-V4.5:
 Remove: multi-level counting;
 Fix: support for "-F" option.
