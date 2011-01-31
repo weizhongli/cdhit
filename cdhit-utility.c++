@@ -91,8 +91,8 @@ char txt_option_B[] =
 char txt_option_p[] =
 "\t1 or 0, default 0\n \tif set to 1, print alignment overlap in .clstr file\n";
 char txt_option_r[] =
-"\t1 or 0, default 0, by default only +/+ strand alignment\n \
-\tif set to 1, do both +/+ & +/- alignments\n";
+"\t1 or 0, default 1, by default do both +/+ & +/- alignments\n \
+\tif set to 0, only +/+ strand alignment\n";
 
 int print_usage (char *arg) {
   cout << cd_hit_ver << "\n\n" ;

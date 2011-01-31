@@ -313,7 +313,7 @@ struct Options
 		short_control = 99999999;
 		min_control = 0;
 		print = 0;
-		option_r  = 0;
+		option_r  = 1;
 		frag_size = 0;
 		des_len = 20;
 		threads = 1;
