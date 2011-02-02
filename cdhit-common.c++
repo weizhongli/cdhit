@@ -815,6 +815,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	int last = back;
 	int count = 0, count2 = 0, count3 = 0;
 	int match, begin1, begin2, end1, end2;
+	int gbegin1, gbegin2, gend1, gend2;
 	int64_t score, smin = best_score1, smax = best_score1 - 1;
 	int posmin, posmax, pos = 0;
 	int bl, dlen = 0, dcount = 0;
@@ -905,6 +906,15 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 				BB[NN++] = letters[ iseq2[j-1] ];
 			}
 #endif
+			if( alninfo && options.global_identity ){
+				if( i == 1 || j == 1 ){
+					gbegin1 = i-1;
+					gbegin2 = j-1;
+				}else if( i == len1 || j == len2 ){
+					gend1 = i-1;
+					gend2 = j-1;
+				}
+			}
 			score = score_mat[i][j1];
 			i -= 1;
 			j -= 1;
@@ -945,8 +955,10 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 		alninfo[2] = begin2;
 		alninfo[3] = end2;
 		if( options.global_identity ){
-			alninfo[0] = 0;
-			alninfo[1] = len1 - 1;
+			alninfo[0] = gbegin1;
+			alninfo[1] = gend1;
+			alninfo[2] = gbegin2;
+			alninfo[3] = gend2;
 		}
 	}
 #ifdef PRINT

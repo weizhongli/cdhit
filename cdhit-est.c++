@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	string db_in;
 	string db_out;
 
-	options.NAA = 8;
+	options.NAA = 10;
 	options.NAAN = NAA8;
 	seq_db.NAAN = NAA8;
 	options.NAA_top_limit = 12;
