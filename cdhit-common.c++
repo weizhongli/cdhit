@@ -993,6 +993,10 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	char fname[100];
 	sprintf( fname, "alignments/pair%06i.txt", fcount );
 	FILE *fout = fopen( fname, "w+" );
+	if( fout == NULL ){
+		if( fcount <= 1 ) printf( "alignment files open failed\n" );
+		return OK_FUNC;
+	}
 	fprintf( fout, "# length X = %i\n", len2 );
 	fprintf( fout, "# length Y = %i\n", len1 );
 	if( alninfo ){
