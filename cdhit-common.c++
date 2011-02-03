@@ -860,7 +860,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 			if( score < smin ){
 				count2 = 0;
 				smin = score;
-				posmin = pos;
+				posmin = pos - 1;
 				begin1 = i;
 				begin2 = j;
 			}
@@ -882,7 +882,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 			if( score < smin ){
 				count2 = 0;
 				smin = score;
-				posmin = pos;
+				posmin = pos - 1;
 				begin1 = i;
 				begin2 = j;
 			}
@@ -932,11 +932,12 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 			count2 += match;
 			count3 += match;
 			if( score < smin ){
+				int mm = match == 0;
 				count2 = 0;
 				smin = score;
-				posmin = pos;
-				begin1 = i + 1;
-				begin2 = j + 1;
+				posmin = pos - mm;
+				begin1 = i + mm;
+				begin2 = j + mm;
 			}
 			break;
 		default : printf( "%i\n", back ); break;
@@ -968,6 +969,8 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	printf( "dlen = %5i, dcount = %5i, dist = %.3f\n", dlen, dcount, dcount/(float)dlen );
 #endif
 #ifdef MAKEALIGN
+	float identity = iden_no / (float)( options.global_identity ? len1 : alnln);
+	if( identity < options.cluster_thd ) return OK_FUNC;
 	while(i--){
 		AA[NN] = letters[ iseq1[i-1] ];
 		BB[NN++] = '-';
@@ -990,23 +993,32 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	char fname[100];
 	sprintf( fname, "alignments/pair%06i.txt", fcount );
 	FILE *fout = fopen( fname, "w+" );
-	fprintf( fout, "# %g\n", dist );
+	fprintf( fout, "# length X = %i\n", len2 );
+	fprintf( fout, "# length Y = %i\n", len1 );
+	if( alninfo ){
+		fprintf( fout, "# align X: %i-%i\n", alninfo[2]+1, alninfo[3]+1 );
+		fprintf( fout, "# align Y: %i-%i\n", alninfo[0]+1, alninfo[1]+1 );
+	}
+	fprintf( fout, "# alignment length: %i\n", alnln );
+	fprintf( fout, "# identity count: %i\n", iden_no );
+	fprintf( fout, "# identity: %g\n", identity );
+	fprintf( fout, "# distance: %g\n", dist );
 #if 0
 	fprintf( fout, "%i %s\n", seq1->index, AA );
 	fprintf( fout, "%i %s\n", seq2->index, BB );
 #else
 	bool printaa = true;
-	IA = IB = 0;
+	IB = IA = 0;
 	fprintf( fout, "\n\nX " );
-	while( IB < NN ){
+	while( IA < NN ){
 		if( printaa ){
-			fprintf( fout, "%c", AA[IA] );
-			IA += 1;
-			if( IA % 75 ==0 or IA == NN ) printaa = false, fprintf( fout, "\nY " );
-		}else{
 			fprintf( fout, "%c", BB[IB] );
 			IB += 1;
-			if( IB % 75 ==0 ) printaa = true, fprintf( fout, "\n\nX " );
+			if( IB % 75 ==0 or IB == NN ) printaa = false, fprintf( fout, "\nY " );
+		}else{
+			fprintf( fout, "%c", AA[IA] );
+			IA += 1;
+			if( IA % 75 ==0 ) printaa = true, fprintf( fout, "\n\nX " );
 		}
 	}
 #endif

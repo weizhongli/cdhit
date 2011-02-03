@@ -3,7 +3,7 @@ CD-HIT ChangeLog
 
 CD-HIT-V4.5.2:
 MinorChange: default value of "-n" for DNA sequence from 8 to 10;
-MinorFix: alignment location for "-G 1".
+MinorFix: alignment locations and length;
 
 CD-HIT-V4.5.1:
 MinorChange: default value of "-r" from 0 to 1;
