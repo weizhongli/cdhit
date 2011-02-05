@@ -88,6 +88,18 @@ char txt_option_B[] =
 "\t1 or 0, default 0, by default, sequences are stored in RAM\n \
 \tif set to 1, sequence are stored on hard drive\n \
 \tit is recommended to use -B 1 for huge databases\n";
+char txt_option_uL[] = 
+"\tmaximum unmatched percentage for the longer sequence, default 1.0\n \
+\tif set to 0.1, the unmatched region (excluding leading and tailing gaps)\n \
+\tmust not be more than 10% of the sequence\n";
+char txt_option_uS[] = 
+"\tmaximum unmatched percentage for the shorter sequence, default 1.0\n \
+\tif set to 0.1, the unmatched region (excluding leading and tailing gaps)\n \
+\tmust not be more than 10% of the sequence\n";
+char txt_option_U[] = 
+"\tmaximum unmatched length, default 99999999\n \
+\tif set to 10, the unmatched region (excluding leading and tailing gaps)\n \
+\tmust not be more than 10 bases\n";
 char txt_option_p[] =
 "\t1 or 0, default 0\n \tif set to 1, print alignment overlap in .clstr file\n";
 char txt_option_r[] =
@@ -115,6 +127,9 @@ int print_usage (char *arg) {
   cout << "    -aS" << txt_option_aS;
   cout << "    -AS" << txt_option_AS;
   cout << "    -A" << txt_option_A;
+  cout << "    -uL" << txt_option_uL;
+  cout << "    -uS" << txt_option_uS;
+  cout << "    -U" << txt_option_U;
   cout << "    -B" << txt_option_B;
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;
@@ -151,6 +166,9 @@ int print_usage_2d (char *arg) {
   cout << "    -aS" << txt_option_aS;
   cout << "    -AS" << txt_option_AS;
   cout << "    -A" << txt_option_A;
+  cout << "    -uL" << txt_option_uL;
+  cout << "    -uS" << txt_option_uS;
+  cout << "    -U" << txt_option_U;
   cout << "    -B" << txt_option_B;
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;
@@ -183,6 +201,9 @@ int print_usage_est (char *arg) {
   cout << "    -aS" << txt_option_aS;
   cout << "    -AS" << txt_option_AS;
   cout << "    -A" << txt_option_A;
+  cout << "    -uL" << txt_option_uL;
+  cout << "    -uS" << txt_option_uS;
+  cout << "    -U" << txt_option_U;
   cout << "    -B" << txt_option_B;
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;
@@ -218,6 +239,9 @@ int print_usage_est_2d (char *arg) {
   cout << "    -aS" << txt_option_aS;
   cout << "    -AS" << txt_option_AS;
   cout << "    -A" << txt_option_A;
+  cout << "    -uL" << txt_option_uL;
+  cout << "    -uS" << txt_option_uS;
+  cout << "    -U" << txt_option_U;
   cout << "    -B" << txt_option_B;
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;

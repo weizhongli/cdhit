@@ -173,6 +173,9 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-aS") == 0) short_coverage = atof(value);
 	else if (strcmp(flag, "-AS") == 0) short_control = intval;
 	else if (strcmp(flag, "-A" ) == 0) min_control  = intval;
+	else if (strcmp(flag, "-uL") == 0) long_unmatch_per = atof(value);
+	else if (strcmp(flag, "-uS") == 0) short_unmatch_per = atof(value);
+	else if (strcmp(flag, "-U") == 0) unmatch_len = intval;
 	else if (strcmp(flag, "-tmp" ) == 0) temp_dir  = value;
 	else if (strcmp(flag, "-T" ) == 0){
 #ifndef NO_OPENMP
@@ -950,6 +953,14 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	alnln = posmin - posmax + 1;
 	dist = dcount/(float)dlen;
 	//dist = - 0.75 * log( 1.0 - dist * 4.0 / 3.0 );
+	int umtail1 = len1 - 1 - end1;
+	int umtail2 = len2 - 1 - end2;
+	int umhead = begin1 < begin2 ? begin1 : begin2;
+	int umtail = umtail1 < umtail2 ? umtail1 : umtail2;
+	int umlen = umhead + umtail;
+	if( umlen > options.unmatch_len ) return FAILED_FUNC;
+	if( umtail > len1 * options.short_unmatch_per ) return FAILED_FUNC;
+	if( umtail > len2 * options.long_unmatch_per ) return FAILED_FUNC;
 	if( alninfo ){
 		alninfo[0] = begin1;
 		alninfo[1] = end1;
@@ -988,17 +999,18 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 		AA[NN-i-1] = aa;
 		BB[NN-i-1] = bb;
 	}
-	static int fcount = 0;
+	static int fcount = 0; 
 	fcount += 1;
-	char fname[100];
-	sprintf( fname, "alignments/pair%06i.txt", fcount );
-	FILE *fout = fopen( fname, "w+" );
+	FILE *fout = fopen( "alignments.txt", "a" );
 	if( fout == NULL ){
 		if( fcount <= 1 ) printf( "alignment files open failed\n" );
 		return OK_FUNC;
 	}
+	fprintf( fout, "\n\n######################################################\n" );
 	fprintf( fout, "# length X = %i\n", len2 );
 	fprintf( fout, "# length Y = %i\n", len1 );
+	fprintf( fout, "# best align X: %i-%i\n", begin2+1, end2+1 );
+	fprintf( fout, "# best align Y: %i-%i\n", begin1+1, end1+1 );
 	if( alninfo ){
 		fprintf( fout, "# align X: %i-%i\n", alninfo[2]+1, alninfo[3]+1 );
 		fprintf( fout, "# align Y: %i-%i\n", alninfo[0]+1, alninfo[1]+1 );
@@ -2520,14 +2532,16 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 				band_width1, band_left, band_center, band_right, required_aa1);
 		if ( best_sum < required_aa2 ) continue;
 
+		int rc = FAILED_FUNC;
 		if (options.print || aln_cover_flag) //return overlap region
-			local_band_align(seqi, seqj, len, len2, mat,
+			rc = local_band_align(seqi, seqj, len, len2, mat,
 					best_score, tiden_no, alnln, distance, talign_info+1,
 					band_left, band_center, band_right, buf);
 		else
-			local_band_align(seqi, seqj, len, len2, mat,
+			rc = local_band_align(seqi, seqj, len, len2, mat,
 					best_score, tiden_no, alnln, distance, NULL, 
 					band_left, band_center, band_right, buf);
+		if ( rc == FAILED_FUNC ) continue;
 		if ( tiden_no < required_aa1 ) continue;
 		lens = len;
 		if( options.has2D && len > len2 ) lens = len2;
@@ -2662,8 +2676,9 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			if ( best_sum < required_aas ) continue;
 			//if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
 
+			int rc = FAILED_FUNC;
 			if (options.print || aln_cover_flag){ //return overlap region
-				local_band_align(seqi, seqj, len, len2, mat,
+				rc = local_band_align(seqi, seqj, len, len2, mat,
 						best_score, tiden_no, alnln, distance, talign_info+1,
 						band_left, band_center, band_right, buf);
 				if( comp ){
@@ -2672,10 +2687,11 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 				}
 			}else{
 				//printf( "%5i %5i %5i %5i\n", band_width1, band_right-band_left, band_left, band_right );
-				local_band_align(seqi, seqj, len, len2, mat,
+				rc = local_band_align(seqi, seqj, len, len2, mat,
 						best_score, tiden_no, alnln, distance, talign_info+1,
 						band_left, band_center, band_right, buf);
 			}
+			if ( rc == FAILED_FUNC ) continue;
 			//printf( "%i  %i  %i\n", best_score, tiden_no, required_aa1 );
 			if ( tiden_no < required_aa1 ) continue;
 			len_eff1 = (options.global_identity == 0) ? alnln : len;

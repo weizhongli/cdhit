@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5.2"
+#define CDHIT_VERSION  "4.5.3"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -266,6 +266,9 @@ struct Options
 	double  short_coverage; // -aS:
 	int     short_control; // -AS:
 	int     min_control; // -A:
+	double  long_unmatch_per; // -uL
+	double  short_unmatch_per; // -uS
+	int     unmatch_len; // -U
 	int     print;
 	int     des_len;
 	int     frag_size;
@@ -311,6 +314,9 @@ struct Options
 		long_control = 99999999;
 		short_coverage = 0.0;
 		short_control = 99999999;
+		long_unmatch_per = 1.0;
+		short_unmatch_per = 1.0;
+		unmatch_len = 99999999;
 		min_control = 0;
 		print = 0;
 		option_r  = 1;
