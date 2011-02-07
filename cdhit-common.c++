@@ -2267,9 +2267,9 @@ void SequenceDB::DoClustering( int T, const Options & options )
 
 	size_t tabsize = 0;
 	size_t mem_limit = (options.max_memory - mem_need) / sizeof(IndexCount);
-	size_t mem_limit2 = mem_limit / 50;
+	size_t mem_limit2 = mem_limit / 64;
 
-	if( mem_limit2 > 1E7 ) mem_limit2 = (size_t)1E7;
+	if( mem_limit2 > 1E6 ) mem_limit2 = (size_t)1E6;
 
 	printf( "Table limit with the given memory limit:\n" );
 	printf( "Max number of representatives: %i\n", MAX_TABLE_SEQ );
@@ -2288,7 +2288,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		size_t sum = 0;
 		size_t lim = mem_limit;
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
-		if( i ==0 ) lim /= 8; // first SCB with small size
+		if( i ==0 ) lim /= 8*T; // first SCB with small size
 		if( lim < mem_limit2 ) lim = (lim + mem_limit2) / 2; // SCB size has lower limit
 		while( m < N && sum < lim ){
 			Sequence *seq = sequences[m];

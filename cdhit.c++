@@ -57,9 +57,6 @@ int main(int argc, char *argv[])
 
 	seq_db.DoClustering( options );
 
-	times(&CPU_end);
-	show_cpu_time(CPU_begin, CPU_end);
-
 	printf( "writing new database\n" );
 	seq_db.WriteClusters( db_in.c_str(), db_out.c_str(), options );
 
