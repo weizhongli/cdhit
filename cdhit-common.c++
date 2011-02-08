@@ -227,6 +227,10 @@ bool Options::SetOptionEST( const char *flag, const char *value )
 	NAA_top_limit = 12;
 	if( SetOptionCommon( flag, value ) ) return true;
 	if (strcmp(flag, "-r" ) == 0) option_r  = atoi(value); 
+	else if (strcmp(flag, "-gap") == 0) mat.gap = MAX_SEQ * atoi(value);
+	else if (strcmp(flag, "-gap-ext") == 0) mat.ext_gap = MAX_SEQ * atoi(value);
+	else if (strcmp(flag, "-match") == 0) mat.set_match( atoi(value) );
+	else if (strcmp(flag, "-mismatch") == 0) mat.set_mismatch( atoi(value) );
 	else return false;
 	return true;
 }
@@ -705,7 +709,6 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 		if( back_mat[i].Size() < band_width1 ) back_mat[i].Resize( band_width1 );
 	}
 
-	VectorInt64 & gap_array  = mat.gap_array;
 	best_score = 0;
 	/*
 	   seq2 len2 = 17            seq2 len2 = 17      seq2 len2 = 17
@@ -1132,7 +1135,7 @@ void setaa_to_na()
 
 
 /////////////////
-ScoreMatrix::ScoreMatrix() : gap_array( MAX_GAP )
+ScoreMatrix::ScoreMatrix()
 {
 	init();
 }
@@ -1148,7 +1151,6 @@ void ScoreMatrix::set_gap(int gap1, int ext_gap1)
 	int i;
 	gap = MAX_SEQ * gap1;
 	ext_gap = MAX_SEQ * ext_gap1;
-	for (i=0; i<MAX_GAP; i++)  gap_array[i] = gap + i * ext_gap;
 }
 
 void ScoreMatrix::set_matrix(int *mat1)
@@ -1165,7 +1167,18 @@ void ScoreMatrix::set_to_na()
 	set_gap( -6, -1 );
 	set_matrix( BLOSUM62_na );
 }
-
+void ScoreMatrix::set_match( int score )
+{
+	int i;
+	for ( i=0; i<MAX_AA; i++) matrix[i][i] = score;
+}
+void ScoreMatrix::set_mismatch( int score )
+{
+	int i, j;
+	for ( i=0; i<MAX_AA; i++)
+		for ( j=0; j<i; j++)
+			matrix[j][i] = matrix[i][j] = MAX_SEQ * score;
+}
 
 WordTable::WordTable( int naa, int naan )
 {
