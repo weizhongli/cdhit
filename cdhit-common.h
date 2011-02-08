@@ -269,6 +269,7 @@ struct Options
 	double  long_unmatch_per; // -uL
 	double  short_unmatch_per; // -uS
 	int     unmatch_len; // -U
+	int     max_indel; // -D
 	int     print;
 	int     des_len;
 	int     frag_size;
@@ -283,6 +284,7 @@ struct Options
 
 	bool    has2D;
 	bool    isEST;
+	bool    is454;
 	bool    useIdentity;
 	bool    useDistance;
 
@@ -295,6 +297,7 @@ struct Options
 		useDistance = false;
 		has2D = false;
 		isEST = false;
+		is454 = false;
 		NAA = 5;
 		NAA_top_limit = 5;
 		cluster_thd = 0.9;
@@ -318,6 +321,7 @@ struct Options
 		short_unmatch_per = 1.0;
 		unmatch_len = 99999999;
 		min_control = 0;
+		max_indel = 1;
 		print = 0;
 		option_r  = 1;
 		frag_size = 0;

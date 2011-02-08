@@ -198,6 +198,13 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 }
 bool Options::SetOption( const char *flag, const char *value )
 {
+	if( is454 ){
+		if( strcmp(flag, "-s") == 0 ) return false;
+		else if( strcmp(flag, "-S") == 0 ) return false;
+		else if( strcmp(flag, "-G") == 0 ) return false;
+		else if( strcmp(flag, "-A") == 0 ) return false;
+		else if( strcmp(flag, "-D") == 0 ){ max_indel = atoi(value); return true; }
+	}
 	if( SetOptionCommon( flag, value ) ) return true;
 	if (strcmp(flag, "-t" ) == 0) tolerance = atoi(value);
 	else if (strcmp(flag, "-F" ) == 0) frag_size = atoi(value);
@@ -846,6 +853,8 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	}
 #endif
 
+	int indels = 0;
+	int max_indels = 0;
 	while( back != DP_BACK_NONE ){
 		switch( back ){
 		case DP_BACK_TOP  :
@@ -945,10 +954,23 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 			break;
 		default : printf( "%i\n", back ); break;
 		}
+		if( options.is454 ){
+			if( back == DP_BACK_LEFT_TOP ){
+				if( indels > max_indels ) max_indels = indels;
+				indels = 0;
+			}else{
+				if( last == DP_BACK_LEFT_TOP ){
+					indels = 1;
+				}else if( indels ){
+					indels += 1;
+				}
+			}
+		}
 		pos += 1;
 		last = back;
 		back = back_mat[i][j1];
 	}
+	if( options.is454 and max_indels > options.max_indel ) return FAILED_FUNC;
 	iden_no = options.global_identity ? count3 : count - count2;
 	alnln = posmin - posmax + 1;
 	dist = dcount/(float)dlen;
@@ -959,8 +981,8 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	int umtail = umtail1 < umtail2 ? umtail1 : umtail2;
 	int umlen = umhead + umtail;
 	if( umlen > options.unmatch_len ) return FAILED_FUNC;
-	if( umtail > len1 * options.short_unmatch_per ) return FAILED_FUNC;
-	if( umtail > len2 * options.long_unmatch_per ) return FAILED_FUNC;
+	if( umlen > len1 * options.short_unmatch_per ) return FAILED_FUNC;
+	if( umlen > len2 * options.long_unmatch_per ) return FAILED_FUNC;
 	if( alninfo ){
 		alninfo[0] = begin1;
 		alninfo[1] = end1;
@@ -1019,6 +1041,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	fprintf( fout, "# identity count: %i\n", iden_no );
 	fprintf( fout, "# identity: %g\n", identity );
 	fprintf( fout, "# distance: %g\n", dist );
+	if( options.is454 ) fprintf( fout, "# max indel: %i\n", max_indels );
 #if 0
 	fprintf( fout, "%i %s\n", seq1->index, AA );
 	fprintf( fout, "%i %s\n", seq2->index, BB );
@@ -1367,6 +1390,7 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 			}
 		}
 	}
+	//printf( "%6i %6i\n", S, lookCounts.size );
 	lookCounts[ lookCounts.size ].count = 0;
 	//printf( "\n\n" );
 	return OK_FUNC;
@@ -2694,6 +2718,12 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			if ( rc == FAILED_FUNC ) continue;
 			//printf( "%i  %i  %i\n", best_score, tiden_no, required_aa1 );
 			if ( tiden_no < required_aa1 ) continue;
+			if ( options.is454 ){
+				if (talign_info[3] != talign_info[1]) continue; // same start
+				if (talign_info[1] > 1) continue; // one mismatch allowed at beginning
+				if ((len-talign_info[2]) > 2) continue; // one mismatch allowed at end
+			}
+
 			len_eff1 = (options.global_identity == 0) ? alnln : len;
 			tiden_pc = tiden_no / (float)len_eff1;
 			//printf( "%i %i\n", tiden_no, options.cluster_thd100 );

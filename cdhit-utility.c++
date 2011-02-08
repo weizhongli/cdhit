@@ -264,3 +264,36 @@ int print_usage_div (char *arg) {
 //  cout << "    -dbmax max size of your db\n\n\n";
   exit(1);
 } // END print_usage_div
+
+char mytxt_option_c[] =
+"\tsequence identity threshold, default 0.98\n \
+\tthis is a \"global sequence identity\" calculated as :\n \
+\tnumber of identical amino acids in alignment\n \
+\tdivided by the full length of the shorter sequence + gaps\n";
+char mytxt_option_b[] = "\tband_width of alignment, default 10\n";
+char mytxt_option_n_est[] = "\tword_length, default 10, see user's guide for choosing it\n";
+char mytxt_option_D[] = "\tmax size per indel, default 1\n";
+int print_usage_454 (char *arg)
+{
+  cout << cd_hit_ver << "\n\n" ;
+  cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
+  cout << "    -i" << txt_option_i;
+  cout << "    -o" << txt_option_o;
+  cout << "    -c" << mytxt_option_c;
+  cout << "    -b" << mytxt_option_b;
+  cout << "    -M" << txt_option_M;
+  cout << "    -n" << mytxt_option_n_est;
+  cout << "    -aL" << txt_option_aL;
+  cout << "    -AL" << txt_option_AL;
+  cout << "    -aS" << txt_option_aS;
+  cout << "    -AS" << txt_option_AS;
+  cout << "    -B" << txt_option_B;
+  cout << "    -g" << txt_option_g;
+  cout << "    -D" << mytxt_option_D;
+  cout << "    -h print this help\n\n";
+  cout << "    Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
+  cout << "    If you find cd-hit useful, please kindly cite:\n\n";
+  cout << "    " << cd_hit_ref1 << "\n";
+  cout << "    " << cd_hit_ref3 << "\n\n\n";
+  exit(1);
+}
