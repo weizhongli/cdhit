@@ -1,6 +1,11 @@
 
 CD-HIT ChangeLog
 
+CD-HIT-V4.5.3:
+Add: cd-hit-454 program to the main package (cdhit-454.c++);
+Add: options to change the scoring settings;
+Add: options to control the length of unmatched region.
+
 CD-HIT-V4.5.2:
 MinorChange: default value of "-n" for DNA sequence from 8 to 10;
 MinorFix: alignment locations and length;
