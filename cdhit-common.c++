@@ -203,6 +203,7 @@ bool Options::SetOption( const char *flag, const char *value )
 		else if( strcmp(flag, "-S") == 0 ) return false;
 		else if( strcmp(flag, "-G") == 0 ) return false;
 		else if( strcmp(flag, "-A") == 0 ) return false;
+		else if( strcmp(flag, "-r") == 0 ) return false;
 		else if( strcmp(flag, "-D") == 0 ){ max_indel = atoi(value); return true; }
 	}
 	if( SetOptionCommon( flag, value ) ) return true;
