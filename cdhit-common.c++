@@ -842,8 +842,8 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	printf( "%i %i %i\n", band_left, band_center, band_right );
 	printf( "%i %i %i %i\n", i, j, j1, len2 );
 #endif
-#ifdef MAKEALIGN
 #define MAKEALIGN
+#ifdef MAKEALIGN
 	char AA[ MAX_SEQ ], BB[ MAX_SEQ ];
 	int NN = 0;
 	int IA, IB;
@@ -1172,6 +1172,7 @@ void ScoreMatrix::set_match( int score )
 {
 	int i;
 	for ( i=0; i<MAX_AA; i++) matrix[i][i] = score;
+	matrix[3][4] = matrix[4][3] = score;
 }
 void ScoreMatrix::set_mismatch( int score )
 {
@@ -1179,6 +1180,7 @@ void ScoreMatrix::set_mismatch( int score )
 	for ( i=0; i<MAX_AA; i++)
 		for ( j=0; j<i; j++)
 			matrix[j][i] = matrix[i][j] = MAX_SEQ * score;
+	matrix[3][4] = matrix[4][3] = matrix[3][3];
 }
 
 WordTable::WordTable( int naa, int naan )

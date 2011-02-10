@@ -106,6 +106,14 @@ char txt_option_r[] =
 "\t1 or 0, default 1, by default do both +/+ & +/- alignments\n \
 \tif set to 0, only +/+ strand alignment\n";
 
+char txt_option_match[] = "\tmatching score, default 2 (1 for T-U and N-N)\n";
+char txt_option_match2[] = "\tmatching score, default 2\n";
+char txt_option_mismatch[] = "\tmismatching score, default -2\n";
+char txt_option_mismatch2[] = "\tmismatching score, default -1\n";
+char txt_option_gap[] = "\tgap opening score, default -6\n";
+char txt_option_gap2[] = "\tgap opening score, default -3\n";
+char txt_option_gap_ext[] = "\tgap extension score, default -1\n";
+
 int print_usage (char *arg) {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
@@ -208,6 +216,10 @@ int print_usage_est (char *arg) {
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;
   cout << "    -r" << txt_option_r;
+  cout << "    -match" << txt_option_match;
+  cout << "    -mismatch" << txt_option_mismatch;
+  cout << "    -gap" << txt_option_gap;
+  cout << "    -gap-ext" << txt_option_gap_ext;
   cout << "    -h print this help\n\n";
   cout << contacts;
   cout << "    " << cd_hit_ref1 << "\n";
@@ -246,6 +258,10 @@ int print_usage_est_2d (char *arg) {
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;
   cout << "    -r" << txt_option_r;
+  cout << "    -match" << txt_option_match;
+  cout << "    -mismatch" << txt_option_mismatch;
+  cout << "    -gap" << txt_option_gap;
+  cout << "    -gap-ext" << txt_option_gap_ext;
   cout << "    -h print this help\n\n";
   cout << contacts;
   cout << "    " << cd_hit_ref1 << "\n";
@@ -282,6 +298,7 @@ int print_usage_454 (char *arg)
   cout << "    -c" << mytxt_option_c;
   cout << "    -b" << mytxt_option_b;
   cout << "    -M" << txt_option_M;
+  cout << "    -T" << txt_option_T;
   cout << "    -n" << mytxt_option_n_est;
   cout << "    -aL" << txt_option_aL;
   cout << "    -AL" << txt_option_AL;
@@ -290,6 +307,10 @@ int print_usage_454 (char *arg)
   cout << "    -B" << txt_option_B;
   cout << "    -g" << txt_option_g;
   cout << "    -D" << mytxt_option_D;
+  cout << "    -match" << txt_option_match2;
+  cout << "    -mismatch" << txt_option_mismatch2;
+  cout << "    -gap" << txt_option_gap2;
+  cout << "    -gap-ext" << txt_option_gap_ext;
   cout << "    -h print this help\n\n";
   cout << "    Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
   cout << "    If you find cd-hit useful, please kindly cite:\n\n";
