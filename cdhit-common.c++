@@ -842,8 +842,8 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	printf( "%i %i %i\n", band_left, band_center, band_right );
 	printf( "%i %i %i %i\n", i, j, j1, len2 );
 #endif
-#define MAKEALIGN
 #ifdef MAKEALIGN
+#define MAKEALIGN
 	char AA[ MAX_SEQ ], BB[ MAX_SEQ ];
 	int NN = 0;
 	int IA, IB;
