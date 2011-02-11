@@ -1583,7 +1583,7 @@ void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options
 	}
 	buf[ len ] = 0;
 #endif
-	fprintf( fout, "%i\t%i%s, %s...", id, size, tag, identifier );
+	fprintf( fout, "%i\t%i%s, >%s...", id, size, tag, identifier+1 );
 	if( identity ){
 		int *c = coverage;
 		fprintf( fout, " at " );
