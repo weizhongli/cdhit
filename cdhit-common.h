@@ -369,6 +369,8 @@ struct Sequence
 	size_t   des_begin;
 	// length of the description:
 	int   des_length;
+	// length of the description in quality score part:
+	int   des_length2;
 	// length of data in fasta file, including line wrapping:
 	int   dat_length;
 

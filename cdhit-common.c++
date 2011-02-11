@@ -1602,6 +1602,7 @@ void SequenceDB::Read( const char *file, const Options & options )
 	Sequence one;
 	Sequence dummy;
 	Sequence des;
+	Sequence *last = NULL;
 	FILE *swap = NULL;
 	FILE *fin = fopen( file, "r" );
 	char *buffer = NULL;
@@ -1615,8 +1616,20 @@ void SequenceDB::Read( const char *file, const Options & options )
 	buffer = new char[ MAX_LINE_SIZE+1 ];
 
 	while (not feof( fin ) || one.size) { /* do not break when the last sequence is not handled */
+		buffer[0] = '>';
 		if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL && one.size == 0) break;
-		if (buffer[0] == '>' || (res==NULL && one.size)) {
+		if( buffer[0] == '+' ){
+			int len = strlen( buffer );
+			int len2 = len;
+			while( len2 && buffer[len2-1] != '\n' ){
+				if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+				len2 = strlen( buffer );
+				len += len2;
+			}
+			one.des_length2 = len;
+			dummy.des_length2 = len;
+			fseek( fin, one.size, SEEK_CUR );
+		}else if (buffer[0] == '>' || buffer[0] == '@' || (res==NULL && one.size)) {
 			if ( one.size ) { // write previous record
 				one.dat_length = dummy.dat_length = one.size;
 				one.Format();
@@ -1631,6 +1644,7 @@ void SequenceDB::Read( const char *file, const Options & options )
 						}
 						dummy.size = one.size;
 						dummy.offset = ftell( swap );
+						dummy.des_length = one.des_length;
 						sequences.Append( new Sequence( dummy ) ); 
 						one.ConvertBases();
 						fwrite( one.data, 1, one.size, swap );
@@ -1642,8 +1656,10 @@ void SequenceDB::Read( const char *file, const Options & options )
 					}
 					//if( sequences.size() >= 10000 ) break;
 				}
-				one.size = 0;
 			}
+			one.size = 0;
+			one.des_length2 = 0;
+
 			int len = strlen( buffer );
 			int len2 = len;
 			des.size = 0;
@@ -1659,7 +1675,7 @@ void SequenceDB::Read( const char *file, const Options & options )
 			one.des_length = dummy.des_length = len;
 
 			int i = 0;
-			if( des.data[i] == '>' ) i += 1;
+			if( des.data[i] == '>' || des.data[i] == '@' || des.data[i] == '+' ) i += 1;
 			if( des.data[i] == ' ' or des.data[i] == '\t' ) i += 1;
 			if( options.des_len and options.des_len < des.size ) des.size = options.des_len;
 			while( i < des.size and ! isspace( des.data[i] ) ) i += 1;
@@ -1792,6 +1808,7 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 	n = sequences.size();
 	for (i=0; i<n; i++){
 		Sequence *seq = sequences[i];
+		int qs = seq->des_length2 ? seq->des_length2 + seq->dat_length : 0;
 		fseek( fin, seq->des_begin, SEEK_SET );
 
 		seg_size += seq->size;
@@ -1803,8 +1820,8 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 			seg_size = seq->size;
 		}
 
-		count = (seq->des_length + seq->dat_length) / MAX_LINE_SIZE;
-		rest = (seq->des_length + seq->dat_length) % MAX_LINE_SIZE;
+		count = (seq->des_length + seq->dat_length + qs) / MAX_LINE_SIZE;
+		rest = (seq->des_length + seq->dat_length + qs) % MAX_LINE_SIZE;
 		//printf( "count = %6i,  rest = %6i\n", count, rest );
 		for (j=0; j<count; j++){
 			if( fread( buf, 1, MAX_LINE_SIZE, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
@@ -1832,10 +1849,11 @@ void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options
 	std::sort( sorting.begin(), sorting.end() );
 	for (i=0; i<n; i++){
 		Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
+		int qs = seq->des_length2 ? seq->des_length2 + seq->dat_length : 0;
 		fseek( fin, seq->des_begin, SEEK_SET );
 
-		count = (seq->des_length + seq->dat_length) / MAX_LINE_SIZE;
-		rest = (seq->des_length + seq->dat_length) % MAX_LINE_SIZE;
+		count = (seq->des_length + seq->dat_length + qs) / MAX_LINE_SIZE;
+		rest = (seq->des_length + seq->dat_length + qs) % MAX_LINE_SIZE;
 		//printf( "count = %6i,  rest = %6i\n", count, rest );
 		for (j=0; j<count; j++){
 			if( fread( buf, 1, MAX_LINE_SIZE, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
