@@ -1,6 +1,10 @@
 
 CD-HIT ChangeLog
 
+CD-HIT-V4.5.4:
+Add: support for FASTQ file as input;
+Change: default identity threshold from 0.9 to 0.95 for EST.
+
 CD-HIT-V4.5.3:
 Add: cd-hit-454 program to the main package (cdhit-454.c++);
 Add: options to change the scoring settings;
