@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 	string db_in;
 	string db_out;
 
+	options.cluster_thd = 0.95;
 	options.NAA = 10;
 	options.NAAN = NAA8;
 	seq_db.NAAN = NAA8;
