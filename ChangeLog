@@ -3,6 +3,7 @@ CD-HIT ChangeLog
 
 CD-HIT-V4.5.4:
 Add: support for FASTQ file as input;
+Add: improvement to sequence partition for parallelization;
 Change: default identity threshold from 0.9 to 0.95 for EST.
 
 CD-HIT-V4.5.3:
