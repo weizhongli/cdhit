@@ -2325,9 +2325,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 
 	size_t tabsize = 0;
 	size_t mem_limit = (options.max_memory - mem_need) / sizeof(IndexCount);
-	size_t mem_limit2 = mem_limit / 64;
-
-	if( mem_limit2 > 1E6 ) mem_limit2 = (size_t)1E6;
 
 	printf( "Table limit with the given memory limit:\n" );
 	printf( "Max number of representatives: %i\n", MAX_TABLE_SEQ );
@@ -2339,14 +2336,17 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	}
 	printf( "\n" );
 
+	size_t mem_limit2 = mem_limit / 64;
+	if( mem_limit2 > 1E6 ) mem_limit2 = (size_t)1E6;
+
 	omp_set_num_threads(T);
 	for(i=0; i<N; ){
 		int start = i;
 		int m = i;
 		size_t sum = 0;
-		size_t lim = mem_limit;
+		size_t lim = mem_limit / T;
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
-		if( i ==0 ) lim /= 8*T; // first SCB with small size
+		if( i ==0 ) lim /= 8; // first SCB with small size
 		if( lim < mem_limit2 ) lim = (lim + mem_limit2) / 2; // SCB size has lower limit
 		while( m < N && sum < lim ){
 			Sequence *seq = sequences[m];
@@ -2360,6 +2360,12 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		if( m >= N ){
 			m = N;
 			if( m > i + 1E3 ) m = i + (N - i) / T;
+		}
+		for(k=i; k<m; k++){
+			Sequence *seq = sequences[k];
+			if( ! (seq->state & IS_REDUNDANT) ){
+				mem_limit -= (size_t)(seq->size * redundancy);
+			}
 		}
 		//printf( "m = %i  %i,  %i\n", i, m, m-i );
 		printf( "\r# comparing sequences from  %9i  to  %9i\n", i, m );
