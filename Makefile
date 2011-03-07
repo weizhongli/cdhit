@@ -78,3 +78,11 @@ cdhit-div.o: cdhit-div.c++ cdhit-common.h
 
 cdhit-454.o: cdhit-454.c++ cdhit-common.h
 	$(CC) $(CCFLAGS) cdhit-454.c++ -c
+
+PREFIX ?= /usr/local/bin
+
+install:
+	for prog in $(PROGS); do \
+		install -m 0755 $$prog $(PREFIX); \
+	done
+	install -m 0755 *.pl $(PREFIX);
