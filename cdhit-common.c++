@@ -1171,8 +1171,8 @@ void ScoreMatrix::set_to_na()
 void ScoreMatrix::set_match( int score )
 {
 	int i;
-	for ( i=0; i<MAX_AA; i++) matrix[i][i] = score;
-	matrix[3][4] = matrix[4][3] = score;
+	for ( i=0; i<MAX_AA; i++) matrix[i][i] = MAX_SEQ * score;
+	matrix[3][4] = matrix[4][3] = MAX_SEQ * score;
 }
 void ScoreMatrix::set_mismatch( int score )
 {
