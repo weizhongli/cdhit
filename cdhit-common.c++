@@ -1168,19 +1168,21 @@ void ScoreMatrix::set_to_na()
 	set_gap( -6, -1 );
 	set_matrix( BLOSUM62_na );
 }
+// Only for est
 void ScoreMatrix::set_match( int score )
 {
 	int i;
-	for ( i=0; i<MAX_AA; i++) matrix[i][i] = MAX_SEQ * score;
-	matrix[3][4] = matrix[4][3] = MAX_SEQ * score;
+	for ( i=0; i<5; i++) matrix[i][i] = MAX_SEQ * score;
+	//matrix[3][4] = matrix[4][3] = MAX_SEQ * score;
 }
+// Only for est
 void ScoreMatrix::set_mismatch( int score )
 {
 	int i, j;
 	for ( i=0; i<MAX_AA; i++)
 		for ( j=0; j<i; j++)
 			matrix[j][i] = matrix[i][j] = MAX_SEQ * score;
-	matrix[3][4] = matrix[4][3] = matrix[3][3];
+	matrix[3][4] = matrix[4][3] = MAX_SEQ;
 }
 
 WordTable::WordTable( int naa, int naan )
@@ -3106,7 +3108,7 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 					}
 					if( flag == -1 ) seq->state |= IS_MINUS_STRAND; // for EST only
 				}
-				float p = (100.0*j)/N;
+				float p = (100.0*j)/M;
 				if( p > p0+1E-1 ){ // print only if the percentage changed
 					printf( "\r%4.1f%%", p );
 					fflush( stdout );
@@ -3141,7 +3143,7 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 					}
 					if( flag == -1 ) seq->state |= IS_MINUS_STRAND; // for EST only
 				}
-				float p = (100.0*j)/N;
+				float p = (100.0*j)/M;
 				if( p > p0+1E-1 ){ // print only if the percentage changed
 					printf( "\r%4.1f%%", p );
 					fflush( stdout );
