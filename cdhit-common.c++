@@ -65,7 +65,7 @@ struct TempFile
 		}
 		strcat( buf, "cdhit.temp." );
 		len += 11;
-		sprintf( buf + len, "%x", this );
+		sprintf( buf + len, "%p", this );
 		file = fopen( buf, "w+" );
 	}
 	~TempFile(){
@@ -1971,7 +1971,7 @@ void WorkingParam::ControlLongCoverage( int len2, const Options & options )
 
 void show_cpu_time(tms &CPU_begin, tms &CPU_end)
 {
-	int  ClockTicksPerSecond, total_seconds;
+	double ClockTicksPerSecond, total_seconds;
 	//  ClockTicksPerSecond = (int)sysconf(_SC_CLK_TCK);
 	//  ClockTicksPerSecond = (int)(100);
 	ClockTicksPerSecond = CLOCK_TICKS;
@@ -1979,7 +1979,7 @@ void show_cpu_time(tms &CPU_begin, tms &CPU_end)
 	total_seconds = (CPU_end.tms_utime - CPU_begin.tms_utime) 
 		/ ClockTicksPerSecond;
 
-	cout << "Total CPU time " << total_seconds << endl;
+	cout << "Total CPU time: " << total_seconds << " s" << endl;
 } // END  show_current_cpu_time
 
 // when alignment coverage such as -aL is specified
@@ -2257,27 +2257,27 @@ size_t SequenceDB::MinimalMemory( int frag_no, int bsize, int T, const Options &
 	printf( "\nApproximated minimal memory consumption:\n" );
 	mem = N*sizeof(Sequence) + options.total_desc + N;
 	if( options.store_disk == false ) mem += options.total_letters + N;
-	printf( "%-16s: %iM\n", "Sequence", mem/mega );
+	printf( "%-16s: %zuM\n", "Sequence", mem/mega );
 	mem_need += mem;
 
 	mem = bsize;
-	printf( "%-16s: %i X %iM = %iM\n", "Buffer", T, mem/mega, T*mem/mega );
+	printf( "%-16s: %i X %zuM = %zuM\n", "Buffer", T, mem/mega, T*mem/mega );
 	mem_need += T*mem;
 
 	mem = F*(sizeof(Sequence*) + sizeof(IndexCount)) + NAAN*sizeof(NVector<IndexCount>);
-	printf( "%-16s: %i X %iM = %iM\n", "Table", table, mem/mega, table*mem/mega );
+	printf( "%-16s: %i X %zuM = %zuM\n", "Table", table, mem/mega, table*mem/mega );
 	mem_need += table*mem;
 
 	mem = sequences.capacity()*sizeof(Sequence*) + N*sizeof(int);
 	mem += Comp_AAN_idx.size()*sizeof(int);
-	printf( "%-16s: %iM\n", "Miscellaneous", mem/mega );
+	printf( "%-16s: %zuM\n", "Miscellaneous", mem/mega );
 	mem_need += mem;
 
-	printf( "%-16s: %iM\n\n", "Total", mem_need/mega );
+	printf( "%-16s: %zuM\n\n", "Total", mem_need/mega );
 
 	if(options.max_memory and options.max_memory < mem_need + 50*table ){
 		char msg[200];
-		sprintf( msg, "not enough memory, please set -M option greater than %i\n", 
+		sprintf( msg, "not enough memory, please set -M option greater than %zu\n", 
 				50*table + mem_need/mega );
 		bomb_error(msg);
 	}
@@ -2475,7 +2475,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		}else if( i < m ){
 			printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		}
-		printf( "---------- new table with %8i representatives\n", word_table.sequences.size() );
+		printf( "---------- new table with %8zu representatives\n", word_table.sequences.size() );
 		if( (last_table.size + word_table.size) > tabsize )
 			tabsize = last_table.size + word_table.size;
 		last_table.Clear();
@@ -2486,7 +2486,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	}
 	printf( "\n%9li  finished  %9li  clusters\n", sequences.size(), rep_seqs.size() );
 	mem = (mem_need + tabsize*sizeof(IndexCount))/mega;
-	printf( "\nApprixmated maximum memory consumption: %iM\n", mem );
+	printf( "\nApprixmated maximum memory consumption: %zuM\n", mem );
 	last_table.Clear();
 	word_table.Clear();
 }
@@ -2993,7 +2993,7 @@ void SequenceDB::DoClustering( const Options & options )
 	}
 	printf( "\n%9li  finished  %9li  clusters\n", sequences.size(), rep_seqs.size() );
 	mem = (mem_need + tabsize*sizeof(IndexCount))/mega;
-	printf( "\nApprixmated maximum memory consumption: %iM\n", mem );
+	printf( "\nApprixmated maximum memory consumption: %zuM\n", mem );
 	temp_files.Clear();
 	word_table.Clear();
 
