@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+no warnings qw(once);
 
 our $script_name = $0;
 our $script_dir = $0;
@@ -9,17 +10,16 @@ require "$script_dir/psi-cd-hit-local.pl";
 parse_para_etc(@ARGV);
 open_LOG();
 
-our @dess    = ();
-our @lens    = ();
-our @NR_idx = ();
-our $NR_no  = 0;
-our %redundant_in_db2 = ();
-
 my $cd_hit_div_pl     = "$script_dir/cd-hit-div.pl";
 my ($i, $j, $k, $i0, $j0, $k0, $ll, $cmd);
 
-read_db_no_seq();
+our @dess    = ();#descriptions of sequences
+our @lens    = ();#lengths of sequences
+our $NR_no  = 0;  #number of sequences
+our @NR_idx = (); #index number of sequences after sorted
+our %redundant_in_db2 = ();
 
+read_db_no_seq();
 @NR_idx = (0..($NR_no-1));
 @NR_idx = sort { $lens[$b] <=> $lens[$a] or $a <=> $b } @NR_idx;
 

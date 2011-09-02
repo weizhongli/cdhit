@@ -56,6 +56,10 @@ our $remote_perl_script;
 
 sub parse_para_etc {
   my ($arg, $cmd);
+   if(@ARGV==0){
+      ($script_name =~ /cd-hit-2d/) ? print_usage_2d() : print_usage();
+      exit();
+   }
   while($arg = shift) {
     if    ($arg eq "-i")          { $db_in     = shift; }
     elsif ($arg eq "-i2")         { $db_in2    = shift; }
@@ -144,8 +148,9 @@ sub read_db {
 
   open(DBIN, $db_in)         || die "Can not open $db_in";
   while($ll=<DBIN>){
-    chop($ll);
+    chomp($ll);
     if ($ll =~ /^>/) {
+    	$ll =~ s/\r$//;
       $seq =~ s/\s//g;
       if (length($seq) > $len_t) { add_seq($des, $seq); }
       $des = $ll; $seq = "";
@@ -170,8 +175,9 @@ sub read_db2 {
   open(DBIN2, $db_in2)       || die "Can not open $db_in2";
   
   while($ll=<DBIN2>){
-    chop($ll);
+    chomp($ll);
     if ($ll =~ /^>/) {
+    	$ll =~ s/\r$//;
       $seq =~ s/\s//g;
       if (length($seq) > $len_t) { add_seq_db2($des, $seq); }
       $des = $ll; $seq = "";
@@ -224,7 +230,6 @@ sub add_seq_db2 {
 }
 ########## END add_seq_db2
 
-
 sub read_db_no_seq {
   my $des = "";
   my $seq = "";
@@ -232,8 +237,9 @@ sub read_db_no_seq {
 
   open(DBIN, $db_in)         || die "Can not open $db_in";
   while($ll=<DBIN>){
-    chop($ll);
+    chomp($ll);
     if ($ll =~ /^>/) {
+    	$ll =~ s/\r$//;
       $seq =~ s/\s//g;
       if (length($seq) > $len_t) { add_seq_ez($des, $seq); }
       $des = $ll; $seq = "";
@@ -250,8 +256,6 @@ sub read_db_no_seq {
 }
 ########## END read_db_no_seq
 
-
-
 sub add_seq_ez {
   my ($des, $seq) = @_;
   if ($print_db) { push(@dess,   $des); }
@@ -264,7 +268,6 @@ sub add_seq_ez {
 }
 ########## END add_seq_ez
 
-
 sub open_LOG {
   open(OUTT, ">> $db_out1") || die "can not open $db_out1";
   print OUTT "Started $date";
@@ -272,7 +275,6 @@ sub open_LOG {
   open(LOG, ">> $db_log")     || die "Can not open $db_log";
 }
 ########## END open_LOG
-
 
 {## use static variables
 my $last_NR90_no=0;
@@ -705,7 +707,7 @@ sub fish_other_homolog_db2 {
 ########## END fish_other_homolog_db2
 
 sub process_multi_bl {
-  my ($i, $j, $k, $i0, $j0, $k0, $ll);
+  my $ll;
   my $blout = shift;
 
   open(TMPBL, $blout) || die;
@@ -1228,8 +1230,8 @@ sub readblast {
           else { $bscore = 0; }
 
           my $expect = $line;
-          if    ( $expect =~ /Expect\s*=\s*(.+)\s*$/ )        {$expect=$1;}
-          elsif ( $expect =~ /Expect\(\d+\)\s*=\s*(.+)\s*$/ ) {$expect=$1;}
+          if    ( $expect =~ /Expect\s*=\s*([\d\.eE+-]+)/ )        {$expect=$1;}
+          elsif ( $expect =~ /Expect\(\d+\)\s*=\s*([\d\.eE+-]+)/ ) {$expect=$1;}
           else                                                {$expect= 0;}
           $expect =~ s/^[eE]/1e/; # change e-100 to 1e-100
 
@@ -1484,8 +1486,8 @@ sub readblast_fh {
           else { $bscore = 0; }
 
           my $expect = $line;
-          if    ( $expect =~ /Expect\s*=\s*(.+)\s*$/ )        {$expect=$1;}
-          elsif ( $expect =~ /Expect\(\d+\)\s*=\s*(.+)\s*$/ ) {$expect=$1;}
+          if    ( $expect =~ /Expect\s*=\s*([\d\.eE+-]+)/ )        {$expect=$1;}
+          elsif ( $expect =~ /Expect\(\d+\)\s*=\s*([\d\.eE+-]+)/ ) {$expect=$1;}
           else                                                {$expect= 0;}
           $expect =~ s/^[eE]/1e/; # change e-100 to 1e-100
 
@@ -1503,9 +1505,9 @@ sub readblast_fh {
 
           $this_sbj[$no]->{score}  = $score;
           $this_sbj[$no]->{bscore} = $bscore;
-	  $this_sbj[$no]->{expect} = $expect;
+	       $this_sbj[$no]->{expect} = $expect;
           $this_sbj[$no]->{alnln}  = $alnln;
-	  $this_sbj[$no]->{iden}   = $iden;
+	       $this_sbj[$no]->{iden}   = $iden;
           $this_sbj[$no]->{posi}   = $posi;
           $this_sbj[$no]->{gaps}   = $gaps; 
 

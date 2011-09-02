@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+no warnings qw(once);
 
 our $script_name = $0;
 our $script_dir = $0;

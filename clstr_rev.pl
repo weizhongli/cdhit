@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-
 # if nr90 from nr100 and
 #    nr80 from nr90, so I have nr90.clstr and nr80.clstr
 # but, in nr80.clstr, some gi numbers whose from nr100 are there
@@ -27,7 +26,6 @@ while(my $ll=<TMP>) {
   else {
     $readin = 1;
     $clstr .= $ll;
-#    if ($ll =~ /\*/ and $ll =~ />([^\.]+)\.\.\./ ) { $gi = $1; }
     if ($ll =~ /\*/ and $ll =~ />(.+)\.\.\./ ) { $gi = $1; }
     $this_no++;
   }
@@ -44,13 +42,12 @@ while( $ll = <TMP>) {
     print $ll;
     $no = 0;
   }
-#  elsif ($ll =~ />([^\.]+)\.\.\./ ) {
   elsif ($ll =~ />(.+)\.\.\./ ) {
     $gi = $1; 
     chop($ll);
     $rep = ( $ll =~ /\*$/) ? 1 : 0;
     $iden = "";
-    if ($ll =~ / at (\d.+)$/) { $iden = $1; }
+    if ($ll =~ / at (.+)$/) { $iden = $1; }
     else                  { $iden = "100%"; }
 
     if ( $gi2clstr{$gi} ) {

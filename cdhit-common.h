@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5.4"
+#define CDHIT_VERSION  "4.5.6"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -277,11 +277,8 @@ struct Options
 	int     option_r;
 	int     threads;
 
-	int     max_length;
 	int     max_entries;
 	size_t  mem_limit;
-	size_t  total_letters;
-	size_t  total_desc;
 
 	bool    has2D;
 	bool    isEST;
@@ -328,11 +325,8 @@ struct Options
 		frag_size = 0;
 		des_len = 20;
 		threads = 1;
-		max_length = 0;
 		max_entries = 0;
 		mem_limit = 100000000;
-		total_letters = 0;
-		total_desc = 0;
 	};
 
 	bool SetOptionCommon( const char *flag, const char *value );
@@ -397,7 +391,7 @@ struct Sequence
 	void Reserve( int n );
 
 	void Swap( Sequence & other );
-	void Format();
+	int Format();
 
 	void ConvertBases();
 	//void ComputeStats();
@@ -462,13 +456,13 @@ struct WorkingBuffer
 	char seqi_comp[MAX_SEQ];
 	int total_bytes;
 
-	WorkingBuffer( int frag=0, const Options & options=Options() ){
-		Set( frag, options );
+	WorkingBuffer( int frag=0, int maxlen=0, const Options & options=Options() ){
+		Set( frag, maxlen, options );
 	}
-	void Set( int frag, const Options & options ){
+	void Set( int frag, int maxlen, const Options & options ){
 		bool est = options.isEST;
 		int m = MAX_UAA*MAX_UAA;
-		int max_len = options.max_length;
+		int max_len = maxlen;
 		int band = max_len*max_len;
 		if( est ) m = m * m;
 		if( band > options.band_width ) band = options.band_width;
@@ -519,12 +513,22 @@ class SequenceDB
 		Vector<Sequence*>  sequences;
 		Vector<int>        rep_seqs;
 
+		long long total_letter;
+		long long total_desc;
+		int max_len;
+		int min_len;
+
 		void Clear(){
 			for(int i=0; i<sequences.size(); i++) delete sequences[i];
 			sequences.clear(); rep_seqs.clear();
 		}
 
-		SequenceDB(){ }
+		SequenceDB(){
+			total_letter = 0;
+			total_desc = 0;
+			min_len = 0;
+			max_len = 0;
+		}
 		~SequenceDB(){ Clear(); }
 
 		void Read( const char *file, const Options & options );
@@ -540,7 +544,7 @@ class SequenceDB
 		void SortDivide( Options & options, bool sort=true );
 		void MakeWordTable( const Options & optioins );
 
-		size_t MinimalMemory( int frag_no, int bsize, int T, const Options & options );
+		size_t MinimalMemory( int frag_no, int bsize, int T, const Options & options, size_t extra=0 );
 
 		void ClusterOne( Sequence *seq, int id, WordTable & table,
 				WorkingParam & param, WorkingBuffer & buf, const Options & options );
