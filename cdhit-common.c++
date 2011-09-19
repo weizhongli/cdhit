@@ -2305,7 +2305,7 @@ size_t SequenceDB::MinimalMemory( int frag_no, int bsize, int T, const Options &
 	}
 	return mem_need;
 }
-size_t MemoryLimit( size_t mem_need, int T, const Options & options )
+size_t MemoryLimit( size_t mem_need, const Options & options )
 {
 	size_t mem_limit = (options.max_memory - mem_need) / sizeof(IndexCount);
 
@@ -2313,9 +2313,9 @@ size_t MemoryLimit( size_t mem_need, int T, const Options & options )
 	printf( "Max number of representatives: %i\n", MAX_TABLE_SEQ );
 	if( options.max_memory == 0 ){
 		mem_limit = options.max_entries;
-		if( mem_limit > T * MAX_TABLE_SIZE ) mem_limit = T * MAX_TABLE_SIZE;
+		if( mem_limit > MAX_TABLE_SIZE ) mem_limit = MAX_TABLE_SIZE;
 	}
-	printf( "Max number of word counting entries: %li\n\n", mem_limit );
+	printf( "Max number of word counting entries: %zu\n\n", mem_limit );
 	return mem_limit;
 }
 void SequenceDB::DoClustering( int T, const Options & options )
@@ -2358,22 +2358,17 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	int N = sequences.size();
 	int K = N - 100 * T;
 	size_t mem_need = MinimalMemory( frag_no, buffers[0].total_bytes, T, options );
-	size_t mem_limit = MemoryLimit( mem_need, T, options );
+	size_t mem_limit = MemoryLimit( mem_need, options );
 	size_t mem, mega = 1000000;
 	size_t tabsize = 0;
-
-	size_t mem_limit2 = mem_limit / 64;
-	if( mem_limit2 > 1E6 ) mem_limit2 = (size_t)1E6;
 
 	omp_set_num_threads(T);
 	for(i=0; i<N; ){
 		int start = i;
 		int m = i;
 		size_t sum = 0;
-		size_t lim = mem_limit / T;
-		float redundancy = sqrt( (rep_seqs.size() + 1.0) / (i + 1.0) );
+		size_t lim = mem_limit;
 		if( i ==0 ) lim /= 8; // first SCB with small size
-		if( lim < mem_limit2 ) lim = (lim + mem_limit2) / 2; // SCB size has lower limit
 		while( m < N && sum < lim ){
 			Sequence *seq = sequences[m];
 			if( ! (seq->state & IS_REDUNDANT) ){
@@ -2387,14 +2382,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 			m = N;
 			if( m > i + 1E3 ) m = i + (N - i) / T;
 		}
-#if 0
-		for(k=i; k<m; k++){
-			Sequence *seq = sequences[k];
-			if( ! (seq->state & IS_REDUNDANT) ){
-				mem_limit -= (size_t)(seq->size * redundancy);
-			}
-		}
-#endif
 		//printf( "m = %i  %i,  %i\n", i, m, m-i );
 		printf( "\r# comparing sequences from  %9i  to  %9i\n", i, m );
 		if( last_table.size ){
@@ -2465,7 +2452,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 				}
 			}
 		}
-		if( i == start || m == N ){//{|| word_table.size < mem_limit2 ){
+		if( i == start || m == N ){
 			//printf( "comparing the first or last or very small group ...\n" ); fflush( stdout );
 			for(k=i; k<m; ){
 				int kk, mm = k, sum = 0;
@@ -2947,7 +2934,7 @@ void SequenceDB::DoClustering( const Options & options )
 	WordTable word_table( options.NAA, NAAN );
 
 	size_t mem_need = MinimalMemory( frag_no, buffer.total_bytes, 1, options );
-	size_t mem_limit = MemoryLimit( mem_need, 1, options );
+	size_t mem_limit = MemoryLimit( mem_need, options );
 	size_t mem, mega = 1000000;
 	int N = sequences.size();
 
@@ -3056,7 +3043,7 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 	if( T >1 ) omp_set_num_threads(T);
 
 	size_t mem_need = MinimalMemory( N, buffer.total_bytes, T, options, other.total_letter+other.total_desc );
-	size_t mem_limit = MemoryLimit( mem_need, T, options );
+	size_t mem_limit = MemoryLimit( mem_need, options );
 
 	WordTable word_table( options.NAA, NAAN );
 
