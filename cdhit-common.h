@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5.6"
+#define CDHIT_VERSION  "4.5.7"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -52,7 +52,7 @@
 #define MAX_FILE_NAME 1280
 #define MAX_SEG 50
 #define MAX_BIN_SWAP 2E9
-#define MAX_TABLE_SIZE 200000000
+#define MAX_TABLE_SIZE 50000000
 #define CLOCK_TICKS 100
 #define FAILED_FUNC 1
 #define OK_FUNC 0
@@ -94,6 +94,7 @@ class Vector : public vector<TYPE>
 			if( n + 1 >= this->capacity() ) this->reserve( n + n/5 + 1 );
 			push_back( item );
 		}
+		int size()const{ return (int)vector<TYPE>::size(); }
 };
 
 // for primitive types only
@@ -277,7 +278,8 @@ struct Options
 	int     option_r;
 	int     threads;
 
-	int     max_entries;
+	size_t  max_entries;
+	size_t  max_sequences;
 	size_t  mem_limit;
 
 	bool    has2D;
@@ -326,6 +328,7 @@ struct Options
 		des_len = 20;
 		threads = 1;
 		max_entries = 0;
+		max_sequences = 1<<20;
 		mem_limit = 100000000;
 	};
 
@@ -336,6 +339,7 @@ struct Options
 	bool SetOptions( int argc, char *argv[], bool twodata=false, bool est=false );
 
 	void Validate();
+	void ComputeTableLimits( int naan, int typical_len, size_t mem_need );
 
 	void Print();
 };
@@ -433,7 +437,8 @@ struct WorkingParam
 	void ComputeRequiredBases( int NAA, int ss, const Options & option );
 };
 
-#define MAX_TABLE_SEQ (1<<22)
+//#define MAX_TABLE_SEQ (1<<22)
+#define MAX_TABLE_SEQ 4000000
 
 enum { DP_BACK_NONE=0, DP_BACK_LEFT_TOP=1, DP_BACK_LEFT=2, DP_BACK_TOP=3 };
 
@@ -517,6 +522,7 @@ class SequenceDB
 		long long total_desc;
 		int max_len;
 		int min_len;
+		int len_n50;
 
 		void Clear(){
 			for(int i=0; i<sequences.size(); i++) delete sequences[i];
@@ -528,6 +534,7 @@ class SequenceDB
 			total_desc = 0;
 			min_len = 0;
 			max_len = 0;
+			len_n50 = 0;
 		}
 		~SequenceDB(){ Clear(); }
 

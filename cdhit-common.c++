@@ -841,7 +841,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	int last = back;
 	int count = 0, count2 = 0, count3 = 0;
 	int match, begin1, begin2, end1, end2;
-	int gbegin1, gbegin2, gend1, gend2;
+	int gbegin1=0, gbegin2=0, gend1=0, gend2=0;
 	int64_t score, smin = best_score1, smax = best_score1 - 1;
 	int posmin, posmax, pos = 0;
 	int bl, dlen = 0, dcount = 0;
@@ -1239,7 +1239,7 @@ void WordTable::Clear()
 	size = 0;
 	frag_count = 0;
 	sequences.clear();
-	for (i=0; i<NAAN; i++) indexCounts[i].Clear();
+	for (i=0; i<NAAN; i++) indexCounts[i].size = 0;//Clear();
 }
 
 int WordTable::AddWordCounts( NVector<IndexCount> & counts, Sequence *seq, bool skipN)
@@ -1252,10 +1252,9 @@ int WordTable::AddWordCounts( NVector<IndexCount> & counts, Sequence *seq, bool 
 			j = ic.index;
 			if ( skipN && j<0) continue; // for those has 'N'
 			NVector<IndexCount> & row = indexCounts[j];
-			int cap = row.capacity;
 			ic.index = idx;
 			row.Append( ic );
-			size += row.capacity - cap;
+			size += 1;
 		}
 	}
 	sequences.Append( seq );
@@ -1274,9 +1273,8 @@ int WordTable::AddWordCounts(int aan_no, Vector<int> & word_encodes, Vector<INTs
 			j = word_encodes[i];
 			if( skipN && j<0) continue; // for those has 'N'
 			NVector<IndexCount> & row = indexCounts[j];
-			int cap = row.capacity;
 			row.Append( IndexCount( idx, k ) );
-			size += row.capacity - cap;
+			size += 1;
 			//if( k >1 ) printf( " %3i", k );
 		}
 	}
@@ -1310,9 +1308,8 @@ int WordTable::AddWordCountsFrag( int aan_no, Vector<int> & word_encodes,
 			if ( (k1=word_encodes_no[i1]) ) {
 				j = word_encodes[i1];
 				NVector<IndexCount> & row = indexCounts[j];
-				int cap = row.capacity;
 				row.Append( IndexCount( frag_count + fra, k1 ) );
-				size += row.capacity - cap;
+				size += 1;
 			}
 		}
 	}
@@ -1779,8 +1776,10 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 	cout << "Total letters: " << total_letter << endl;
 	// END change all the NR_seq to iseq
 
+	len_n50 = (max_len + min_len) / 2; // will be properly set, if sort is true;
 	if( sort ){
 		// **************************** Form NR_idx[], Sort them from Long to short
+		long long sum = 0;
 		int M = max_len - min_len + 1;
 		Vector<int> count( M, 0 ); // count for each size = max_len - i
 		Vector<int> accum( M, 0 ); // count for all size > max_len - i
@@ -1789,6 +1788,13 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 
 		for (i=0; i<N; i++) count[ max_len - sequences[i]->size ] ++;
 		for (i=1; i<M; i++) accum[i] = accum[i-1] + count[i-1];
+		for (i=0; i<M; i++){
+			sum += (max_len - i) * count[i];
+			if( sum >= (total_letter>>1) ){
+				len_n50 = max_len - i;
+				break;
+			}
+		}
 		for (i=0; i<N; i++){
 			int len = max_len - sequences[i]->size;
 			int id = accum[len] + offset[len];
@@ -2309,14 +2315,43 @@ size_t MemoryLimit( size_t mem_need, const Options & options )
 {
 	size_t mem_limit = (options.max_memory - mem_need) / sizeof(IndexCount);
 
-	printf( "Table limit with the given memory limit:\n" );
-	printf( "Max number of representatives: %i\n", MAX_TABLE_SEQ );
+	//printf( "Table limit with the given memory limit:\n" );
 	if( options.max_memory == 0 ){
 		mem_limit = options.max_entries;
 		if( mem_limit > MAX_TABLE_SIZE ) mem_limit = MAX_TABLE_SIZE;
 	}
-	printf( "Max number of word counting entries: %zu\n\n", mem_limit );
+	//printf( "Max number of representatives: %zu\n", mem_limit );
+	//printf( "Max number of word counting entries: %zu\n\n", mem_limit );
 	return mem_limit;
+}
+void Options::ComputeTableLimits( int naan, int typical_len, size_t mem_need )
+{
+	//float scale = 1.0 / (log( threads ) / log(2) + log( typical_len ) / log(100));
+	//float scale = (exp( - threads / 4.0 ) + exp( - threads / 100.0 ) / 16.0);
+	//double scale = exp( - 0.25*threads ) + 0.05*exp( - 0.01*threads ) + 0.01;
+#if 0
+	double scale = exp( - 0.2*threads ) + 0.05*exp( - 0.01*threads ) + 0.005;
+	scale *= 0.5 + exp( - typical_len / 1000.0 );
+	max_entries = (size_t)(naan * (1 + scale * (1<<9)));
+#endif
+	//2//double scale = exp( - 0.25*T ) + 0.1*exp( - 0.025*T ) + 0.01*exp( - 0.0025*T ) + 0.005;
+	double T = threads;
+	//double scale = exp( - 0.25*T ) + 0.1*exp( - 0.025*T ) + 0.002*exp( - 0.0025*T ) + 0.001;
+	//double scale = (1.0 + 0.2) / (T + 0.2);
+	//double scale = exp( - 0.25*T ) + 0.1*exp( - 0.025*T ) + 0.01*exp( - 0.0025*T ) + 0.001;
+	//double scale = exp( - 0.5*T ) + 0.1*exp( - 0.05*T ) + 0.01*exp( - 0.005*T ) + 0.001;
+	//double scale = exp( - 0.5*T ) + 0.1*exp( - 0.05*T ) + 0.02*exp( - 0.005*T ) + 0.0003;
+	double scale = 0.9/T + 0.1/sqrt(T);
+	max_sequences = (size_t)(scale * MAX_TABLE_SEQ);
+	max_entries = naan + 2 * max_sequences * typical_len;
+	if( max_memory ){
+		double frac = max_sequences / (double) max_entries;
+		max_entries = (options.max_memory - mem_need) / sizeof(IndexCount);
+		max_sequences = (size_t)(max_entries * frac);
+	}
+	printf( "Table limit with the given memory limit:\n" );
+	printf( "Max number of representatives: %zu\n", max_sequences );
+	printf( "Max number of word counting entries: %zu\n\n", max_entries );
 }
 void SequenceDB::DoClustering( int T, const Options & options )
 {
@@ -2362,11 +2397,17 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	size_t mem, mega = 1000000;
 	size_t tabsize = 0;
 
+	Options opts( options );
+	opts.ComputeTableLimits( NAAN, len_n50, mem_need );
+
 	omp_set_num_threads(T);
 	for(i=0; i<N; ){
 		int start = i;
 		int m = i;
 		size_t sum = 0;
+		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
+#define TEST
+#ifndef TEST
 		size_t lim = mem_limit;
 		if( i ==0 ) lim /= 8; // first SCB with small size
 		while( m < N && sum < lim ){
@@ -2378,9 +2419,28 @@ void SequenceDB::DoClustering( int T, const Options & options )
 			if( i ==0 and (m > 1E6 or sum > 1E8) ) break;
 			m ++;
 		}
+#else
+		size_t max_items = opts.max_entries;
+		size_t max_seqs = opts.max_sequences;
+		size_t items = 0;
+		if( i ==0 ){ // first SCB with small size
+			max_items /= 8;
+			max_seqs = 1000;
+		}
+		while( m < N && (sum*redundancy) < max_seqs && items < max_items ){
+			Sequence *seq = sequences[m];
+			if( ! (seq->state & IS_REDUNDANT) ){
+				if ( options.store_disk ) seq->SwapIn();
+				//items += seq->size;
+				items += (size_t)(seq->size * redundancy);
+				sum += 1;
+			}
+			m ++;
+		}
+#endif
 		if( m >= N ){
 			m = N;
-			if( m > i + 1E3 ) m = i + (N - i) / T;
+			if( m > i + 1E3 ) m = i + (N - i) / 2;
 		}
 		//printf( "m = %i  %i,  %i\n", i, m, m-i );
 		printf( "\r# comparing sequences from  %9i  to  %9i\n", i, m );
@@ -2410,19 +2470,20 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					//#pragma omp atomic
 					may_stop = 1;
 				}
-				int tid = omp_get_thread_num();
 				if( j == (m0-1) ){ // use m0 to avoid other iterations satisfying the condition:
-					int ks0 = i;
+					int tid = omp_get_thread_num();
 					for(int ks=i; ks<m; ks++){
 						Sequence *seq = sequences[ks];
 						i = ks + 1;
 						if (seq->state & IS_REDUNDANT) continue;
 						ClusterOne( seq, ks, word_table, params[tid], buffers[tid], options );
 						if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-						if( may_stop and ks > (ks0+1000) ) break;
-						if( word_table.size >= mem_limit ) break;
-						int tmax = MAX_TABLE_SEQ - (frag_size ? seq->size / frag_size + 1 : 0);
-						if( word_table.sequences.size() >= tmax or word_table.frag_count >= tmax ) break;
+						if( may_stop and word_table.sequences.size() >= 100 ) break;
+#ifdef TEST
+						if( word_table.size >= max_items ) break;
+						int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
+						if( word_table.sequences.size() >= tmax ) break;
+#endif
 					}
 					self_stop = 1;
 				}else{
@@ -2432,6 +2493,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 						#pragma omp critical
 						seq->SwapIn();
 					}
+					int tid = omp_get_thread_num();
 					CheckOne( seq, last_table, params[tid], buffers[tid], options );
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 					if( min > params[tid].len_upper_bound ){
@@ -2478,9 +2540,11 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					ClusterOne( seq, ks, word_table, params[0], buffers[0], options );
 					bk = true;
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-					if( word_table.size >= mem_limit ) break;
-					int tmax = MAX_TABLE_SEQ - (frag_size ? seq->size / frag_size + 1 : 0);
-					if( word_table.sequences.size() >= tmax or word_table.frag_count >= tmax ) break;
+#ifdef TEST
+					if( word_table.size >= max_items ) break;
+					int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
+					if( word_table.sequences.size() >= tmax ) break;
+#endif
 					bk = false;
 				}
 				if( bk ) break;
@@ -2488,7 +2552,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		}else if( i < m ){
 			printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		}
-		printf( "---------- new table with %8zu representatives\n", word_table.sequences.size() );
+		printf( "---------- new table with %8i representatives\n", word_table.sequences.size() );
 		if( (last_table.size + word_table.size) > tabsize )
 			tabsize = last_table.size + word_table.size;
 		last_table.Clear();
@@ -2497,7 +2561,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		last_table.size = word_table.size;
 		word_table.size = 0;
 	}
-	printf( "\n%9li  finished  %9li  clusters\n", sequences.size(), rep_seqs.size() );
+	printf( "\n%9i  finished  %9i  clusters\n", sequences.size(), rep_seqs.size() );
 	mem = (mem_need + tabsize*sizeof(IndexCount))/mega;
 	printf( "\nApprixmated maximum memory consumption: %zuM\n", mem );
 	last_table.Clear();
@@ -2579,8 +2643,8 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 		if (len2 > len_upper_bound ) continue;
 		if (options.has2D && len2 < len_lower_bound ) continue;
 		if( frag_size ){
-			uint32_t count = ic->count;
 			uint32_t *ims = & indexMapping[ ic->index ];
+			int count = ic->count;
 			k = (len2 - NAA) / frag_size + 1;
 			sum = 0;
 			for (j1=0; j1<frg2; j1++){
@@ -2941,10 +3005,15 @@ void SequenceDB::DoClustering( const Options & options )
 	size_t total_letters = total_letter;
 	size_t tabsize = 0;
 
+	Options opts( options );
+	opts.ComputeTableLimits( NAAN, len_n50, mem_need );
+
 	for(i=0; i<N; ){
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
-		size_t sum = 0;
 		int m = i;
+		size_t sum = 0;
+#define TEST
+#ifndef TEST
 		//printf( "\rdefining new sequence group\n", i, m );
 		fflush( stdout );
 		while( m < N && sum < mem_limit ){
@@ -2955,6 +3024,24 @@ void SequenceDB::DoClustering( const Options & options )
 			}
 			m ++;
 		}
+#else
+		size_t max_items = opts.max_entries;
+		size_t max_seqs = opts.max_sequences;
+		size_t items = 0;
+		if( i ==0 ){ // first SCB with small size
+			max_items /= 8;
+			max_seqs = 1000;
+		}
+		while( m < N && (sum*redundancy) < max_seqs && items < max_items ){
+			Sequence *seq = sequences[m];
+			if( ! (seq->state & IS_REDUNDANT) ){
+				if ( options.store_disk ) seq->SwapIn();
+				items += (size_t)(seq->size * redundancy);
+				sum += 1;
+			}
+			m ++;
+		}
+#endif
 		if( m > N ) m = N;
 		printf( "\rcomparing sequences from  %9i  to  %9i\n", i, m );
 		fflush( stdout );
@@ -2965,9 +3052,11 @@ void SequenceDB::DoClustering( const Options & options )
 			ClusterOne( seq, ks, word_table, param, buffer, options );
 			total_letters -= seq->size;
 			if( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-			if( word_table.size >= mem_limit ) break;
-			int tmax = MAX_TABLE_SEQ - (frag_size ? seq->size / frag_size + 1 : 0);
-			if( word_table.sequences.size() >= tmax or word_table.frag_count >= tmax ) break;
+#ifdef TEST
+			if( word_table.size >= max_items ) break;
+			int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
+			if( word_table.sequences.size() >= tmax ) break;
+#endif
 		}
 		m = i;
 		if( word_table.size == 0 ) continue;
@@ -2994,9 +3083,9 @@ void SequenceDB::DoClustering( const Options & options )
 		//if( i && i < m ) printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		word_table.Clear();
 	}
-	printf( "\n%9li  finished  %9li  clusters\n", sequences.size(), rep_seqs.size() );
+	printf( "\n%9i  finished  %9i  clusters\n", sequences.size(), rep_seqs.size() );
 	mem = (mem_need + tabsize*sizeof(IndexCount))/mega;
-	printf( "\nApprixmated maximum memory consumption: %iM\n", mem );
+	printf( "\nApprixmated maximum memory consumption: %liM\n", mem );
 	temp_files.Clear();
 	word_table.Clear();
 
@@ -3045,16 +3134,23 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 	size_t mem_need = MinimalMemory( N, buffer.total_bytes, T, options, other.total_letter+other.total_desc );
 	size_t mem_limit = MemoryLimit( mem_need, options );
 
+	Options opts( options );
+	opts.ComputeTableLimits( NAAN, len_n50, mem_need );
+
 	WordTable word_table( options.NAA, NAAN );
 
+	size_t max_items = opts.max_entries;
+	size_t max_seqs = opts.max_sequences;
 	for(i=0; i<N; ){
+		size_t items = 0;
 		size_t sum = 0;
 		int m = i;
-		while( m < N && sum < mem_limit && m < (i + MAX_TABLE_SEQ) ){
+		while( m < N && sum < max_seqs && items < max_items ){
 			Sequence *seq = other.sequences[m];
 			if( ! (seq->state & IS_REDUNDANT) ){
 				if ( options.store_disk ) seq->SwapIn();
-				sum += seq->size;
+				items += seq->size;
+				sum += 1;
 			}
 			m ++;
 		}
