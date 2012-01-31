@@ -1208,6 +1208,7 @@ WordTable::WordTable( int naa, int naan )
 	capacity = 0;
 	pBuffer = NULL;
 	pHashs = NULL;
+	tsize = 0;
 
 	Init( naa, naan );
 }
@@ -1288,26 +1289,28 @@ void WordTable::PackTable()
 
 	pHashs = NULL;
 
-	words = 0;
+	int words = 0;
 	for(i=0; i<NAAN; i++) words += indexCounts[i].Size() != 0;
-	k = words*sizeof(IndexCount) + words*sizeof(IndexCount2) + size*sizeof(IndexCount) + 32;
+	tsize = words + 997;
+
+	k = tsize*sizeof(IndexCount) + words*sizeof(IndexCount2) + size*sizeof(IndexCount) + 32;
 	if( capacity < k ){
 		capacity = k;
 		pBuffer = realloc( pBuffer, capacity );
 	}
 	pHashs = (IndexCount*) pBuffer;
-	pWords = (IndexCount2*) (pHashs + words);
+	pWords = (IndexCount2*) (pHashs + tsize);
 	pCounts = (IndexCount*) (pWords + words);
-	memset( pHashs, 0, words * sizeof(IndexCount) );
+	memset( pHashs, 0, tsize * sizeof(IndexCount) );
 
 	for(i=0; i<NAAN; i++){
 		if( indexCounts[i].Size() ==0 ) continue;
-		k = MurmurHashX( i, words );
+		k = MurmurHashX( i, tsize );
 		pHashs[k].count += 1;
 	}
 	IndexCount *ic = pHashs;
 	IndexCount *ic2 = ic + 1;
-	for(i=1; i<words; i++, ic++, ic2++){
+	for(i=1; i<tsize; i++, ic++, ic2++){
 		ic2->index = ic->index + ic->count;
 		ic->count = 0;
 	}
@@ -1316,7 +1319,7 @@ void WordTable::PackTable()
 	index = 0;
 	for(i=0; i<NAAN; i++){
 		if( indexCounts[i].Size() ==0 ) continue;
-		j = MurmurHashX( i, words );
+		j = MurmurHashX( i, tsize );
 		k = indexCounts[i].Size();
 
 		IndexCount *ic = pHashs + j;
@@ -1489,7 +1492,7 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 
 		if( pHashs ){
 			IndexCount2 *ic2, *ic3;
-			ic = pHashs + MurmurHashX( j, words );
+			ic = pHashs + MurmurHashX( j, tsize );
 			ic2 = pWords + ic->index;
 			ic3 = ic2 + ic->count;
 			while( ic2 != ic3 && ic2->word != j ) ic2++;

@@ -236,7 +236,7 @@ class WordTable
 		size_t  size;
 		int     frag_count;
 
-		int          words;
+		int          tsize;
 		int          capacity;
 		void        *pBuffer;
 		IndexCount  *pHashs;
