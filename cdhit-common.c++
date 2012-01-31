@@ -1204,6 +1204,11 @@ WordTable::WordTable( int naa, int naan )
 	is_aa    = 1;
 	size = 0;
 	frag_count = 0;
+
+	capacity = 0;
+	pBuffer = NULL;
+	pHashs = NULL;
+
 	Init( naa, naan );
 }
 
@@ -1240,6 +1245,90 @@ void WordTable::Clear()
 	frag_count = 0;
 	sequences.clear();
 	for (i=0; i<NAAN; i++) indexCounts[i].size = 0;//Clear();
+	pHashs = NULL;
+}
+
+/*
+Based on MurmurHash2;
+http://sites.google.com/site/murmurhash/
+http://www.burtleburtle.net/bob/hash/doobs.html
+ */
+
+#define HASH_SEED  0xda0
+
+unsigned int MurmurHashX( unsigned int k, unsigned int T )
+{
+	/* 'm' and 'r' are mixing constants generated offline.
+	   They're not really 'magic', they just happen to work well. */
+	const unsigned int m = 0x5bd1e995;
+	const int r = 24;
+
+	/* Initialize the hash to a 'random' value */
+	unsigned int h = HASH_SEED ^ 4;
+
+	k *= m; 
+	k ^= k >> r; 
+	k *= m; 
+
+	h *= m; 
+	h ^= k;
+
+	/* Do a few final mixes of the hash to ensure the last few
+	   bytes are well-incorporated. */
+	h ^= h >> 13;
+	h *= m;
+	h ^= h >> 15;
+
+	return h % T;
+}
+
+void WordTable::PackTable()
+{
+	int i, j, k, m, index, count;
+
+	pHashs = NULL;
+
+	words = 0;
+	for(i=0; i<NAAN; i++) words += indexCounts[i].Size() != 0;
+	k = words*sizeof(IndexCount) + words*sizeof(IndexCount2) + size*sizeof(IndexCount) + 32;
+	if( capacity < k ){
+		capacity = k;
+		pBuffer = realloc( pBuffer, capacity );
+	}
+	pHashs = (IndexCount*) pBuffer;
+	pWords = (IndexCount2*) (pHashs + words);
+	pCounts = (IndexCount*) (pWords + words);
+	memset( pHashs, 0, words * sizeof(IndexCount) );
+
+	for(i=0; i<NAAN; i++){
+		if( indexCounts[i].Size() ==0 ) continue;
+		k = MurmurHashX( i, words );
+		pHashs[k].count += 1;
+	}
+	IndexCount *ic = pHashs;
+	IndexCount *ic2 = ic + 1;
+	for(i=1; i<words; i++, ic++, ic2++){
+		ic2->index = ic->index + ic->count;
+		ic->count = 0;
+	}
+	ic->count = 0;
+
+	index = 0;
+	for(i=0; i<NAAN; i++){
+		if( indexCounts[i].Size() ==0 ) continue;
+		j = MurmurHashX( i, words );
+		k = indexCounts[i].Size();
+
+		IndexCount *ic = pHashs + j;
+		IndexCount2 *ic2 = pWords + ic->index + ic->count;
+		ic->count += 1;
+
+		ic2->word = i;
+		ic2->index = index;
+		ic2->count = k;
+		index += k;
+		memcpy( pCounts + ic2->index, indexCounts[i].items, k * sizeof(IndexCount) );
+	}
 }
 
 int WordTable::AddWordCounts( NVector<IndexCount> & counts, Sequence *seq, bool skipN)
@@ -1379,7 +1468,7 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 	bool est, int min)
 {
 	int S = frag_count ? frag_count : sequences.size();
-	int  j, k, j0, j1, k1, m;
+	int j, k, j0, j1, k1 = 0, m;
 	int ix1, ix2, ix3, ix4;
 	IndexCount tmp;
 
@@ -1397,9 +1486,21 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 		j1 = *wen;
 		//if( j1 >1 ) printf( " %3i", j1 );
 		if( j1==0 ) continue;
-		NVector<IndexCount> & one = indexCounts[j];
-		k1 = one.Size();
-		IndexCount *ic = one.items;
+
+		if( pHashs ){
+			IndexCount2 *ic2, *ic3;
+			ic = pHashs + MurmurHashX( j, words );
+			ic2 = pWords + ic->index;
+			ic3 = ic2 + ic->count;
+			while( ic2 != ic3 && ic2->word != j ) ic2++;
+			if( ic2 == ic3 ) continue;
+			k1 = ic2->count;
+			ic = pCounts + ic2->index;
+		}else{
+			NVector<IndexCount> & one = indexCounts[j];
+			k1 = one.Size();
+			ic = one.items;
+		}
 
 		int rest = aan_no - j0 + 1;
 		for (k=0; k<k1; k++, ic++){
@@ -3060,6 +3161,8 @@ void SequenceDB::DoClustering( const Options & options )
 		}
 		m = i;
 		if( word_table.size == 0 ) continue;
+		word_table.PackTable();
+
 		float p0 = 0;
 		for(int j=m; j<N; j++){
 			Sequence *seq = sequences[j];

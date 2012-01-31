@@ -18,7 +18,7 @@ endif
 # make debug=yes
 # make openmp=yes debug=yes
 ifeq ($(debug),yes)
-CCFLAGS += -ggdb
+CCFLAGS += -ggdb -O0
 else
 CCFLAGS += -O2
 endif
