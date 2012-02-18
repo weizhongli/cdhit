@@ -47,6 +47,65 @@
 
 #endif
 
+//class function definition
+const char aa[] = {"ARNDCQEGHILKMFPSTWYVBZX"};
+//{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,2,6,20};
+int aa2idx[] = {0, 2, 4, 3, 6, 13,7, 8, 9,20,11,10,12, 2,20,14,
+                5, 1,15,16,20,19,17,20,18, 6};
+    // idx for  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P
+    //          Q  R  S  T  U  V  W  X  Y  Z
+    // so  aa2idx[ X - 'A'] => idx_of_X, eg aa2idx['A' - 'A'] => 0,
+    // and aa2idx['M'-'A'] => 12
+
+int BLOSUM62[] = {
+  4,                                                                  // A
+ -1, 5,                                                               // R
+ -2, 0, 6,                                                            // N
+ -2,-2, 1, 6,                                                         // D
+  0,-3,-3,-3, 9,                                                      // C
+ -1, 1, 0, 0,-3, 5,                                                   // Q
+ -1, 0, 0, 2,-4, 2, 5,                                                // E
+  0,-2, 0,-1,-3,-2,-2, 6,                                             // G
+ -2, 0, 1,-1,-3, 0, 0,-2, 8,                                          // H
+ -1,-3,-3,-3,-1,-3,-3,-4,-3, 4,                                       // I
+ -1,-2,-3,-4,-1,-2,-3,-4,-3, 2, 4,                                    // L
+ -1, 2, 0,-1,-3, 1, 1,-2,-1,-3,-2, 5,                                 // K
+ -1,-1,-2,-3,-1, 0,-2,-3,-2, 1, 2,-1, 5,                              // M
+ -2,-3,-3,-3,-2,-3,-3,-3,-1, 0, 0,-3, 0, 6,                           // F
+ -1,-2,-2,-1,-3,-1,-1,-2,-2,-3,-3,-1,-2,-4, 7,                        // P
+  1,-1, 1, 0,-1, 0, 0, 0,-1,-2,-2, 0,-1,-2,-1, 4,                     // S
+  0,-1, 0,-1,-1,-1,-1,-2,-2,-1,-1,-1,-1,-2,-1, 1, 5,                  // T
+ -3,-3,-4,-4,-2,-2,-3,-2,-2,-3,-2,-3,-1, 1,-4,-3,-2,11,               // W
+ -2,-2,-2,-3,-2,-1,-2,-3, 2,-1,-1,-2,-1, 3,-3,-2,-2, 2, 7,            // Y
+  0,-3,-3,-3,-1,-2,-2,-3,-3, 3, 1,-2, 1,-1,-2,-2, 0,-3,-1, 4,         // V
+ -2,-1, 3, 4,-3, 0, 1,-1, 0,-3,-4, 0,-3,-3,-2, 0,-1,-4,-3,-3, 4,      // B
+ -1, 0, 0, 1,-3, 3, 4,-2, 0,-3,-3, 1,-1,-3,-1, 0,-1,-3,-2,-2, 1, 4,   // Z
+  0,-1,-1,-1,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-2, 0, 0,-2,-1,-1,-1,-1,-1 // X
+//A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  B  Z  X
+//0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19  2  6 20
+};
+
+
+int na2idx[] = {0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                4, 4, 4, 3, 3, 4, 4, 4, 4, 4};
+    // idx for  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P
+    //          Q  R  S  T  U  V  W  X  Y  Z
+    // so aa2idx[ X - 'A'] => idx_of_X, eg aa2idx['A' - 'A'] => 0,
+    // and aa2idx['M'-'A'] => 4
+int BLOSUM62_na[] = {
+  2,                  // A
+ -2, 2,               // C
+ -2,-2, 2,            // G
+ -2,-2,-2, 2,         // T
+ -2,-2,-2, 1, 2,      // U
+ -2,-2,-2,-2,-2, 1,   // N
+  0, 0, 0, 0, 0, 0, 1 // X
+//A  C  G  T  U  N  X
+//0  1  2  3  3  4  5
+};
+
+void setaa_to_na();
+
 struct TempFile
 {
 	FILE *file;
@@ -232,7 +291,16 @@ bool Options::SetOptionEST( const char *flag, const char *value )
 	else if (strcmp(flag, "-gap-ext") == 0) mat.ext_gap = MAX_SEQ * atoi(value);
 	else if (strcmp(flag, "-match") == 0) mat.set_match( atoi(value) );
 	else if (strcmp(flag, "-mismatch") == 0) mat.set_mismatch( atoi(value) );
-	else return false;
+	else if (strcmp(flag, "-mask") == 0){
+		string letters = value;
+		int i, n = letters.size();
+		for(i=0; i<n; i++){
+			char ch = toupper( letters[i] );
+			if( ch < 'A' || ch > 'Z' ) continue;
+			na2idx[ ch - 'A' ] = 5;
+		}
+		setaa_to_na();
+	}else return false;
 	return true;
 }
 bool Options::SetOptions( int argc, char *argv[], bool twod, bool est )
@@ -538,7 +606,7 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
 		unsigned char c1 = iseq2[1];
 		unsigned char c2 = iseq2[2];
 		unsigned char c3 = iseq2[3];
-		if ((c0==4) || (c1==4) || (c2==4) || (c3==4)) continue; //skip N
+		if ((c0>=4) || (c1>=4) || (c2>=4) || (c3>=4)) continue; //skip N
 
 		c22 = c0*NAA3+ c1*NAA2 + c2*NAA1 + c3;
 		if ( (j=taap[c22]) == 0) continue;
@@ -869,6 +937,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	}
 #endif
 
+	int masked = 0;
 	int indels = 0;
 	int max_indels = 0;
 	while( back != DP_BACK_NONE ){
@@ -947,8 +1016,6 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 			i -= 1;
 			j -= 1;
 			match = iseq1[i] == iseq2[j];
-			dlen += 1;
-			dcount += ! match;
 			if( score > smax ){
 				count = 0;
 				smax = score;
@@ -956,9 +1023,15 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 				end1 = i;
 				end2 = j;
 			}
-			count += match;
-			count2 += match;
-			count3 += match;
+			if( iseq1[i] > 4 || iseq2[j] > 4 ){
+				masked += 1;
+			}else{
+				dlen += 1;
+				dcount += ! match;
+				count += match;
+				count2 += match;
+				count3 += match;
+			}
 			if( score < smin ){
 				int mm = match == 0;
 				count2 = 0;
@@ -988,7 +1061,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	}
 	if( options.is454 and max_indels > options.max_indel ) return FAILED_FUNC;
 	iden_no = options.global_identity ? count3 : count - count2;
-	alnln = posmin - posmax + 1;
+	alnln = posmin - posmax + 1 - masked;
 	dist = dcount/(float)dlen;
 	//dist = - 0.75 * log( 1.0 - dist * 4.0 / 3.0 );
 	int umtail1 = len1 - 1 - end1;
@@ -1084,61 +1157,6 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 } // END int local_band_align
 
 
-//class function definition
-const char aa[] = {"ARNDCQEGHILKMFPSTWYVBZX"};
-//{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,2,6,20};
-int aa2idx[] = {0, 2, 4, 3, 6, 13,7, 8, 9,20,11,10,12, 2,20,14,
-                5, 1,15,16,20,19,17,20,18, 6};
-    // idx for  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P
-    //          Q  R  S  T  U  V  W  X  Y  Z
-    // so  aa2idx[ X - 'A'] => idx_of_X, eg aa2idx['A' - 'A'] => 0,
-    // and aa2idx['M'-'A'] => 12
-
-int BLOSUM62[] = {
-  4,                                                                  // A
- -1, 5,                                                               // R
- -2, 0, 6,                                                            // N
- -2,-2, 1, 6,                                                         // D
-  0,-3,-3,-3, 9,                                                      // C
- -1, 1, 0, 0,-3, 5,                                                   // Q
- -1, 0, 0, 2,-4, 2, 5,                                                // E
-  0,-2, 0,-1,-3,-2,-2, 6,                                             // G
- -2, 0, 1,-1,-3, 0, 0,-2, 8,                                          // H
- -1,-3,-3,-3,-1,-3,-3,-4,-3, 4,                                       // I
- -1,-2,-3,-4,-1,-2,-3,-4,-3, 2, 4,                                    // L
- -1, 2, 0,-1,-3, 1, 1,-2,-1,-3,-2, 5,                                 // K
- -1,-1,-2,-3,-1, 0,-2,-3,-2, 1, 2,-1, 5,                              // M
- -2,-3,-3,-3,-2,-3,-3,-3,-1, 0, 0,-3, 0, 6,                           // F
- -1,-2,-2,-1,-3,-1,-1,-2,-2,-3,-3,-1,-2,-4, 7,                        // P
-  1,-1, 1, 0,-1, 0, 0, 0,-1,-2,-2, 0,-1,-2,-1, 4,                     // S
-  0,-1, 0,-1,-1,-1,-1,-2,-2,-1,-1,-1,-1,-2,-1, 1, 5,                  // T
- -3,-3,-4,-4,-2,-2,-3,-2,-2,-3,-2,-3,-1, 1,-4,-3,-2,11,               // W
- -2,-2,-2,-3,-2,-1,-2,-3, 2,-1,-1,-2,-1, 3,-3,-2,-2, 2, 7,            // Y
-  0,-3,-3,-3,-1,-2,-2,-3,-3, 3, 1,-2, 1,-1,-2,-2, 0,-3,-1, 4,         // V
- -2,-1, 3, 4,-3, 0, 1,-1, 0,-3,-4, 0,-3,-3,-2, 0,-1,-4,-3,-3, 4,      // B
- -1, 0, 0, 1,-3, 3, 4,-2, 0,-3,-3, 1,-1,-3,-1, 0,-1,-3,-2,-2, 1, 4,   // Z
-  0,-1,-1,-1,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-2, 0, 0,-2,-1,-1,-1,-1,-1 // X
-//A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  B  Z  X
-//0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19  2  6 20
-};
-
-
-int na2idx[] = {0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-                4, 4, 4, 3, 3, 4, 4, 4, 4, 4};
-    // idx for  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P
-    //          Q  R  S  T  U  V  W  X  Y  Z
-    // so aa2idx[ X - 'A'] => idx_of_X, eg aa2idx['A' - 'A'] => 0,
-    // and aa2idx['M'-'A'] => 4
-int BLOSUM62_na[] = {
-  2,               // A
- -2, 2,            // C
- -2,-2, 2,         // G
- -2,-2,-2, 2,      // T
- -2,-2,-2, 1, 2,   // U
- -2,-2,-2,-2,-2, 1 // N
-//A  C  G  T  U  N
-//0  1  2  3  3  4
-};
 
 void setaa_to_na()
 {
@@ -2172,7 +2190,7 @@ int WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
 
 	if( est ){
 		for (j=0; j<len; j++){
-			if ( seqi[j] == 4 ) {                      // here N is 4
+			if ( seqi[j] >= 4 ) {                      // here N is 4
 				i0 = (j-NAA+1 > 0) ? j-NAA+1 : 0;
 				i1 = j < aan_no ? j : aan_no - 1;
 				for (i=i0; i<=i1; i++) word_encodes[i]=-1;
@@ -2215,7 +2233,7 @@ void WorkingBuffer::ComputeAAP2( const char *seqi, int size )
 	int sk, j1, mm, c22;
 	for (sk=0; sk<NAA4; sk++) taap[sk] = 0;
 	for (j1=0; j1<len1; j1++) {
-		if ((seqi[j1]==4) || (seqi[j1+1]==4) || (seqi[j1+2]==4) || (seqi[j1+3]==4)) continue; //skip N
+		if ((seqi[j1]>=4) || (seqi[j1+1]>=4) || (seqi[j1+2]>=4) || (seqi[j1+3]>=4)) continue; //skip N
 		c22 = seqi[j1]*NAA3 + seqi[j1+1]*NAA2 + seqi[j1+2]*NAA1 + seqi[j1+3];
 		taap[c22]++;
 	}
@@ -2223,7 +2241,7 @@ void WorkingBuffer::ComputeAAP2( const char *seqi, int size )
 		aap_begin[sk] = mm;  mm += taap[sk];  taap[sk] = 0;
 	}
 	for (j1=0; j1<len1; j1++) {
-		if ((seqi[j1]==4) || (seqi[j1+1]==4) || (seqi[j1+2]==4) || (seqi[j1+3]==4)) continue; //skip N
+		if ((seqi[j1]>=4) || (seqi[j1+1]>=4) || (seqi[j1+2]>=4) || (seqi[j1+3]>=4)) continue; //skip N
 		c22 = seqi[j1]*NAA3 + seqi[j1+1]*NAA2 + seqi[j1+2]*NAA1 + seqi[j1+3];
 		aap_list[aap_begin[c22]+taap[c22]++] =j1;
 	}
@@ -2815,7 +2833,6 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			band_width1 = (options.band_width < len+len2-2 ) ? options.band_width : len+len2-2;
 			diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
 					band_width1, band_left, band_center, band_right, required_aa1);
-			//printf( "%i %i\n", best_sum, required_aas );
 			if ( best_sum < required_aas ) continue;
 			//if( comp and flag and (not options.cluster_best) and j > rep->cluster_id ) goto Break;
 
