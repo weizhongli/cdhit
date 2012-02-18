@@ -1255,10 +1255,17 @@ http://sites.google.com/site/murmurhash/
 http://www.burtleburtle.net/bob/hash/doobs.html
  */
 
+#include"MurmurHash3.h"
+
 #define HASH_SEED  0xda0
 
-unsigned int MurmurHashX( unsigned int k, unsigned int T )
+#define MurmurHashX( k, T ) (k%T)
+
+unsigned int MurmurHashX2( unsigned int k, unsigned int T )
 {
+	unsigned int out;
+	MurmurHash3_x86_32( &k, 4, HASH_SEED, &out);
+	return out%T;
 	/* 'm' and 'r' are mixing constants generated offline.
 	   They're not really 'magic', they just happen to work well. */
 	const unsigned int m = 0x5bd1e995;
@@ -1291,13 +1298,18 @@ void WordTable::PackTable()
 
 	int words = 0;
 	for(i=0; i<NAAN; i++) words += indexCounts[i].Size() != 0;
-	tsize = words + 997;
+
+	tsize = 2*words;// + 3571;
+	if( tsize > NAAN ) tsize = NAAN;
+	//tsize = NAAN;
 
 	k = tsize*sizeof(IndexCount) + words*sizeof(IndexCount2) + size*sizeof(IndexCount) + 32;
 	if( capacity < k ){
 		capacity = k;
 		pBuffer = realloc( pBuffer, capacity );
 	}
+	printf( "\b%9i %9i %9i\n", tsize, words, k );
+
 	pHashs = (IndexCount*) pBuffer;
 	pWords = (IndexCount2*) (pHashs + tsize);
 	pCounts = (IndexCount*) (pWords + words);
@@ -1310,11 +1322,17 @@ void WordTable::PackTable()
 	}
 	IndexCount *ic = pHashs;
 	IndexCount *ic2 = ic + 1;
+	int collisions = 0;
+	int collisions2 = 0;
 	for(i=1; i<tsize; i++, ic++, ic2++){
+		collisions += ic->count > 1;
+		if( ic->count > 1 ) collisions2 += ic->count;
 		ic2->index = ic->index + ic->count;
 		ic->count = 0;
 	}
 	ic->count = 0;
+
+	printf( "words: %6i,  table size: %9i,  number of collisions: %9i %9i\n", words, tsize, collisions, collisions2 );
 
 	index = 0;
 	for(i=0; i<NAAN; i++){
@@ -1473,7 +1491,7 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 	int S = frag_count ? frag_count : sequences.size();
 	int j, k, j0, j1, k1 = 0, m;
 	int ix1, ix2, ix3, ix4;
-	IndexCount tmp;
+	IndexCount tmp, *end = NULL;
 
 	IndexCount *ic = lookCounts.items;
 	for(j=0; j<lookCounts.size; j++, ic++) indexMapping[ ic->index ] = 0;
@@ -1504,9 +1522,10 @@ int WordTable::CountWords(int aan_no, Vector<int> & word_encodes, Vector<INTs> &
 			k1 = one.Size();
 			ic = one.items;
 		}
+		end = ic + k1;
 
 		int rest = aan_no - j0 + 1;
-		for (k=0; k<k1; k++, ic++){
+		for (; ic != end; ic++){
 			int c = ic->count < j1 ? ic->count : j1;
 			uint32_t *idm = indexMapping.items + ic->index;
 			if( *idm ==0 ){
