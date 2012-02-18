@@ -1,0 +1,6 @@
+
+How to compile?
+  1. Compile without multi-threading support: make
+  2. Compile with multi-threading support: make openmp=yes
+
+For more information, please read the cd-hit-users-guide.pdf. 
