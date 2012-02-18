@@ -3304,7 +3304,7 @@ int calc_ann_list(int len, char *seqi, int NAA, int& aan_no, Vector<int> & aan_l
 	if( est ){
 		// for the short word containing 'N', mask it to '-1'
 		for (j=0; j<len; j++){
-			if ( seqi[j] == 4 ) {                      // here N is 4
+			if ( seqi[j] >= 4 ) {                      // here N is 4
 				i0 = (j-NAA+1 > 0) ? j-NAA+1 : 0;
 				i1 = j < aan_no ? j : aan_no - 1;
 				for (i=i0; i<=i1; i++) aan_list[i]=-1;
