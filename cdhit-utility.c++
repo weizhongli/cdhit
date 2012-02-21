@@ -107,6 +107,7 @@ char txt_option_r[] =
 "\t1 or 0, default 1, by default do both +/+ & +/- alignments\n \
 \tif set to 0, only +/+ strand alignment\n";
 
+char txt_option_mask[] = "\tmasking letters (e.g. -mask NX, to mask out both 'N' and 'X')\n";
 char txt_option_match[] = "\tmatching score, default 2 (1 for T-U and N-N)\n";
 char txt_option_match2[] = "\tmatching score, default 2\n";
 char txt_option_mismatch[] = "\tmismatching score, default -2\n";
@@ -217,6 +218,7 @@ int print_usage_est (char *arg) {
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;
   cout << "    -r" << txt_option_r;
+  cout << "    -mask" << txt_option_mask;
   cout << "    -match" << txt_option_match;
   cout << "    -mismatch" << txt_option_mismatch;
   cout << "    -gap" << txt_option_gap;
@@ -259,6 +261,7 @@ int print_usage_est_2d (char *arg) {
   cout << "    -p" << txt_option_p;
   cout << "    -g" << txt_option_g;
   cout << "    -r" << txt_option_r;
+  cout << "    -mask" << txt_option_mask;
   cout << "    -match" << txt_option_match;
   cout << "    -mismatch" << txt_option_mismatch;
   cout << "    -gap" << txt_option_gap;
