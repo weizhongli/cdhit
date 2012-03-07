@@ -18,7 +18,7 @@ endif
 # make debug=yes
 # make openmp=yes debug=yes
 ifeq ($(debug),yes)
-CCFLAGS += -ggdb
+CCFLAGS += -ggdb -O0
 else
 CCFLAGS += -O2
 endif
@@ -27,6 +27,8 @@ endif
 LDFLAGS = -o
 
 PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div cd-hit-454
+
+COMMON_OBJS = cdhit-common.o cdhit-utility.o MurmurHash3.o
 
 .c++.o:
 	$(CC) $(CCFLAGS) -c $<
@@ -38,23 +40,23 @@ clean:
 
 # programs
 
-cd-hit: cdhit-common.o cdhit-utility.o cdhit.o
-	$(CC) $(CCFLAGS) cdhit.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit
+cd-hit: $(COMMON_OBJS) cdhit.o
+	$(CC) $(CCFLAGS) cdhit.o $(COMMON_OBJS) $(LDFLAGS) cd-hit
 
-cd-hit-2d: cdhit-common.o cdhit-utility.o cdhit-2d.o
-	$(CC) $(CCFLAGS) cdhit-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-2d
+cd-hit-2d: $(COMMON_OBJS) cdhit-2d.o
+	$(CC) $(CCFLAGS) cdhit-2d.o $(COMMON_OBJS) $(LDFLAGS) cd-hit-2d
 
-cd-hit-est: cdhit-common.o cdhit-utility.o cdhit-est.o
-	$(CC) $(CCFLAGS) cdhit-est.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est
+cd-hit-est: $(COMMON_OBJS) cdhit-est.o
+	$(CC) $(CCFLAGS) cdhit-est.o $(COMMON_OBJS) $(LDFLAGS) cd-hit-est
 
-cd-hit-est-2d: cdhit-common.o cdhit-utility.o cdhit-est-2d.o
-	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est-2d
+cd-hit-est-2d: $(COMMON_OBJS) cdhit-est-2d.o
+	$(CC) $(CCFLAGS) cdhit-est-2d.o $(COMMON_OBJS) $(LDFLAGS) cd-hit-est-2d
 
-cd-hit-div: cdhit-common.o cdhit-utility.o cdhit-div.o
-	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-div
+cd-hit-div: $(COMMON_OBJS) cdhit-div.o
+	$(CC) $(CCFLAGS) cdhit-div.o $(COMMON_OBJS) $(LDFLAGS) cd-hit-div
 
-cd-hit-454: cdhit-common.o cdhit-utility.o cdhit-454.o
-	$(CC) $(CCFLAGS) cdhit-454.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-454
+cd-hit-454: $(COMMON_OBJS) cdhit-454.o
+	$(CC) $(CCFLAGS) cdhit-454.o $(COMMON_OBJS) $(LDFLAGS) cd-hit-454
 
 # objects
 cdhit-common.o: cdhit-common.c++ cdhit-common.h

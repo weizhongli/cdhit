@@ -213,6 +213,15 @@ struct IndexCount
 	IndexCount( int i=0, int c=0 ){ index = i, count = c; }
 };
 
+struct IndexCount2
+{
+	int index;
+	int count;
+	int word;
+
+	IndexCount2( int i=0, int c=0, int w=0 ){ index = i, count = c; word = w; }
+};
+
 struct Sequence;
 
 class WordTable
@@ -227,11 +236,21 @@ class WordTable
 		size_t  size;
 		int     frag_count;
 
+		int          tsize;
+		int          capacity;
+		void        *pBuffer;
+		IndexCount  *pHashs;
+		IndexCount2 *pWords;
+		IndexCount  *pCounts;
+
 	public:
 		WordTable( int naa=0, int naan=0 );
 		void Init(int, int);
 		void Clear();
 		void SetDNA();
+
+		void PackTable();
+
 		int  AddWordCounts( NVector<IndexCount> & counts, Sequence *seq, bool skipN=false);
 		int  AddWordCountsFrag( NVector<IndexCount> & counts, int frag, int frag_size, int repfrag );
 
