@@ -1524,8 +1524,8 @@ void Sequence::Reserve( int n )
 			memcpy( data, old, m );
 			delete []old;
 		}
-		if( size ) data[size] = 0;
 	}
+	if( size ) data[size] = 0;
 }
 void Sequence::ConvertBases()
 {
@@ -1576,6 +1576,9 @@ void Sequence::Swap( Sequence & other )
 int Sequence::Format()
 {
 	int i, j=0, m = 0;
+	while( size && isspace( data[size-1] ) ) size --;
+	if( size && data[size-1] == '*' ) size --;
+	if( size ) data[size] = 0;
 	for (i=0; i<size; i++){
 		char ch = data[i];
 		m += ! (isalpha( ch ) | isspace( ch ));
