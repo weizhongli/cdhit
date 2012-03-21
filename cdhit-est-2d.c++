@@ -37,7 +37,6 @@ void make_comp_short_word_index(int NAA, int *NAAN_array, Vector<int> & Comp_AAN
 Options options;
 SequenceDB seq_db;
 SequenceDB seq_db2;
-struct tms CPU_current, CPU_begin, CPU_end;
 
 // next two control how if seqs in db2 is longer than reps in db1
 // by deault, only seqs in db2 that are shorter than rep in db1
@@ -59,7 +58,8 @@ int main(int argc, char **argv)
 	setaa_to_na();
 	mat.set_to_na(); //mat.set_gap(-6,-1);
 
-	times(&CPU_begin);
+	float begin_time = current_time();
+	float end_time;
 
 	// ***********************************    parse command line and open file
 	if (argc < 7) print_usage_est_2d(argv[0]);
@@ -95,8 +95,8 @@ int main(int argc, char **argv)
 
 	seq_db2.WriteExtra2D( seq_db, options );
 	cout << "program completed !" << endl << endl;
-	times(&CPU_end);
-	show_cpu_time(CPU_begin, CPU_end);
+	end_time = current_time();
+	printf( "Total CPU time %.2f\n", end_time - begin_time );
 	return 0;
 } // END int main
 

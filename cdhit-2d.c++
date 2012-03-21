@@ -31,7 +31,6 @@
 Options options;
 SequenceDB seq_db;
 SequenceDB seq_db2;
-struct tms CPU_current, CPU_begin, CPU_end;
 
 ////////////////////////////////////  MAIN /////////////////////////////////////
 int main(int argc, char **argv)
@@ -40,7 +39,8 @@ int main(int argc, char **argv)
 	string db_in2;
 	string db_out;
 
-	times(&CPU_begin);
+	float begin_time = current_time();
+	float end_time;
 
 	// ***********************************    parse command line and open file
 	if (argc < 7) print_usage_2d(argv[0]);
@@ -71,8 +71,8 @@ int main(int argc, char **argv)
 	// write a backup clstr file in case next step crashes
 	seq_db2.WriteExtra2D( seq_db, options );
 	cout << "program completed !" << endl << endl;
-	times(&CPU_end);
-	show_cpu_time(CPU_begin, CPU_end);
+	end_time = current_time();
+	printf( "Total CPU time %.2f\n", end_time - begin_time );
 	return 0;
 } // END int main
 

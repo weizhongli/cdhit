@@ -26,45 +26,44 @@
 Options options;
 SequenceDB seq_db;
 
-struct tms CPU_current, CPU_begin, CPU_end;
-
 ////////////////////////////////////  MAIN /////////////////////////////////////
 int main(int argc, char *argv[])
 {
-  string db_in;
-  string db_out;
-  int i, div = 1;
+	string db_in;
+	string db_out;
+	int i, div = 1;
 
-  times(&CPU_begin);
+	float begin_time = current_time();
+	float end_time;
 
-  // ***********************************    parse command line and open file
-  if (argc < 5) print_usage_div(argv[0]);
-  for (i=1; i<argc; i++) {
-    if      (strcmp(argv[i], "-i"    )==0) db_in =  argv[++i];
-    else if (strcmp(argv[i], "-o"    )==0) db_out = argv[++i];
-    else if (strcmp(argv[i], "-div"  )==0) div    = atoi(argv[++i]);
-    else                                   print_usage_div(argv[0]);
-  }
-  if( div <= 1 ){
-    printf( "Warning: -div must be greater than 1.\n" );
-    printf( "Warning: no database is writen.\n" );
-    return 0;
-  }
-  options.store_disk = 1;
+	// ***********************************    parse command line and open file
+	if (argc < 5) print_usage_div(argv[0]);
+	for (i=1; i<argc; i++) {
+		if      (strcmp(argv[i], "-i"    )==0) db_in =  argv[++i];
+		else if (strcmp(argv[i], "-o"    )==0) db_out = argv[++i];
+		else if (strcmp(argv[i], "-div"  )==0) div    = atoi(argv[++i]);
+		else                                   print_usage_div(argv[0]);
+	}
+	if( div <= 1 ){
+		printf( "Warning: -div must be greater than 1.\n" );
+		printf( "Warning: no database is writen.\n" );
+		return 0;
+	}
+	options.store_disk = 1;
 
-  //printf( "%i  %i  %i\n", sizeof(NVector<IndexCount>), seq_db.NAAN, sizeof(NVector<IndexCount>) * seq_db.NAAN );
+	//printf( "%i  %i  %i\n", sizeof(NVector<IndexCount>), seq_db.NAAN, sizeof(NVector<IndexCount>) * seq_db.NAAN );
 
-  seq_db.Read( db_in.c_str(), options );
-  cout << "total seq: " << seq_db.sequences.size() << endl;
-  seq_db.SortDivide( options );
+	seq_db.Read( db_in.c_str(), options );
+	cout << "total seq: " << seq_db.sequences.size() << endl;
+	seq_db.SortDivide( options );
 
-  printf( "writing new databases\n" );
-  seq_db.DivideSave( db_in.c_str(), db_out.c_str(), div, options );
+	printf( "writing new databases\n" );
+	seq_db.DivideSave( db_in.c_str(), db_out.c_str(), div, options );
 
-  times(&CPU_end);
-  show_cpu_time(CPU_begin, CPU_end);
+	end_time = current_time();
+	printf( "Total CPU time %.2f\n", end_time - begin_time );
 
-  cout << "program completed !" << endl << endl;
-  return 0;
+	cout << "program completed !" << endl << endl;
+	return 0;
 } // END int main
 

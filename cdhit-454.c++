@@ -30,8 +30,6 @@
 Options options;
 SequenceDB seq_db;
 
-struct tms CPU_current, CPU_begin, CPU_end;
-
 // matrix below is for highly similar seqs
 // with this matrix, alignment can be maintained if there is a mismatch
 // at very end of alignment
@@ -75,7 +73,8 @@ int main(int argc, char *argv[])
 	mat.set_gap(-3,-1); //instead of -6 -1 to maintain maxium length of alignment
 	mat.set_matrix(myBLOSUM62_na2);
 
-	times(&CPU_begin);
+	float begin_time = current_time();
+	float end_time;
 
 	// ***********************************    parse command line and open file
 	if (argc < 5) print_usage_454(argv[0]);
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
 	// write a backup clstr file in case next step crashes
 	seq_db.WriteExtra1D( options );
 	cout << "program completed !" << endl << endl;
-	times(&CPU_end);
-	show_cpu_time(CPU_begin, CPU_end);
+	end_time = current_time();
+	printf( "Total CPU time %.2f\n", end_time - begin_time );
 	return 0;
 } // END int main

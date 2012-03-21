@@ -323,3 +323,9 @@ int print_usage_454 (char *arg)
   cout << "    " << cd_hit_ref4 << "\n\n\n";
   exit(1);
 }
+
+float current_time()
+{
+	return ((float)clock())/CLOCKS_PER_SEC;
+}
+
