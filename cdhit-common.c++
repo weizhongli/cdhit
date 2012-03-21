@@ -30,7 +30,6 @@
 #include<stdint.h>
 #include<assert.h>
 #include<limits.h>
-#include<time.h>
 
 #ifndef NO_OPENMP
 
@@ -1023,7 +1022,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 				end1 = i;
 				end2 = j;
 			}
-			if( iseq1[i] > 4 || iseq2[j] > 4 ){
+			if( options.isEST && (iseq1[i] > 4 || iseq2[j] > 4) ){
 				masked += 1;
 			}else{
 				dlen += 1;
@@ -2019,18 +2018,6 @@ void WorkingParam::ControlLongCoverage( int len2, const Options & options )
 	}
 }
 
-void show_cpu_time(tms &CPU_begin, tms &CPU_end)
-{
-	double ClockTicksPerSecond, total_seconds;
-	//  ClockTicksPerSecond = (int)sysconf(_SC_CLK_TCK);
-	//  ClockTicksPerSecond = (int)(100);
-	ClockTicksPerSecond = CLOCK_TICKS;
-
-	total_seconds = (CPU_end.tms_utime - CPU_begin.tms_utime) 
-		/ ClockTicksPerSecond;
-
-	cout << "Total CPU time: " << total_seconds << " s" << endl;
-} // END  show_current_cpu_time
 
 // when alignment coverage such as -aL is specified
 // if a existing rep is too long, it won't be qulified 
@@ -2418,6 +2405,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	size_t mem_limit = MemoryLimit( mem_need, options );
 	size_t mem, mega = 1000000;
 	size_t tabsize = 0;
+	int remaining = 0;
 
 	Options opts( options );
 	opts.ComputeTableLimits( NAAN, len_n50, mem_need );
@@ -2426,7 +2414,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	for(i=0; i<N; ){
 		int start = i;
 		int m = i;
-		size_t sum = 0;
+		size_t sum = remaining;
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
 #define TEST
 #ifndef TEST
@@ -2445,9 +2433,9 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		size_t max_items = opts.max_entries;
 		size_t max_seqs = opts.max_sequences;
 		size_t items = 0;
-		if( i ==0 ){ // first SCB with small size
-			max_items /= 8;
-			max_seqs = 1000;
+		if( i == 0 && max_seqs > 1000 ){ // first SCB with small size
+			max_items /= 64;
+			max_seqs /= 64;
 		}
 		while( m < N && (sum*redundancy) < max_seqs && items < max_items ){
 			Sequence *seq = sequences[m];
@@ -2460,9 +2448,9 @@ void SequenceDB::DoClustering( int T, const Options & options )
 			m ++;
 		}
 #endif
-		if( m >= N ){
+		if( m == i || m >= N ){
 			m = N;
-			if( m > i + 1E3 ) m = i + (N - i) / 2;
+			if( m > i + 1E3 ) m = i + (N - i) / (2*T);
 		}
 		//printf( "m = %i  %i,  %i\n", i, m, m-i );
 		printf( "\r# comparing sequences from  %9i  to  %9i\n", i, m );
@@ -2572,6 +2560,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 				if( bk ) break;
 			}
 		}else if( i < m ){
+			remaining = m - i;
 			printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		}
 		printf( "---------- new table with %8i representatives\n", word_table.sequences.size() );
@@ -2888,10 +2877,10 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			seq->identity = tiden_pc;
 			seq->distance = distance;
 			seq->cluster_id = rep->cluster_id;
-			seq->coverage[0] = talign_info[1] +1;
-			seq->coverage[1] = talign_info[2] +1;
-			seq->coverage[2] = talign_info[3] +1;
-			seq->coverage[3] = talign_info[4] +1;
+			seq->coverage[0] = talign_info[0] +1;
+			seq->coverage[1] = talign_info[1] +1;
+			seq->coverage[2] = talign_info[2] +1;
+			seq->coverage[3] = talign_info[3] +1;
 			if (not options.cluster_best) break;
 		}
 		while( ic->count ){
@@ -2943,7 +2932,7 @@ void SequenceDB::ComputeDistance( const Options & options )
 			diag_test_aapn_est(NAA1, seqj, len, len2, buf, best_sum,
 					band_width1, band_left, band_center, band_right, 0);
 			local_band_align(seqi, seqj, len, len2, mat,
-					best_score, tiden_no, alnln, distance, talign_info+1,
+					best_score, tiden_no, alnln, distance, talign_info,
 					band_left, band_center, band_right, buf);
 			dists[seq->index][rep->index] = dists[rep->index][seq->index] = distance;
 		}
@@ -3050,8 +3039,8 @@ void SequenceDB::DoClustering( const Options & options )
 		size_t max_seqs = opts.max_sequences;
 		size_t items = 0;
 		if( i ==0 ){ // first SCB with small size
-			max_items /= 8;
-			max_seqs = 1000;
+//			max_items /= 8;
+//			max_seqs = 1000;
 		}
 		while( m < N && (sum*redundancy) < max_seqs && items < max_items ){
 			Sequence *seq = sequences[m];

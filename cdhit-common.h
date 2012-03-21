@@ -32,14 +32,14 @@
 #include<stdio.h>
 #include<string.h>
 #include<ctype.h>
-#include<sys/times.h>
 #include<stdint.h>
+#include<time.h>
 
 #include<valarray>
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5.7"
+#define CDHIT_VERSION  "4.5.8"
 
 #define MAX_AA 23
 #define MAX_NA 6
@@ -597,7 +597,7 @@ void cal_aax_cutoff (double &aa1_cutoff, double &aa2_cutoff, double &aan_cutoff,
 void update_aax_cutoff(double &aa1_cutoff, double &aa2_cutoff, double &aan_cutoff,
 		int tolerance, int naa_stat_start_percent,
 		int naa_stat[5][61][4], int NAA, int iden);
-void show_cpu_time(tms &CPU_begin, tms &CPU_end);
 
 int calc_ann_list(int len, char *seqi, int NAA, int& aan_no, Vector<int> & aan_list, Vector<INTs> & aan_list_no, bool est=false);
 
+float current_time();
