@@ -1531,39 +1531,7 @@ void Sequence::ConvertBases()
 {
 	int i;
 	for(i=0; i<size; i++) data[i] = aa2idx[data[i] - 'A'];
-	//ComputeStats();
 }
-#if 0
-extern Options options;
-void Sequence::ComputeStats()
-{
-	int oneCounts[4];
-	int twoCounts[16];
-	int i = 0;
-	stats = 0;
-	if( size <=1 or options.isEST == false ) return;
-	memset( oneCounts, 0, 4*sizeof(int) );
-	memset( twoCounts, 0, 16*sizeof(int) );
-	if( data[0] < 4 ) oneCounts[ data[0] ] = 1;
-	for(i=1; i<size; i++){
-		if( data[i] >=4 or data[i-1] >=4 ) continue;
-		oneCounts[ data[i] ] += 1;
-		twoCounts[ data[i-1] * 4 + data[i] ] += 1;
-	}
-	unsigned char *s4 = (unsigned char*) & stats;
-	double entropy = 0.0;
-	for(i=0; i<16; i++){
-		if( twoCounts[i] == 0 ) continue;
-		double p = twoCounts[i] / (size - 1.0);
-		entropy += - p * log( p );
-	}
-	entropy = entropy * 255.0 / (4.0 * log(2));
-	s4[0] = (oneCounts[0] * 255) / size;
-	s4[1] = (oneCounts[1] * 255) / size;
-	s4[2] = (oneCounts[2] * 255) / size;
-	s4[3] = (int) entropy;
-}
-#endif
 
 void Sequence::Swap( Sequence & other )
 {
@@ -1615,13 +1583,6 @@ void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options
 	const char *tag = options.isEST ? "nt" : "aa";
 	bool print = options.print != 0;
 	bool strand = options.isEST;
-#if 0
-	if( options.des_len ==0 ){
-		len = 0;
-		while( len < MAX_DES && ! isspace( buf[len] ) ) len ++;
-	}
-	buf[ len ] = 0;
-#endif
 	fprintf( fout, "%i\t%i%s, >%s...", id, size, tag, identifier+1 );
 	if( identity ){
 		int *c = coverage;
@@ -2117,27 +2078,13 @@ void WorkingParam::ComputeRequiredBases( int NAA, int ss, const Options & option
 		//required_aa1 = required_aas = required_aan = 0;
 		return;
 	}
-#if 0
-#endif
-#if 1
 	// (N-K)-K*(1-C)*N = C*K*N-(K-1)*N-K = (C*K-K+1)*N-K
-	//required_aa1 = int((ss*aa1_cutoff-ss+1)*len_eff) - ss;
 	required_aa1 = (len_eff - ss) - int(ss * ceil( (1.0 - aa1_cutoff) * len_eff ));
 	if( required_aa1 < 0 ) required_aa1 = 0;
 	required_aas = required_aa1;
-	//required_aan = int((NAA*aa1_cutoff-NAA+1)*len_eff) - NAA;
 	required_aan = (len_eff - NAA) - int(NAA * ceil( (1.0 - aa1_cutoff) * len_eff ));
 	//printf( "%i %i\n", required_aa1, required_aan );
 	if( required_aan < 0 ) required_aan = 0;
-#if 0
-	if( required_aan ){
-		int part = NAA + required_aan - 1;
-		int len_eff2 = len_eff - part;
-		required_aa1 = (part - ss + 1) + (len_eff2 - ss) - int(ss * ceil( (1.0 - aa1_cutoff) * len_eff2 ));
-		if( required_aa1 < 0 ) required_aa1 = 0;
-		required_aas = required_aa1;
-	}
-#endif
 
 	int aa1_old = int (aa1_cutoff* (double) len_eff) - ss + 1;
 	int aas_old = int (aas_cutoff* (double) len_eff);
@@ -2158,16 +2105,6 @@ void WorkingParam::ComputeRequiredBases( int NAA, int ss, const Options & option
 	required_aa1 = (int)(fnew*required_aa1 + fold*aa1_old);
 	required_aas = (int)(fnew*required_aas + fold*aas_old);
 	required_aan = (int)(fnew*required_aan + fold*aan_old);
-#else
-	required_aa1 = int (aa1_cutoff* (double) len_eff) - ss + 1;
-	//printf( "%g %i\n", aa1_cutoff, len_eff );
-	required_aas = (aa1_cutoff > 0.95) ?
-		len_eff-ss  +1-(len_eff-required_aa1)*ss   :
-		int (aas_cutoff* (double) len_eff);
-	required_aan = (aa1_cutoff > 0.95) ?
-		len_eff-NAA+1-(len_eff-required_aa1)*NAA :
-		int (aan_cutoff* (double) len_eff);
-#endif
 }
 int WorkingBuffer::EncodeWords( Sequence *seq, int NAA, bool est )
 {
@@ -2341,22 +2278,7 @@ size_t MemoryLimit( size_t mem_need, const Options & options )
 }
 void Options::ComputeTableLimits( int naan, int typical_len, size_t mem_need )
 {
-	//float scale = 1.0 / (log( threads ) / log(2) + log( typical_len ) / log(100));
-	//float scale = (exp( - threads / 4.0 ) + exp( - threads / 100.0 ) / 16.0);
-	//double scale = exp( - 0.25*threads ) + 0.05*exp( - 0.01*threads ) + 0.01;
-#if 0
-	double scale = exp( - 0.2*threads ) + 0.05*exp( - 0.01*threads ) + 0.005;
-	scale *= 0.5 + exp( - typical_len / 1000.0 );
-	max_entries = (size_t)(naan * (1 + scale * (1<<9)));
-#endif
-	//2//double scale = exp( - 0.25*T ) + 0.1*exp( - 0.025*T ) + 0.01*exp( - 0.0025*T ) + 0.005;
-	double T = threads;
-	//double scale = exp( - 0.25*T ) + 0.1*exp( - 0.025*T ) + 0.002*exp( - 0.0025*T ) + 0.001;
-	//double scale = (1.0 + 0.2) / (T + 0.2);
-	//double scale = exp( - 0.25*T ) + 0.1*exp( - 0.025*T ) + 0.01*exp( - 0.0025*T ) + 0.001;
-	//double scale = exp( - 0.5*T ) + 0.1*exp( - 0.05*T ) + 0.01*exp( - 0.005*T ) + 0.001;
-	//double scale = exp( - 0.5*T ) + 0.1*exp( - 0.05*T ) + 0.02*exp( - 0.005*T ) + 0.0003;
-	double scale = 0.9/T + 0.1/sqrt(T);
+	double scale = 0.9/threads + 0.1/sqrt(threads);
 	max_sequences = (size_t)(scale * MAX_TABLE_SEQ);
 	max_entries = naan + 2 * max_sequences * typical_len;
 	if( max_memory ){
@@ -2422,20 +2344,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		int m = i;
 		size_t sum = remaining;
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
-#define TEST
-#ifndef TEST
-		size_t lim = mem_limit;
-		if( i ==0 ) lim /= 8; // first SCB with small size
-		while( m < N && sum < lim ){
-			Sequence *seq = sequences[m];
-			if( ! (seq->state & IS_REDUNDANT) ){
-				if ( options.store_disk ) seq->SwapIn();
-				sum += seq->size;
-			}
-			if( i ==0 and (m > 1E6 or sum > 1E8) ) break;
-			m ++;
-		}
-#else
 		size_t max_items = opts.max_entries;
 		size_t max_seqs = opts.max_sequences;
 		size_t items = 0;
@@ -2454,7 +2362,6 @@ void SequenceDB::DoClustering( int T, const Options & options )
 			m ++;
 		}
 		if( (m > i + 1E4) && (m > i + (N - i) / (2+T)) ) m = i + (N - i) / (2+T);
-#endif
 		if( m == i || m >= N ){
 			m = N;
 			if( m > i + 1E3 ) m = i + (N - i) / (2+T);
@@ -2494,11 +2401,9 @@ void SequenceDB::DoClustering( int T, const Options & options )
 							ClusterOne( seq, ks, word_table, params[tid], buffers[tid], options );
 							if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
 							if( may_stop and word_table.sequences.size() >= 100 ) break;
-#ifdef TEST
 							if( word_table.size >= max_items ) break;
 							int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
 							if( word_table.sequences.size() >= tmax ) break;
-#endif
 						}
 						self_stop = 1;
 					}else{
@@ -2555,17 +2460,15 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					ClusterOne( seq, ks, word_table, params[0], buffers[0], options );
 					bk = true;
 					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-#ifdef TEST
 					if( word_table.size >= max_items ) break;
 					int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
 					if( word_table.sequences.size() >= tmax ) break;
-#endif
 					bk = false;
 				}
 				if( bk ) break;
 			}
 		}else if( i < m ){
-			remaining = 0.5*remaining + 2*(m - i);
+			remaining = remaining/2 + 2*(m - i);
 			printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		}
 		printf( "---------- new table with %8i representatives\n", word_table.sequences.size() );
@@ -3027,26 +2930,9 @@ void SequenceDB::DoClustering( const Options & options )
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
 		int m = i;
 		size_t sum = 0;
-#define TEST
-#ifndef TEST
-		//printf( "\rdefining new sequence group\n", i, m );
-		fflush( stdout );
-		while( m < N && sum < mem_limit ){
-			Sequence *seq = sequences[m];
-			if( ! (seq->state & IS_REDUNDANT) ){
-				if ( options.store_disk ) seq->SwapIn();
-				sum += seq->size;
-			}
-			m ++;
-		}
-#else
 		size_t max_items = opts.max_entries;
 		size_t max_seqs = opts.max_sequences;
 		size_t items = 0;
-		if( i ==0 ){ // first SCB with small size
-//			max_items /= 8;
-//			max_seqs = 1000;
-		}
 		while( m < N && (sum*redundancy) < max_seqs && items < max_items ){
 			Sequence *seq = sequences[m];
 			if( ! (seq->state & IS_REDUNDANT) ){
@@ -3056,7 +2942,6 @@ void SequenceDB::DoClustering( const Options & options )
 			}
 			m ++;
 		}
-#endif
 		if( m > N ) m = N;
 		printf( "\rcomparing sequences from  %9i  to  %9i\n", i, m );
 		fflush( stdout );
@@ -3067,11 +2952,9 @@ void SequenceDB::DoClustering( const Options & options )
 			ClusterOne( seq, ks, word_table, param, buffer, options );
 			total_letters -= seq->size;
 			if( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-#ifdef TEST
 			if( word_table.size >= max_items ) break;
 			int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
 			if( word_table.sequences.size() >= tmax ) break;
-#endif
 		}
 		m = i;
 		if( word_table.size == 0 ) continue;
