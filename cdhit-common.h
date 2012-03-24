@@ -400,7 +400,6 @@ struct Sequence
 	int Format();
 
 	void ConvertBases();
-	//void ComputeStats();
 
 	void SwapIn();
 	void SwapOut();
