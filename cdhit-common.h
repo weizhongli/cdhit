@@ -287,12 +287,14 @@ struct Options
 	bool    is454;
 	bool    useIdentity;
 	bool    useDistance;
+	bool    backupFile;
 
 	string  input;
 	string  input2;
 	string  output;
 
 	Options(){
+		backupFile = false;
 		useIdentity = false;
 		useDistance = false;
 		has2D = false;
