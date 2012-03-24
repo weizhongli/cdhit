@@ -14,10 +14,10 @@ char cd_hit_ref4[] = "\"Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li. Artif
 //
 
 char contacts[] =
-  "    Questions, bugs, contact Limin Fu at l2fu@ucsd.edu, or Weizhong Li at liwz@sdsc.edu\n"
-  "    For updated versions and information, please visit: http://cd-hit.org\n\n"
-  "    cd-hit web server is also available from http://cd-hit.org\n\n"
-  "    If you find cd-hit useful, please kindly cite:\n\n";
+  "   Questions, bugs, contact Limin Fu at l2fu@ucsd.edu, or Weizhong Li at liwz@sdsc.edu\n"
+  "   For updated versions and information, please visit: http://cd-hit.org\n\n"
+  "   cd-hit web server is also available from http://cd-hit.org\n\n"
+  "   If you find cd-hit useful, please kindly cite:\n\n";
 
 char txt_option_i[] = "\tinput filename in fasta format, required\n";
 char txt_option_i_2d[] = "\tinput filename for db1 in fasta format, required\n";
@@ -106,6 +106,8 @@ char txt_option_p[] =
 char txt_option_r[] =
 "\t1 or 0, default 1, by default do both +/+ & +/- alignments\n \
 \tif set to 0, only +/+ strand alignment\n";
+char txt_option_bak[] =
+"\twrite backup cluster file (1 or 0, default 0)\n";
 
 char txt_option_mask[] = "\tmasking letters (e.g. -mask NX, to mask out both 'N' and 'X')\n";
 char txt_option_match[] = "\tmatching score, default 2 (1 for T-U and N-N)\n";
@@ -119,34 +121,35 @@ char txt_option_gap_ext[] = "\tgap extension score, default -1\n";
 int print_usage (char *arg) {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
-  cout << "    -i" << txt_option_i;
-  cout << "    -o" << txt_option_o;
-  cout << "    -c" << txt_option_c;
-  cout << "    -G" << txt_option_G;
-  cout << "    -b" << txt_option_b;
-  cout << "    -M" << txt_option_M;
-  cout << "    -T" << txt_option_T;
-  cout << "    -n" << txt_option_n;
-  cout << "    -l" << txt_option_l;
-  cout << "    -t" << txt_option_t;
-  cout << "    -d" << txt_option_d;
-  cout << "    -s" << txt_option_s;
-  cout << "    -S" << txt_option_S;
-  cout << "    -aL" << txt_option_aL;
-  cout << "    -AL" << txt_option_AL;
-  cout << "    -aS" << txt_option_aS;
-  cout << "    -AS" << txt_option_AS;
-  cout << "    -A" << txt_option_A;
-  cout << "    -uL" << txt_option_uL;
-  cout << "    -uS" << txt_option_uS;
-  cout << "    -U" << txt_option_U;
-  cout << "    -B" << txt_option_B;
-  cout << "    -p" << txt_option_p;
-  cout << "    -g" << txt_option_g;
-  cout << "    -h print this help\n\n";
+  cout << "   -i" << txt_option_i;
+  cout << "   -o" << txt_option_o;
+  cout << "   -c" << txt_option_c;
+  cout << "   -G" << txt_option_G;
+  cout << "   -b" << txt_option_b;
+  cout << "   -M" << txt_option_M;
+  cout << "   -T" << txt_option_T;
+  cout << "   -n" << txt_option_n;
+  cout << "   -l" << txt_option_l;
+  cout << "   -t" << txt_option_t;
+  cout << "   -d" << txt_option_d;
+  cout << "   -s" << txt_option_s;
+  cout << "   -S" << txt_option_S;
+  cout << "   -aL" << txt_option_aL;
+  cout << "   -AL" << txt_option_AL;
+  cout << "   -aS" << txt_option_aS;
+  cout << "   -AS" << txt_option_AS;
+  cout << "   -A" << txt_option_A;
+  cout << "   -uL" << txt_option_uL;
+  cout << "   -uS" << txt_option_uS;
+  cout << "   -U" << txt_option_U;
+  cout << "   -B" << txt_option_B;
+  cout << "   -p" << txt_option_p;
+  cout << "   -g" << txt_option_g;
+  cout << "   -bak" << txt_option_bak;
+  cout << "   -h\tprint this help\n\n";
   cout << contacts;
-  cout << "    " << cd_hit_ref1 << "\n";
-  cout << "    " << cd_hit_ref2 << "\n\n\n";
+  cout << "   " << cd_hit_ref1 << "\n";
+  cout << "   " << cd_hit_ref2 << "\n\n\n";
   exit(1);
 } // END print_usage
 
@@ -155,38 +158,39 @@ int print_usage (char *arg) {
 int print_usage_2d (char *arg) {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
-  cout << "    -i" << txt_option_i_2d;
-  cout << "    -i2"<< txt_option_i2;
-  cout << "    -o" << txt_option_o;
-  cout << "    -c" << txt_option_c;
-  cout << "    -G" << txt_option_G;
-  cout << "    -b" << txt_option_b;
-  cout << "    -M" << txt_option_M;
-  cout << "    -T" << txt_option_T;
-  cout << "    -n" << txt_option_n;
-  cout << "    -l" << txt_option_l;
-  cout << "    -t" << txt_option_t;
-  cout << "    -d" << txt_option_d;
-  cout << "    -s" << txt_option_s;
-  cout << "    -S" << txt_option_S;
-  cout << "    -s2" << txt_option_s2;
-  cout << "    -S2" << txt_option_S2;
-  cout << "    -aL" << txt_option_aL;
-  cout << "    -AL" << txt_option_AL;
-  cout << "    -aS" << txt_option_aS;
-  cout << "    -AS" << txt_option_AS;
-  cout << "    -A" << txt_option_A;
-  cout << "    -uL" << txt_option_uL;
-  cout << "    -uS" << txt_option_uS;
-  cout << "    -U" << txt_option_U;
-  cout << "    -B" << txt_option_B;
-  cout << "    -p" << txt_option_p;
-  cout << "    -g" << txt_option_g;
-  cout << "    -h print this help\n\n";
-  cout << "    Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
-  cout << "    If you find cd-hit useful, please kindly cite:\n\n";
-  cout << "    " << cd_hit_ref1 << "\n";
-  cout << "    " << cd_hit_ref3 << "\n\n\n";
+  cout << "   -i" << txt_option_i_2d;
+  cout << "   -i2"<< txt_option_i2;
+  cout << "   -o" << txt_option_o;
+  cout << "   -c" << txt_option_c;
+  cout << "   -G" << txt_option_G;
+  cout << "   -b" << txt_option_b;
+  cout << "   -M" << txt_option_M;
+  cout << "   -T" << txt_option_T;
+  cout << "   -n" << txt_option_n;
+  cout << "   -l" << txt_option_l;
+  cout << "   -t" << txt_option_t;
+  cout << "   -d" << txt_option_d;
+  cout << "   -s" << txt_option_s;
+  cout << "   -S" << txt_option_S;
+  cout << "   -s2" << txt_option_s2;
+  cout << "   -S2" << txt_option_S2;
+  cout << "   -aL" << txt_option_aL;
+  cout << "   -AL" << txt_option_AL;
+  cout << "   -aS" << txt_option_aS;
+  cout << "   -AS" << txt_option_AS;
+  cout << "   -A" << txt_option_A;
+  cout << "   -uL" << txt_option_uL;
+  cout << "   -uS" << txt_option_uS;
+  cout << "   -U" << txt_option_U;
+  cout << "   -B" << txt_option_B;
+  cout << "   -p" << txt_option_p;
+  cout << "   -g" << txt_option_g;
+  cout << "   -bak" << txt_option_bak;
+  cout << "   -h\tprint this help\n\n";
+  cout << "   Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
+  cout << "   If you find cd-hit useful, please kindly cite:\n\n";
+  cout << "   " << cd_hit_ref1 << "\n";
+  cout << "   " << cd_hit_ref3 << "\n\n\n";
   exit(1);
 } // END print_usage_2d
 
@@ -194,39 +198,40 @@ int print_usage_2d (char *arg) {
 int print_usage_est (char *arg) {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
-  cout << "    -i" << txt_option_i;
-  cout << "    -o" << txt_option_o;
-  cout << "    -c" << txt_option_c;
-  cout << "    -G" << txt_option_G;
-  cout << "    -b" << txt_option_b;
-  cout << "    -M" << txt_option_M;
-  cout << "    -T" << txt_option_T;
-  cout << "    -n" << txt_option_n_est;
-  cout << "    -l" << txt_option_l;
-  cout << "    -d" << txt_option_d;
-  cout << "    -s" << txt_option_s;
-  cout << "    -S" << txt_option_S;
-  cout << "    -aL" << txt_option_aL;
-  cout << "    -AL" << txt_option_AL;
-  cout << "    -aS" << txt_option_aS;
-  cout << "    -AS" << txt_option_AS;
-  cout << "    -A" << txt_option_A;
-  cout << "    -uL" << txt_option_uL;
-  cout << "    -uS" << txt_option_uS;
-  cout << "    -U" << txt_option_U;
-  cout << "    -B" << txt_option_B;
-  cout << "    -p" << txt_option_p;
-  cout << "    -g" << txt_option_g;
-  cout << "    -r" << txt_option_r;
-  cout << "    -mask" << txt_option_mask;
-  cout << "    -match" << txt_option_match;
-  cout << "    -mismatch" << txt_option_mismatch;
-  cout << "    -gap" << txt_option_gap;
-  cout << "    -gap-ext" << txt_option_gap_ext;
-  cout << "    -h print this help\n\n";
+  cout << "   -i" << txt_option_i;
+  cout << "   -o" << txt_option_o;
+  cout << "   -c" << txt_option_c;
+  cout << "   -G" << txt_option_G;
+  cout << "   -b" << txt_option_b;
+  cout << "   -M" << txt_option_M;
+  cout << "   -T" << txt_option_T;
+  cout << "   -n" << txt_option_n_est;
+  cout << "   -l" << txt_option_l;
+  cout << "   -d" << txt_option_d;
+  cout << "   -s" << txt_option_s;
+  cout << "   -S" << txt_option_S;
+  cout << "   -aL" << txt_option_aL;
+  cout << "   -AL" << txt_option_AL;
+  cout << "   -aS" << txt_option_aS;
+  cout << "   -AS" << txt_option_AS;
+  cout << "   -A" << txt_option_A;
+  cout << "   -uL" << txt_option_uL;
+  cout << "   -uS" << txt_option_uS;
+  cout << "   -U" << txt_option_U;
+  cout << "   -B" << txt_option_B;
+  cout << "   -p" << txt_option_p;
+  cout << "   -g" << txt_option_g;
+  cout << "   -r" << txt_option_r;
+  cout << "   -mask" << txt_option_mask;
+  cout << "   -match" << txt_option_match;
+  cout << "   -mismatch" << txt_option_mismatch;
+  cout << "   -gap" << txt_option_gap;
+  cout << "   -gap-ext" << txt_option_gap_ext;
+  cout << "   -bak" << txt_option_bak;
+  cout << "   -h\tprint this help\n\n";
   cout << contacts;
-  cout << "    " << cd_hit_ref1 << "\n";
-  cout << "    " << cd_hit_ref3 << "\n\n\n";
+  cout << "   " << cd_hit_ref1 << "\n";
+  cout << "   " << cd_hit_ref3 << "\n\n\n";
   exit(1);
 } // END print_usage_est
 
@@ -234,42 +239,43 @@ int print_usage_est (char *arg) {
 int print_usage_est_2d (char *arg) {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
-  cout << "    -i" << txt_option_i_2d;
-  cout << "    -i2"<< txt_option_i2;
-  cout << "    -o" << txt_option_o;
-  cout << "    -c" << txt_option_c;
-  cout << "    -G" << txt_option_G;
-  cout << "    -b" << txt_option_b;
-  cout << "    -M" << txt_option_M;
-  cout << "    -T" << txt_option_T;
-  cout << "    -n" << txt_option_n_est;
-  cout << "    -l" << txt_option_l;
-  cout << "    -d" << txt_option_d;
-  cout << "    -s" << txt_option_s;
-  cout << "    -S" << txt_option_S;
-  cout << "    -s2" << txt_option_s2;
-  cout << "    -S2" << txt_option_S2;
-  cout << "    -aL" << txt_option_aL;
-  cout << "    -AL" << txt_option_AL;
-  cout << "    -aS" << txt_option_aS;
-  cout << "    -AS" << txt_option_AS;
-  cout << "    -A" << txt_option_A;
-  cout << "    -uL" << txt_option_uL;
-  cout << "    -uS" << txt_option_uS;
-  cout << "    -U" << txt_option_U;
-  cout << "    -B" << txt_option_B;
-  cout << "    -p" << txt_option_p;
-  cout << "    -g" << txt_option_g;
-  cout << "    -r" << txt_option_r;
-  cout << "    -mask" << txt_option_mask;
-  cout << "    -match" << txt_option_match;
-  cout << "    -mismatch" << txt_option_mismatch;
-  cout << "    -gap" << txt_option_gap;
-  cout << "    -gap-ext" << txt_option_gap_ext;
-  cout << "    -h print this help\n\n";
+  cout << "   -i" << txt_option_i_2d;
+  cout << "   -i2"<< txt_option_i2;
+  cout << "   -o" << txt_option_o;
+  cout << "   -c" << txt_option_c;
+  cout << "   -G" << txt_option_G;
+  cout << "   -b" << txt_option_b;
+  cout << "   -M" << txt_option_M;
+  cout << "   -T" << txt_option_T;
+  cout << "   -n" << txt_option_n_est;
+  cout << "   -l" << txt_option_l;
+  cout << "   -d" << txt_option_d;
+  cout << "   -s" << txt_option_s;
+  cout << "   -S" << txt_option_S;
+  cout << "   -s2" << txt_option_s2;
+  cout << "   -S2" << txt_option_S2;
+  cout << "   -aL" << txt_option_aL;
+  cout << "   -AL" << txt_option_AL;
+  cout << "   -aS" << txt_option_aS;
+  cout << "   -AS" << txt_option_AS;
+  cout << "   -A" << txt_option_A;
+  cout << "   -uL" << txt_option_uL;
+  cout << "   -uS" << txt_option_uS;
+  cout << "   -U" << txt_option_U;
+  cout << "   -B" << txt_option_B;
+  cout << "   -p" << txt_option_p;
+  cout << "   -g" << txt_option_g;
+  cout << "   -r" << txt_option_r;
+  cout << "   -mask" << txt_option_mask;
+  cout << "   -match" << txt_option_match;
+  cout << "   -mismatch" << txt_option_mismatch;
+  cout << "   -gap" << txt_option_gap;
+  cout << "   -gap-ext" << txt_option_gap_ext;
+  cout << "   -bak" << txt_option_bak;
+  cout << "   -h\tprint this help\n\n";
   cout << contacts;
-  cout << "    " << cd_hit_ref1 << "\n";
-  cout << "    " << cd_hit_ref3 << "\n\n\n";
+  cout << "   " << cd_hit_ref1 << "\n";
+  cout << "   " << cd_hit_ref3 << "\n\n\n";
   exit(1);
 } // END print_usage_est_2d
 
@@ -278,10 +284,10 @@ int print_usage_div (char *arg) {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
   cout << "Options " << endl << endl;
-  cout << "    -i in_dbname, required" << endl;
-  cout << "    -o out_dbname, required" << endl;
-  cout << "    -div number of divide, required " << endl;
-//  cout << "    -dbmax max size of your db\n\n\n";
+  cout << "   -i in_dbname, required" << endl;
+  cout << "   -o out_dbname, required" << endl;
+  cout << "   -div number of divide, required " << endl;
+//  cout << "   -dbmax max size of your db\n\n\n";
   exit(1);
 } // END print_usage_div
 
@@ -297,30 +303,31 @@ int print_usage_454 (char *arg)
 {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
-  cout << "    -i" << txt_option_i;
-  cout << "    -o" << txt_option_o;
-  cout << "    -c" << mytxt_option_c;
-  cout << "    -b" << mytxt_option_b;
-  cout << "    -M" << txt_option_M;
-  cout << "    -T" << txt_option_T;
-  cout << "    -n" << mytxt_option_n_est;
-  cout << "    -aL" << txt_option_aL;
-  cout << "    -AL" << txt_option_AL;
-  cout << "    -aS" << txt_option_aS;
-  cout << "    -AS" << txt_option_AS;
-  cout << "    -B" << txt_option_B;
-  cout << "    -g" << txt_option_g;
-  cout << "    -D" << mytxt_option_D;
-  cout << "    -match" << txt_option_match2;
-  cout << "    -mismatch" << txt_option_mismatch2;
-  cout << "    -gap" << txt_option_gap2;
-  cout << "    -gap-ext" << txt_option_gap_ext;
-  cout << "    -h print this help\n\n";
-  cout << "    Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
-  cout << "    If you find cd-hit useful, please kindly cite:\n\n";
-  cout << "    " << cd_hit_ref1 << "\n";
-  cout << "    " << cd_hit_ref3 << "\n";
-  cout << "    " << cd_hit_ref4 << "\n\n\n";
+  cout << "   -i" << txt_option_i;
+  cout << "   -o" << txt_option_o;
+  cout << "   -c" << mytxt_option_c;
+  cout << "   -b" << mytxt_option_b;
+  cout << "   -M" << txt_option_M;
+  cout << "   -T" << txt_option_T;
+  cout << "   -n" << mytxt_option_n_est;
+  cout << "   -aL" << txt_option_aL;
+  cout << "   -AL" << txt_option_AL;
+  cout << "   -aS" << txt_option_aS;
+  cout << "   -AS" << txt_option_AS;
+  cout << "   -B" << txt_option_B;
+  cout << "   -g" << txt_option_g;
+  cout << "   -D" << mytxt_option_D;
+  cout << "   -match" << txt_option_match2;
+  cout << "   -mismatch" << txt_option_mismatch2;
+  cout << "   -gap" << txt_option_gap2;
+  cout << "   -gap-ext" << txt_option_gap_ext;
+  cout << "   -bak" << txt_option_bak;
+  cout << "   -h\tprint this help\n\n";
+  cout << "   Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
+  cout << "   If you find cd-hit useful, please kindly cite:\n\n";
+  cout << "   " << cd_hit_ref1 << "\n";
+  cout << "   " << cd_hit_ref3 << "\n";
+  cout << "   " << cd_hit_ref4 << "\n\n\n";
   exit(1);
 }
 

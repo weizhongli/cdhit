@@ -235,6 +235,7 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-uS") == 0) short_unmatch_per = atof(value);
 	else if (strcmp(flag, "-U") == 0) unmatch_len = intval;
 	else if (strcmp(flag, "-tmp" ) == 0) temp_dir  = value;
+	else if (strcmp(flag, "-bak" ) == 0) backupFile  = intval;
 	else if (strcmp(flag, "-T" ) == 0){
 #ifndef NO_OPENMP
 		int cpu = omp_get_num_procs();
@@ -1928,14 +1929,17 @@ void SequenceDB::WriteExtra1D( const Options & options )
 	for (i=0; i<N; i++) sorting[i] = ((long long)sequences[i]->index << 32) | i;
 	std::sort( sorting.begin(), sorting.end() );
 
-	FILE *fin = fopen( options.input.c_str(), "r" );
-	FILE *fout = fopen( db_clstr_bak.c_str(), "w+" );
+	FILE *fout, *fin = fopen( options.input.c_str(), "r" );
 	char *buf = new char[ MAX_DES + 1 ];
-	for (i=0; i<N; i++) {
-		Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
-		seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
+
+	if( options.backupFile ){
+		fout = fopen( db_clstr_bak.c_str(), "w+" );
+		for (i=0; i<N; i++) {
+			Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
+			seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
+		}
+		fclose( fout );
 	}
-	fclose( fout );
 
 	cout << "writing clustering information" << endl;
 	int M = rep_seqs.size();
@@ -1965,19 +1969,21 @@ void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
 	for (i=0; i<N; i++) sorting[i] = ((long long)other.sequences[i]->index << 32) | i;
 	std::sort( sorting.begin(), sorting.end() );
 
-	FILE *fin = fopen( options.input.c_str(), "r" );
+	FILE *fout, *fin = fopen( options.input.c_str(), "r" );
 	FILE *fin2 = fopen( options.input2.c_str(), "r" );
-	FILE *fout = fopen( db_clstr_bak.c_str(), "w+" );
 	char *buf = new char[ MAX_DES + 1 ];
-	for (i=0; i<N; i++) {
-		Sequence *seq = other.sequences[ sorting[i] & 0xffffffff ];
-		seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
+	if( options.backupFile ){
+		fout = fopen( db_clstr_bak.c_str(), "w+" );
+		for (i=0; i<N; i++) {
+			Sequence *seq = other.sequences[ sorting[i] & 0xffffffff ];
+			seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
+		}
+		for (i=0; i<N2; i++) {
+			Sequence *seq = sequences[i];
+			if( seq->state & IS_REDUNDANT ) seq->PrintInfo( seq->cluster_id, fin2, fout, options, buf );
+		}
+		fclose( fout );
 	}
-	for (i=0; i<N2; i++) {
-		Sequence *seq = sequences[i];
-		if( seq->state & IS_REDUNDANT ) seq->PrintInfo( seq->cluster_id, fin2, fout, options, buf );
-	}
-	fclose( fout );
 
 	cout << "writing clustering information" << endl;
 	Vector<Vector<int> > clusters( N );
@@ -2447,10 +2453,11 @@ void SequenceDB::DoClustering( int T, const Options & options )
 			}
 			m ++;
 		}
+		if( (m > i + 1E4) && (m > i + (N - i) / (2+T)) ) m = i + (N - i) / (2+T);
 #endif
 		if( m == i || m >= N ){
 			m = N;
-			if( m > i + 1E3 ) m = i + (N - i) / (2*T);
+			if( m > i + 1E3 ) m = i + (N - i) / (2+T);
 		}
 		//printf( "m = %i  %i,  %i\n", i, m, m-i );
 		printf( "\r# comparing sequences from  %9i  to  %9i\n", i, m );
@@ -2469,58 +2476,56 @@ void SequenceDB::DoClustering( int T, const Options & options )
 			}
 			int may_stop = 0;
 			int self_stop = 0;
-			int JN = N;
 			float p0 = 0;
 			int min = last_table.sequences[ last_table.sequences.size()-1 ]->size;
 			int m0 = m;
+			bool stop = false;
 			#pragma omp parallel for schedule( dynamic, 1 )
-			for(int j=m-1; j<JN; j++){
-				if( j+1 == JN ){
-					//printf( "stoping\n" );
-					//#pragma omp atomic
-					may_stop = 1;
-				}
-				if( j == (m0-1) ){ // use m0 to avoid other iterations satisfying the condition:
-					int tid = omp_get_thread_num();
-					for(int ks=i; ks<m; ks++){
-						Sequence *seq = sequences[ks];
-						i = ks + 1;
-						if (seq->state & IS_REDUNDANT) continue;
-						ClusterOne( seq, ks, word_table, params[tid], buffers[tid], options );
-						if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-						if( may_stop and word_table.sequences.size() >= 100 ) break;
+			for(int j=m-1; j<N; j++){
+				#pragma omp flush (stop)
+				if( ! stop ){
+					if( j+1 == N ) may_stop = 1;
+					if( j == (m0-1) ){ // use m0 to avoid other iterations satisfying the condition:
+						int tid = omp_get_thread_num();
+						for(int ks=i; ks<m; ks++){
+							Sequence *seq = sequences[ks];
+							i = ks + 1;
+							if (seq->state & IS_REDUNDANT) continue;
+							ClusterOne( seq, ks, word_table, params[tid], buffers[tid], options );
+							if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
+							if( may_stop and word_table.sequences.size() >= 100 ) break;
 #ifdef TEST
-						if( word_table.size >= max_items ) break;
-						int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
-						if( word_table.sequences.size() >= tmax ) break;
+							if( word_table.size >= max_items ) break;
+							int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
+							if( word_table.sequences.size() >= tmax ) break;
 #endif
-					}
-					self_stop = 1;
-				}else{
-					Sequence *seq = sequences[j];
-					if (seq->state & IS_REDUNDANT) continue;
-					if ( options.store_disk ){
-						#pragma omp critical
-						seq->SwapIn();
-					}
-					int tid = omp_get_thread_num();
-					CheckOne( seq, last_table, params[tid], buffers[tid], options );
-					if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-					if( min > params[tid].len_upper_bound ){
-						may_stop = 1;
-						#pragma omp critical
-						JN = j;
-						continue;
-					}
-					if( self_stop && tid ==1 ){
-						float p = (100.0*j)/N;
-						if( p > p0+1E-1 ){ // print only if the percentage changed
-							printf( "\r%4.1f%%", p );
-							fflush( stdout );
-							p0 = p;
 						}
-					}
+						self_stop = 1;
+					}else{
+						Sequence *seq = sequences[j];
+						if (seq->state & IS_REDUNDANT) continue;
+						if ( options.store_disk ){
+							#pragma omp critical
+							seq->SwapIn();
+						}
+						int tid = omp_get_thread_num();
+						CheckOne( seq, last_table, params[tid], buffers[tid], options );
+						if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
+						if( min > params[tid].len_upper_bound ){
+							may_stop = 1;
+							stop = true;
+							#pragma omp flush (stop)
+						}
+						if( self_stop && tid ==1 ){
+							float p = (100.0*j)/N;
+							if( p > p0+1E-1 ){ // print only if the percentage changed
+								printf( "\r%4.1f%%", p );
+								fflush( stdout );
+								p0 = p;
+							}
+						}
 
+					}
 				}
 			}
 		}
@@ -2560,7 +2565,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 				if( bk ) break;
 			}
 		}else if( i < m ){
-			remaining = m - i;
+			remaining = 0.5*remaining + 2*(m - i);
 			printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		}
 		printf( "---------- new table with %8i representatives\n", word_table.sequences.size() );
