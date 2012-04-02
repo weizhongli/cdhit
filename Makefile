@@ -23,6 +23,10 @@ else
 CCFLAGS += -O2
 endif
 
+ifdef MAX_SEQ
+CCFLAGS += -DMAX_SEQ=$(MAX_SEQ)
+endif
+
 #LDFLAGS = -static -o
 LDFLAGS = -o
 
