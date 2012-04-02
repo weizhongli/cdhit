@@ -1740,7 +1740,7 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 	total_letter=0;
 	total_desc=0;
 	max_len = 0;
-	min_len = 99999999;
+	min_len = (size_t)-1;
 	for (i=0; i<N; i++) {
 		Sequence *seq = sequences[i];
 		len = seq->size;
@@ -1753,8 +1753,12 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 	options.max_entries = max_len * MAX_TABLE_SEQ;
 	if (max_len >= 65536 and sizeof(INTs) <=2) 
 		bomb_warning("Some seqs longer than 65536, you may define LONG_SEQ");
+
+	printf( "%ti %ti\n", max_len, MAX_SEQ );
 	if (max_len > MAX_SEQ ) 
-		bomb_warning("Some seqs too long, you need to increase MAX_SEQ");
+		bomb_warning("Some seqs are too long, please rebuild the program with make parameter "
+				"MAX_SEQ=new-maximum-length (e.g. make MAX_SEQ=10000000)");
+
 	cout << "longest and shortest : " << max_len << " and " << min_len << endl;
 	cout << "Total letters: " << total_letter << endl;
 	// END change all the NR_seq to iseq

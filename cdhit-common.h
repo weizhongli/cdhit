@@ -41,10 +41,13 @@
 
 #define CDHIT_VERSION  "4.5.8"
 
+#ifndef MAX_SEQ
+#define MAX_SEQ 655360
+#endif
+
 #define MAX_AA 23
 #define MAX_NA 6
 #define MAX_UAA 21
-#define MAX_SEQ 655360
 #define MAX_DIAG (MAX_SEQ<<1)              // MAX_DIAG be twice of MAX_SEQ
 #define MAX_GAP MAX_SEQ                    // MAX_GAP <= MAX_SEQ
 #define MAX_DES 300000
@@ -462,14 +465,14 @@ struct WorkingBuffer
 	char seqi_comp[MAX_SEQ];
 	int total_bytes;
 
-	WorkingBuffer( int frag=0, int maxlen=0, const Options & options=Options() ){
+	WorkingBuffer( size_t frag=0, size_t maxlen=0, const Options & options=Options() ){
 		Set( frag, maxlen, options );
 	}
-	void Set( int frag, int maxlen, const Options & options ){
+	void Set( size_t frag, size_t maxlen, const Options & options ){
 		bool est = options.isEST;
-		int m = MAX_UAA*MAX_UAA;
-		int max_len = maxlen;
-		int band = max_len*max_len;
+		size_t m = MAX_UAA*MAX_UAA;
+		size_t max_len = maxlen;
+		size_t band = max_len*max_len;
 		if( est ) m = m * m;
 		if( band > options.band_width ) band = options.band_width;
 		taap.resize( m );
@@ -521,9 +524,9 @@ class SequenceDB
 
 		long long total_letter;
 		long long total_desc;
-		int max_len;
-		int min_len;
-		int len_n50;
+		size_t max_len;
+		size_t min_len;
+		size_t len_n50;
 
 		void Clear(){
 			for(int i=0; i<sequences.size(); i++) delete sequences[i];
