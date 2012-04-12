@@ -1754,7 +1754,6 @@ void SequenceDB::SortDivide( Options & options, bool sort )
 	if (max_len >= 65536 and sizeof(INTs) <=2) 
 		bomb_warning("Some seqs longer than 65536, you may define LONG_SEQ");
 
-	printf( "%ti %ti\n", max_len, MAX_SEQ );
 	if (max_len > MAX_SEQ ) 
 		bomb_warning("Some seqs are too long, please rebuild the program with make parameter "
 				"MAX_SEQ=new-maximum-length (e.g. make MAX_SEQ=10000000)");
@@ -2280,11 +2279,12 @@ size_t MemoryLimit( size_t mem_need, const Options & options )
 	//printf( "Max number of word counting entries: %zu\n\n", mem_limit );
 	return mem_limit;
 }
-void Options::ComputeTableLimits( int naan, int typical_len, size_t mem_need )
+void Options::ComputeTableLimits( int naan, int max_len, int typical_len, size_t mem_need )
 {
-	double scale = 0.9/threads + 0.1/sqrt(threads);
+	//double scale = 0.9/threads + 0.1/sqrt(threads);
+	double scale = 1.0 / threads + 0.1 * exp( - 0.1 * threads );
 	max_sequences = (size_t)(scale * MAX_TABLE_SEQ);
-	max_entries = naan + 2 * max_sequences * typical_len;
+	max_entries = (size_t)(scale * (1000*max_len + 1000000*typical_len));
 	if( max_memory ){
 		double frac = max_sequences / (double) max_entries;
 		max_entries = (options.max_memory - mem_need) / sizeof(IndexCount);
@@ -2340,7 +2340,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	int remaining = 0;
 
 	Options opts( options );
-	opts.ComputeTableLimits( NAAN, len_n50, mem_need );
+	opts.ComputeTableLimits( NAAN, max_len, len_n50, mem_need );
 
 	omp_set_num_threads(T);
 	for(i=0; i<N; ){
@@ -2352,8 +2352,8 @@ void SequenceDB::DoClustering( int T, const Options & options )
 		size_t max_seqs = opts.max_sequences;
 		size_t items = 0;
 		if( i == 0 && max_seqs > 1000 ){ // first SCB with small size
-			max_items /= 64;
-			max_seqs /= 64;
+			max_items /= 8;
+			max_seqs /= 8;
 		}
 		while( m < N && (sum*redundancy) < max_seqs && items < max_items ){
 			Sequence *seq = sequences[m];
@@ -2472,7 +2472,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 				if( bk ) break;
 			}
 		}else if( i < m ){
-			remaining = remaining/2 + 2*(m - i);
+			remaining = remaining/2 + (m - i);
 			printf( "\r---------- %6i remaining sequences to the next cycle\n", m-i );
 		}
 		printf( "---------- new table with %8i representatives\n", word_table.sequences.size() );
@@ -2928,7 +2928,7 @@ void SequenceDB::DoClustering( const Options & options )
 	size_t tabsize = 0;
 
 	Options opts( options );
-	opts.ComputeTableLimits( NAAN, len_n50, mem_need );
+	opts.ComputeTableLimits( NAAN, max_len, len_n50, mem_need );
 
 	for(i=0; i<N; ){
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
@@ -3037,7 +3037,7 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 	size_t mem_limit = MemoryLimit( mem_need, options );
 
 	Options opts( options );
-	opts.ComputeTableLimits( NAAN, len_n50, mem_need );
+	opts.ComputeTableLimits( NAAN, max_len, len_n50, mem_need );
 
 	WordTable word_table( options.NAA, NAAN );
 
