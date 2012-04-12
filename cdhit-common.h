@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.5.8"
+#define CDHIT_VERSION  "4.5.9"
 
 #ifndef MAX_SEQ
 #define MAX_SEQ 655360
@@ -344,7 +344,7 @@ struct Options
 	bool SetOptions( int argc, char *argv[], bool twodata=false, bool est=false );
 
 	void Validate();
-	void ComputeTableLimits( int naan, int typical_len, size_t mem_need );
+	void ComputeTableLimits( int naan, int max_len, int typical_len, size_t mem_need );
 
 	void Print();
 };
