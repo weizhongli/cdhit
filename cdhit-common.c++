@@ -2279,16 +2279,16 @@ size_t MemoryLimit( size_t mem_need, const Options & options )
 	//printf( "Max number of word counting entries: %zu\n\n", mem_limit );
 	return mem_limit;
 }
-void Options::ComputeTableLimits( int naan, int max_len, int typical_len, size_t mem_need )
+void Options::ComputeTableLimits( int min_len, int max_len, int typical_len, size_t mem_need )
 {
-	//double scale = 0.9/threads + 0.1/sqrt(threads);
-	double scale = 1.0 / threads + 0.1 * exp( - 0.1 * threads );
+	double scale = 0.5/threads + 0.5/sqrt(threads);
 	max_sequences = (size_t)(scale * MAX_TABLE_SEQ);
-	max_entries = (size_t)(scale * (1000*max_len + 1000000*typical_len));
+	max_entries = (size_t)(scale * (500*max_len + 500000*typical_len + 50000000));
 	if( max_memory ){
 		double frac = max_sequences / (double) max_entries;
 		max_entries = (options.max_memory - mem_need) / sizeof(IndexCount);
 		max_sequences = (size_t)(max_entries * frac);
+		if( max_sequences > MAX_TABLE_SEQ ) max_sequences = MAX_TABLE_SEQ;
 	}
 	printf( "Table limit with the given memory limit:\n" );
 	printf( "Max number of representatives: %zu\n", max_sequences );
@@ -2340,7 +2340,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	int remaining = 0;
 
 	Options opts( options );
-	opts.ComputeTableLimits( NAAN, max_len, len_n50, mem_need );
+	opts.ComputeTableLimits( min_len, max_len, len_n50, mem_need );
 
 	omp_set_num_threads(T);
 	for(i=0; i<N; ){
@@ -2928,7 +2928,7 @@ void SequenceDB::DoClustering( const Options & options )
 	size_t tabsize = 0;
 
 	Options opts( options );
-	opts.ComputeTableLimits( NAAN, max_len, len_n50, mem_need );
+	opts.ComputeTableLimits( min_len, max_len, len_n50, mem_need );
 
 	for(i=0; i<N; ){
 		float redundancy = (rep_seqs.size() + 1.0) / (i + 1.0);
@@ -3037,7 +3037,7 @@ void SequenceDB::ClusterTo( SequenceDB & other, const Options & options )
 	size_t mem_limit = MemoryLimit( mem_need, options );
 
 	Options opts( options );
-	opts.ComputeTableLimits( NAAN, max_len, len_n50, mem_need );
+	opts.ComputeTableLimits( min_len, max_len, len_n50, mem_need );
 
 	WordTable word_table( options.NAA, NAAN );
 
