@@ -1,6 +1,16 @@
 
 CD-HIT ChangeLog
 
+CD-HIT-V4.6 (2011-04-25):
+Add: better auto tuning (for -M 0) of word table size for both single and multiple threaded execution;
+Fix: a minor bug for very long input sequences;
+Add: compiling option to change MAX_SEQ.
+
+CD-HIT-V4.5.8 (2011-03-24):
+Add: handling of asterisk at the end of sequences;
+Add: a few minor improvements in the parallelization;
+Add: new options -mask and -bak.
+
 CD-HIT-V4.5.7 (2011-12-16):
 Add: minor improvements to the word table size handling;
 Add: updated documentation file.
