@@ -38,7 +38,7 @@ PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div cd-hit-454
 all: $(PROGS)
 
 clean:
-	rm *.o $(PROGS)
+	rm -f *.o $(PROGS)
 
 # programs
 
