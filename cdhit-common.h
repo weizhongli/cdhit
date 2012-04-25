@@ -95,7 +95,7 @@ class Vector : public vector<TYPE>
 		void Append( const TYPE & item ){
 			size_t n = this->size();
 			if( n + 1 >= this->capacity() ) this->reserve( n + n/5 + 1 );
-			push_back( item );
+			this->push_back( item );
 		}
 		int size()const{ return (int)vector<TYPE>::size(); }
 };
