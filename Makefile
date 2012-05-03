@@ -28,9 +28,12 @@ CCFLAGS += -DMAX_SEQ=$(MAX_SEQ)
 endif
 
 #LDFLAGS = -static -o
-LDFLAGS = -o
+LDFLAGS += -o
 
 PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div cd-hit-454
+
+# Propagate hardening flags
+CCFLAGS := $(CPPFLAGS) $(CCFLAGS) $(CXXFLAGS)
 
 .c++.o:
 	$(CC) $(CCFLAGS) -c $<

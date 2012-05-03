@@ -1,5 +1,9 @@
 #!/usr/bin/perl -w
 
+no warnings qw(once);
+
+package PSI_CDHIT_LOCAL;
+
 our $pid         = $$;
 
 our $db_in     = "";
@@ -57,7 +61,7 @@ our $remote_perl_script;
 sub parse_para_etc {
   my ($arg, $cmd);
    if(@ARGV==0){
-      ($script_name =~ /cd-hit-2d/) ? print_usage_2d() : print_usage();
+      ($PSI_CDHIT::script_name =~ /cd-hit-2d/) ? print_usage_2d() : print_usage();
       exit();
    }
   while($arg = shift) {
@@ -92,7 +96,7 @@ sub parse_para_etc {
                                     $blastp    = "megablast -a 2 -D 2"; }
     elsif ($arg eq "-J") { $job       = shift; $job_file = shift; }
     else {
-      ($script_name =~ /cd-hit-2d/) ? print_usage_2d() : print_usage();
+      ($PSI_CDHIT::script_name =~ /cd-hit-2d/) ? print_usage_2d() : print_usage();
       exit();
     }
   }
@@ -360,7 +364,7 @@ sub start_deamon_master {
     else                                   { $cpu_of_host{$host1}++; }
     my $t1 = "$pl_dir,$host1,$cpu_of_host{$host1}";
     print LOG "run deamon on node $t1\n";
-    $cmd = `ssh -xqf $host1 'cd $pwd; $script_name -J deamon $t1 >/dev/null 2>&1 &'`;
+    $cmd = `ssh -xqf $host1 'cd $pwd; $PSI_CDHIT::script_name -J deamon $t1 >/dev/null 2>&1 &'`;
   }
 
 }
