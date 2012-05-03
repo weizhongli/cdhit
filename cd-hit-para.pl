@@ -52,7 +52,7 @@ while ($arg=shift) {
   elsif ($arg eq "--Q") { $queue      = shift; }
   elsif ($arg eq "--T") { $queue_type = shift; }
   elsif ($arg eq "--R") { $restart_in = shift; }
-  else  {$arg_pass       .= " $arg " . shift; }
+  else  {$arg_pass       .= " $arg "; }
 }
 ($in and $out) || print_usage();
 
