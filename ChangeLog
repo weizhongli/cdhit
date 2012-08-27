@@ -1,12 +1,16 @@
 
 CD-HIT ChangeLog
 
-CD-HIT-V4.6 (2011-04-25):
+CD-HIT-V4.6.1 (2012-08-27):
+Fix: a minor bug in handling masking letters;
+Add: a few minor changes and fixings to conform to debian packaging rules.
+
+CD-HIT-V4.6 (2012-04-25):
 Add: better auto tuning (for -M 0) of word table size for both single and multiple threaded execution;
 Fix: a minor bug for very long input sequences;
 Add: compiling option to change MAX_SEQ.
 
-CD-HIT-V4.5.8 (2011-03-24):
+CD-HIT-V4.5.8 (2012-03-24):
 Add: handling of asterisk at the end of sequences;
 Add: a few minor improvements in the parallelization;
 Add: new options -mask and -bak.
