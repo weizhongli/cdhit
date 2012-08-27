@@ -2679,7 +2679,11 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	param.ComputeRequiredBases( options.NAA, 4, options );
 	int skip = buf.EncodeWords( seq, options.NAA, true );
 	required_aan -= skip;
+	required_aas -= skip;
+	required_aa1 -= skip;
 	if( required_aan <= 0 ) required_aan = 1;
+	if( required_aas <= 0 ) required_aas = 1;
+	if( required_aa1 <= 0 ) required_aa1 = 1;
 
 	// if minimal alignment length > len, return
 	// I can not return earlier, because I need to calc the word_encodes etc
