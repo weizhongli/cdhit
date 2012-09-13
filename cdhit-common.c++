@@ -2288,6 +2288,7 @@ void Options::ComputeTableLimits( int min_len, int max_len, int typical_len, siz
 		double frac = max_sequences / (double) max_entries;
 		max_entries = (options.max_memory - mem_need) / sizeof(IndexCount);
 		max_sequences = (size_t)(max_entries * frac);
+		if( max_sequences < 100 ) max_sequences = 100;
 		if( max_sequences > MAX_TABLE_SEQ ) max_sequences = MAX_TABLE_SEQ;
 	}
 	printf( "Table limit with the given memory limit:\n" );
