@@ -517,7 +517,8 @@ int diag_test_aapn(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer & b
 	//find the best band range
 	//  int band_b = required_aa1;
 	int band_b = required_aa1-1 >= 0 ? required_aa1-1:0;  // on dec 21 2001
-	int band_e = nall - required_aa1;
+	int band_e = nall - band_b;
+
 	int band_m = ( band_b+band_width-1 < band_e ) ? band_b+band_width-1 : band_e;
 	int best_score=0;
 	int best_score2=0;
@@ -629,11 +630,11 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
 		}
 	}
 #endif
-
+	
 	//find the best band range
 	//  int band_b = required_aa1;
 	int band_b = required_aa1-1 >= 0 ? required_aa1-1:0;  // on dec 21 2001
-	int band_e = nall - required_aa1;
+	int band_e = nall - band_b;
 
 	if( options.is454 ){
 		band_b = len1 - band_width;
@@ -680,7 +681,7 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
 		}
 	}
 #if 0
-	printf( "%i\n", required_aa1 );
+	printf( "%i %i\n", required_aa1, from );
 	printf( "max=%3i  imax=%3i; band:  %3i  %3i  %i\n", max_diag, imax_diag, band_b, band_e, band_m );
 	printf( "best: %i\n", best_score );
 	printf( "from: %i, end: %i,  best: %i\n", from, end, best_score );
@@ -698,7 +699,6 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
 			best_score -= diag_score[j]; end--;
 		} else break;
 	}
-	//printf( "best: %i\n", best_score );
 
 	band_left = from-len1+1; 
 	band_right= end-len1+1;
@@ -709,8 +709,8 @@ int diag_test_aapn_est(int NAA1, char iseq2[], int len1, int len2, WorkingBuffer
 		if( band_right < 0 ) best_sum = 0;
 	}
 #if 0
-	printf( "max=%3i  imax=%3i; band:  %3i  %3i  %i\n", mmax, immax, band_b, band_e, band_m );
 	printf( "%3i:  best: %i,  %i  %i  %i\n", required_aa1, best_score, band_left, band_right, band_width );
+	printf( "max=%3i  imax=%3i; band:  %3i  %3i  %i\n", mmax, immax, band_b, band_e, band_m );
 #endif
 	return OK_FUNC;
 }
@@ -2525,8 +2525,18 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 
 	int NAA = options.NAA;
 	int S = table.sequences.size();
+	int len_eff = len;
 
-	param.ControlShortCoverage( len, options );
+	if( S ){
+		int min = table.sequences[S-1]->size;
+		if( min < len ){
+			if( len * options.diff_cutoff2 > min ) min = len * options.diff_cutoff2;
+			if( (len - options.diff_cutoff_aa2) > min ) min = len - options.diff_cutoff_aa2;
+			len_eff = min;
+		}
+	}
+
+	param.ControlShortCoverage( len_eff, options );
 	param.ComputeRequiredBases( options.NAA, 2, options );
 
 	buf.EncodeWords( seq, options.NAA, false );
@@ -2675,8 +2685,17 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	int j, len = seq->size;
 	int flag = 0;
 	int S = table.sequences.size();
+	int len_eff = len;
+	if( S ){
+		int min = table.sequences[S-1]->size;
+		if( min < len ){
+			if( len * options.diff_cutoff2 > min ) min = len * options.diff_cutoff2;
+			if( (len - options.diff_cutoff_aa2) > min ) min = len - options.diff_cutoff_aa2;
+			len_eff = min;
+		}
+	}
 
-	param.ControlShortCoverage( len, options );
+	param.ControlShortCoverage( len_eff, options );
 	param.ComputeRequiredBases( options.NAA, 4, options );
 	int skip = buf.EncodeWords( seq, options.NAA, true );
 	required_aan -= skip;
@@ -2699,7 +2718,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	int tiden_no, band_center;
 	float tiden_pc, distance=0;
 	int talign_info[5];
-	int j0, comp;
+	int j0, comp, lens;
 	char *seqj;
 
 	for(comp=0; comp<2; comp++){
@@ -2770,9 +2789,11 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 				if ((len-talign_info[1]) > 2) continue; // one mismatch allowed at end
 			}
 
-			len_eff1 = (options.global_identity == 0) ? alnln : (len - talign_info[4]);
+			lens = len;
+			if( options.has2D && len > len2 ) lens = len2;
+			len_eff1 = (options.global_identity == 0) ? alnln : (lens - talign_info[4]);
 			tiden_pc = tiden_no / (float)len_eff1;
-			//printf( "%i %i\n", tiden_no, options.cluster_thd100 );
+			//printf( "%i %f\n", tiden_no, tiden_pc );
 			if( options.useDistance ){
 				if (distance > options.distance_thd ) continue;
 				if (options.cluster_best and distance >= seq->distance) continue; // existing distance
