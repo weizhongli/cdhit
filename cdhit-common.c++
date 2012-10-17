@@ -243,6 +243,9 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 		if( threads > cpu ){
 			threads = cpu;
 			printf( "Warning: total number of CPUs in the system is %i\n", cpu );
+		}else if( threads < 0 ){
+			threads += cpu;
+			if( threads < 0 ) threads = 0;
 		}
 		if( threads == 0 ){
 			threads = cpu;
