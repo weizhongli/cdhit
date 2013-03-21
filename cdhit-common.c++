@@ -1581,7 +1581,7 @@ void Sequence::SwapOut()
 		data = NULL;
 	}
 }
-void Sequence::PrintInfo( int id, FILE *fin, FILE *fout, const Options & options, char *buf )
+void Sequence::PrintInfo( int id, FILE *fout, const Options & options, char *buf )
 {
 	const char *tag = options.isEST ? "nt" : "aa";
 	bool print = options.print != 0;
@@ -1607,7 +1607,7 @@ void SequenceDB::Read( const char *file, const Options & options )
 	Sequence des;
 	Sequence *last = NULL;
 	FILE *swap = NULL;
-	FILE *fin = fopen( file, "r" );
+	FILE *fin = fopen( file, "rb" );
 	char *buffer = NULL;
 	char *res = NULL;
 	size_t swap_size = 0;
@@ -1817,7 +1817,7 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 	size_t max_seg = total_letter / n + sequences[0]->size;
 	if( max_seg >= MAX_BIN_SWAP ) max_seg = (size_t) MAX_BIN_SWAP;
 
-	FILE *fin = fopen( db, "r" );
+	FILE *fin = fopen( db, "rb" );
 	char *buf = new char[MAX_LINE_SIZE+1];
 	char outfile[512];
 	size_t seg_size = 0;
@@ -1857,7 +1857,7 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 }
 void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options & options )
 {
-	FILE *fin = fopen( db, "r" );
+	FILE *fin = fopen( db, "rb" );
 	FILE *fout = fopen( newdb, "w+" );
 	int i, j, n = rep_seqs.size();
 	int count, rest;
@@ -1896,14 +1896,14 @@ void SequenceDB::WriteExtra1D( const Options & options )
 	for (i=0; i<N; i++) sorting[i] = ((long long)sequences[i]->index << 32) | i;
 	std::sort( sorting.begin(), sorting.end() );
 
-	FILE *fout, *fin = fopen( options.input.c_str(), "r" );
+	FILE *fout;
 	char *buf = new char[ MAX_DES + 1 ];
 
 	if( options.backupFile ){
 		fout = fopen( db_clstr_bak.c_str(), "w+" );
 		for (i=0; i<N; i++) {
 			Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
-			seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
+			seq->PrintInfo( seq->cluster_id, fout, options, buf );
 		}
 		fclose( fout );
 	}
@@ -1921,10 +1921,9 @@ void SequenceDB::WriteExtra1D( const Options & options )
 	for (i=0; i<M; i++) {
 		fprintf( fout, ">Cluster %i\n", i );
 		for (k=0; k<(int)clusters[i].size(); k++)
-			sequences[ clusters[i][k] ]->PrintInfo( k, fin, fout, options, buf );
+			sequences[ clusters[i][k] ]->PrintInfo( k, fout, options, buf );
 	}
 	delete []buf;
-	fclose( fin );
 }
 void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
 {
@@ -1936,18 +1935,17 @@ void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
 	for (i=0; i<N; i++) sorting[i] = ((long long)other.sequences[i]->index << 32) | i;
 	std::sort( sorting.begin(), sorting.end() );
 
-	FILE *fout, *fin = fopen( options.input.c_str(), "r" );
-	FILE *fin2 = fopen( options.input2.c_str(), "r" );
+	FILE *fout;
 	char *buf = new char[ MAX_DES + 1 ];
 	if( options.backupFile ){
 		fout = fopen( db_clstr_bak.c_str(), "w+" );
 		for (i=0; i<N; i++) {
 			Sequence *seq = other.sequences[ sorting[i] & 0xffffffff ];
-			seq->PrintInfo( seq->cluster_id, fin, fout, options, buf );
+			seq->PrintInfo( seq->cluster_id, fout, options, buf );
 		}
 		for (i=0; i<N2; i++) {
 			Sequence *seq = sequences[i];
-			if( seq->state & IS_REDUNDANT ) seq->PrintInfo( seq->cluster_id, fin2, fout, options, buf );
+			if( seq->state & IS_REDUNDANT ) seq->PrintInfo( seq->cluster_id, fout, options, buf );
 		}
 		fclose( fout );
 	}
@@ -1963,12 +1961,11 @@ void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
 	for (i=0; i<N; i++) {
 		Sequence *seq = other.sequences[ i ];
 		fprintf( fout, ">Cluster %i\n", i );
-		seq->PrintInfo( 0, fin, fout, options, buf );
+		seq->PrintInfo( 0, fout, options, buf );
 		for (k=0; k<(int)clusters[i].size(); k++)
-			sequences[ clusters[i][k] ]->PrintInfo( k+1, fin2, fout, options, buf );
+			sequences[ clusters[i][k] ]->PrintInfo( k+1, fout, options, buf );
 	}
 	delete []buf;
-	fclose( fin );
 }
 void WorkingParam::ControlShortCoverage( int len, const Options & options )
 {
@@ -2533,7 +2530,7 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 	if( S ){
 		int min = table.sequences[S-1]->size;
 		if( min < len ){
-			if( len * options.diff_cutoff2 > min ) min = len * options.diff_cutoff2;
+			if( len * options.diff_cutoff2 > min ) min = (int)(len * options.diff_cutoff2);
 			if( (len - options.diff_cutoff_aa2) > min ) min = len - options.diff_cutoff_aa2;
 			len_eff = min;
 		}
@@ -2692,7 +2689,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	if( S ){
 		int min = table.sequences[S-1]->size;
 		if( min < len ){
-			if( len * options.diff_cutoff2 > min ) min = len * options.diff_cutoff2;
+			if( len * options.diff_cutoff2 > min ) min = (int)(len * options.diff_cutoff2);
 			if( (len - options.diff_cutoff_aa2) > min ) min = len - options.diff_cutoff_aa2;
 			len_eff = min;
 		}
