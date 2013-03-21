@@ -315,7 +315,7 @@ struct Options
 		band_width = 20;
 		diff_cutoff = 0.0;
 		diff_cutoff2 = 1.0;
-		diff_cutoff_aa = 999999;
+		diff_cutoff_aa = 99999999;
 		diff_cutoff_aa2 = 0;
 		tolerance = 2;
 		long_coverage = 0.0;
@@ -406,7 +406,7 @@ struct Sequence
 
 	void SwapIn();
 	void SwapOut();
-	void PrintInfo( int id, FILE *fin, FILE *fout, const Options & options, char *buf );
+	void PrintInfo( int id, FILE *fout, const Options & options, char *buf );
 };
 
 struct WorkingParam
