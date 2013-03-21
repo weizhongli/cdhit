@@ -1,0 +1,82 @@
+
+CD-HIT ChangeLog
+
+CD-HIT-V4.6.1 (2012-08-27):
+Fix: a minor bug in handling masking letters;
+Add: a few minor changes and fixings to conform to debian packaging rules.
+
+CD-HIT-V4.6 (2012-04-25):
+Add: better auto tuning (for -M 0) of word table size for both single and multiple threaded execution;
+Fix: a minor bug for very long input sequences;
+Add: compiling option to change MAX_SEQ.
+
+CD-HIT-V4.5.8 (2012-03-24):
+Add: handling of asterisk at the end of sequences;
+Add: a few minor improvements in the parallelization;
+Add: new options -mask and -bak.
+
+CD-HIT-V4.5.7 (2011-12-16):
+Add: minor improvements to the word table size handling;
+Add: updated documentation file.
+
+CD-HIT-V4.5.6 (2011-09-02):
+Fix: -M for cd-hit-2d and cd-hit-est-2d;
+Fix: handling of invalid input sequences.
+
+CD-HIT-V4.5.5:
+Fix: a minor bug in option handling for score setting (-match, -mismatch);
+Fix: a minor bug in printing logs to stdout for cd-hit-2d and cd-hit-2d-est.
+
+CD-HIT-V4.5.4:
+Add: support for FASTQ file as input;
+Add: improvement to sequence partition for parallelization;
+Change: default identity threshold from 0.9 to 0.95 for EST.
+
+CD-HIT-V4.5.3:
+Add: cd-hit-454 program to the main package (cdhit-454.c++);
+Add: options to change the scoring settings;
+Add: options to control the length of unmatched region.
+
+CD-HIT-V4.5.2:
+MinorChange: default value of "-n" for DNA sequence from 8 to 10;
+MinorFix: alignment locations and length;
+
+CD-HIT-V4.5.1:
+MinorChange: default value of "-r" from 0 to 1;
+MinorFix: alignment length for "-G 0".
+
+CD-HIT-V4.5:
+Remove: multi-level counting;
+Fix: support for "-F" option.
+
+CD-HIT-V4.5-Beta3:
+Change: default word table size for "-M 0";
+Fix: global identity computation.
+
+CD-HIT-V4.5-Beta2:
+Fix: alignment position and identity.
+
+CD-HIT-V4.5-Beta:
+Change: local band alignment;
+Change: filter threshold calculation;
+Fix: best alignment band searching;
+
+CD-HIT-V4.3:
+Fix: a few bugs related to multi-level counting;
+Change: implementation for -M option.
+
+CD-HIT-V4.2.x:
+Some bug fixings.
+
+CD-HIT-V4.2:
+Add: multi-level counting array to improve the speed.
+
+CD-HIT-V4.1.1:
+Change: improve estimating alignment band for sequences with low complexity.
+
+CD-HIT-V4.1:
+Fix: a bug in searching best alignment band;
+Fix: a bug in handling 'N' for EST;
+
+CD-HIT-V4.0:
+New implementation with parallelization using OpenMP.
