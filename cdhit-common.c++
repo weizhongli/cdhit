@@ -2672,7 +2672,7 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 	Vector<int>  & word_encodes = buf.word_encodes;
 	Vector<int>  & taap = buf.taap;
 	Vector<int> & aan_list_comp = buf.aan_list_comp;
-	char *seqi_comp = buf.seqi_comp;
+	char *seqi_comp = & buf.seqi_comp[0];
 
 	int & aln_cover_flag = param.aln_cover_flag;
 	int & required_aa1 = param.required_aa1;

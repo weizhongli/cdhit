@@ -462,11 +462,12 @@ struct WorkingBuffer
 	Vector<int>  diag_score;
 	Vector<int>  diag_score2;
 	Vector<int> aan_list_comp;
-	char seqi_comp[MAX_SEQ];
+	Vector<char> seqi_comp;
 	int total_bytes;
 
 	WorkingBuffer( size_t frag=0, size_t maxlen=0, const Options & options=Options() ){
 		Set( frag, maxlen, options );
+		seqi_comp.resize( MAX_SEQ );
 	}
 	void Set( size_t frag, size_t maxlen, const Options & options ){
 		bool est = options.isEST;
