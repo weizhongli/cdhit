@@ -1,0 +1,10 @@
+
+#\$ -S /bin/bash
+#\$ -v PATH
+#PBS -v PATH
+#PBS -l walltime=8:00:00
+#PBS -M liwz\@sdsc.edu
+#PBS -A camera
+## PBS -qsmall
+
+
