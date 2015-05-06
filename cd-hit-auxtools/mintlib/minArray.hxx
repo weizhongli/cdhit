@@ -7,6 +7,7 @@
 #ifndef __MIN_ARRAY_HXX__
 #define __MIN_ARRAY_HXX__
 
+#include<string.h>
 #include<stdint.h>
 #include<stdlib.h>
 #include<assert.h>
