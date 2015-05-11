@@ -1,4 +1,3 @@
-
 For cd-hit
 
 How to compile?
@@ -16,4 +15,8 @@ For psi-cd-hit
   please download legacy BLAST (not BLAST+) and install the executables in your $PATH
 
 
-For more information, please read the cd-hit-users-guide.pdf. 
+For more information, please visit http://cd-hit.org or please read the cd-hit-users-guide.pdf. 
+
+cd-hit was originally hosted at Google Code, some of the old releases are still available from https://code.google.com/p/cdhit/.
+
+cd-hit is also available as web server, visit http://cd-hit.org for web server address.

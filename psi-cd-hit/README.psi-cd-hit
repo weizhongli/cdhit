@@ -1,0 +1,22 @@
+
+For protein sequences
+(1) Please use regular cd-hit to cluster your database down to 60% using commands such as
+cd-hit -i db    -o db_90 -c 0.9 -n 5 -g 1 -G 0 -aS 0.8  -d 0 -p 1 -T 16 -M 0 > db_90.log
+cd-hit -i db_90 -o db_60 -c 0.6 -n 4 -g 1 -G 0 -aS 0.8  -d 0 -p 1 -T 16 -M 0 > db_60.log
+
+(2)
+(a) option for local execution on a single computer:
+  ./psi-cd-hit.pl -i db_60 -o db_30 -c 0.3 -ce 1e-6 -aS 0.8 -G 0 -g 1 -exec local -core 16
+  ./psi-cd-hit.pl -i db_60 -o db_30 -c 0.3 -ce 1e-6 -aS 0.8 -G 0 -g 1 -exec local -core 16 -restart db_30.restart (to restart if program crash)
+  ./psi-cd-hit.pl -help to see all options
+
+(b) option for running on a cluster using a queueing system (qsub)
+  ./psi-cd-hit.pl -i db_60 -o db_30 -c 0.3 -ce 1e-6 -aS 0.8 -G 0 -g 1 -exec qsub -host 8 -core 8 -shf qsub_sh_template
+
+For very long DNA sequences
+  ./psi-cd-hit.pl -i db.fna -o db90.fna -c 0.9 -G 1 -g 1 -prog megablast -s "-F F -e 0.000001 -b 100000 -v 100000" -exec local -core 32
+  ./psi-cd-hit.pl -i db.fna -o db90.fna -c 0.9 -G 1 -g 1 -prog blastn -circle 1 -exec local -core 32
+  ./psi-cd-hit.pl -help to see all options
+
+
+visit http://cd-hit.org for more info
