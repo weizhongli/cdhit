@@ -1,138 +1,124 @@
-====== CD-HIT User's Guide ======
+﻿====== CD-HIT User's Guide ======
 
 Last updated: ~~LASTMOD~~
 
 [[http://cd-hit.org]]
 
-[[http://bioinformatics.org/cd-hit/]]
-
-Program developed by Weizhong Li's lab at UCSD [[http://weizhong-lab.ucsd.edu]] [[liwz@sdsc.edu]]
+Program developed by Weizhong Li's lab at UCSD [[http://weizhong-lab.ucsd.edu]] and JCVI [[http://jcvi.org]] [[liwz@sdsc.edu]]
 
 ===== Introduction =====
 
-CD-HIT was originally a protein clustering program. The main advantage of this program is its ultra-fast speed. It can be hundreds of times faster than other clustering programs, for example, BLASTCLUST. Therefore it can handle very large databases, like NR.
+CD-HIT is a widely used program for clustering biological sequences to reduce sequence redundancy and improve the performance of other sequence analyses. 
 
-The 1st version of this program, CD-HI, was published and released in 2001. The 2nd version, called CD-HIT, was published in 2002 with significant improvements. Since 2004, CD-HIT has been hosted at bioinformatics.org as an open source project.
+CD-HIT was originally developed to cluster protein sequences to create reference databases with reduced redundancy (Li, et al., 2001) and was then extended to support clustering nucleotide sequences and comparing two datasets (Li and Godzik, 2006). The CD-HIT web server was implemented in 2009, which allows users to cluster or compare sequences without using command-line CD-HIT. The server provides interactive interface and additional visualization tools. 
 
-Since its release, CD-HIT has been getting more and more popular. It has a significant user base, I estimated at over several thousands users. It is used at many research and educational institutions. For example, at **UniProt**, CD-HIT is used to generate the **UniRef** reference data sets ([[http://www.pir.uniprot.org/database/DBDescription.shtml]]). It is also used in **PDB** to treat redundant sequences ([[http://rutgers.rcsb.org/pdb/redundancy.html]]).
+Currently, CD-HIT package has many programs: cd-hit, cd-hit-2d, cd-hit-est, cd-hit-est-2d, cd-hit-para, cd-hit-2d-para, psi-cd-hit, cd-hit-454, cd-hit-dup, cd-hit-lap, cd-hit-OTU etc. There are also many utility scripts, written in Perl, to help run and analyze CD-HIT jobs. Briefly: 
+	
+  * cd-hit	Cluster peptide sequences	
+  * cd-hit-est	Cluster nucleotide sequences
+  * cd-hit-2d	Compare 2 peptide databases	
+  * cd-hit-est-2d	Compare 2 nucleotide databases
+  * psi-cd-hit	Cluster proteins at <40% cutoff	
+  * cd-hit-lap	Identify overlapping reads
+  * cd-hit-dup 	Identify duplicates from single or paired Illumina reads	
+  * cd-hit-454 	Identify duplicates from 454 reads 
+  * cd-hit-otu	Cluster rRNA tags	
+  * cd-hit Web server	Cluster user-uploaded data 
+  * cd-hit-para	Cluster sequences in parallel on a computer cluster	
+  * scripts	Parse results and so on
+  * h-cd-hit	Hierarchical clustering 		
 
-In 2006, the 3rd major updates were published and released with abilities to perform various jobs like clustering a protein database, clustering a DNA/RNA database, comparing two databases (protein or DNA/RNA), generating protein families, and many others.
-
-The CD-HIT web server was implemented in 2009, which allows users to cluster or compare sequences without using command CD-HIT. The server provides interactive interface and additional visualization tools. It also provides pre-calculated and regularly updated sequence clusters for several widely used databases.
-
-CD-HIT-454, a special version of CD-HIT was implemented in 2010 to cluster artificial duplicated reads in pyrosequencing (454) data.
-
-Currently, CD-HIT package has many programs: cd-hit, cd-hit-2d, cd-hit-est, cd-hit-est-2d, cd-hit-para, cd-hit-2d-para, psi-cd-hit, psi-cd-hit-2d, cd-hit-454. I also developed some utility tools, written in Perl, to help run and analyze CD-HIT jobs.
-
-This program is still under active development; new features and new programs will be out in the future.
-It can be copied under the GNU General Public License version 2 (GPLv2).
+Recently development of cd-hit, especially the multiple-threaded version introduced in 2012 (Fu et al), enables clustering of very large NGS datasets. For example, it only took cd-hit less than a day on a 32-core computer to cluster a few hundred million protein sequences from a metagenomics study. 
 
 ===== Algorithm =====
+__**[You can skip this session if you are eager to use the programs, no problem].**__
 
-Algorithms for CD-HIT were described in three papers published in Bioinformatics.
+Algorithms for CD-HIT were described in these papers.
 
-  *1. Clustering of highly homologous sequences to reduce the size of large protein databases. Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics (2001) 17:282-283, [[http://bioinformatics.oupjournals.org/cgi/reprint/17/3/282.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11294794|Pubmed]]
-  *2. Tolerating some redundancy significantly speeds up clustering of large protein databases. Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics (2002) 18: 77-82, [[http://bioinformatics.oupjournals.org/cgi/reprint/18/1/77.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11836214|Pubmed]]
-  *3. Cd-hit: a fast program for clustering and comparing large sets of protein or nucleotide sequences. Weizhong Li & Adam Godzik. Bioinformatics (2006) 22:1658-1659 [[http://bioinformatics.oxfordjournals.org/cgi/reprint/22/13/1658|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=Abstract&list_uids=16731699|Pubmed]]
+  *1. Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Clustering of highly homologous sequences to reduce the size of large protein databases. Bioinformatics (2001) 17:282-283, [[http://bioinformatics.oupjournals.org/cgi/reprint/17/3/282.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11294794|Pubmed]]
+  *2. Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Tolerating some redundancy significantly speeds up clustering of large protein databases. Bioinformatics (2002) 18: 77-82, [[http://bioinformatics.oupjournals.org/cgi/reprint/18/1/77.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11836214|Pubmed]]
+  *3. Weizhong Li & Adam Godzik. Cd-hit: a fast program for clustering and comparing large sets of protein or nucleotide sequences. Bioinformatics (2006) 22:1658-1659 [[http://bioinformatics.oxfordjournals.org/cgi/reprint/22/13/1658|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=Abstract&list_uids=16731699|Pubmed]]
+  *4. Limin Fu, Beifang Niu, Zhengwei Zhu, Sitao Wu and Weizhong Li. CD-HIT: accelerated for clustering the next generation sequencing data. Bioinformatics (2012) 28:3150-3152, doi: 10.1093/bioinformatics/bts565 [[http://bioinformatics.oxfordjournals.org/content/28/23/3150|PDF]]
+  *5. Ying Huang, Beifang Niu, Ying Gao, Limin Fu and Weizhong Li. CD-HIT Suite: a web server for clustering and comparing biological sequences. Bioinformatics, (2010). 26:680 [[http://bioinformatics.oxfordjournals.org/cgi/reprint/btq003v1|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20053844|Pubmed]]
+  *6. Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li, Artificial and natural duplicates in pyrosequencing reads of metagenomic data. BMC Bioinformatics, (2010) 11:187 [[http://www.biomedcentral.com/content/pdf/1471-2105-11-187.pdf|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20388221|Pubmed]]
+  *7. Weizhong Li, Limin Fu, Beifang Niu, Sitao Wu and John Wooley. Ultrafast clustering algorithms for metagenomic sequence analysis. Briefings in Bioinformatics, (2012) 13 (6): 656-668. doi: 10.1093/bib/bbs035 [[http://bib.oxfordjournals.org/content/13/6/656|PDF]]  
 
-I suggest that you read these papers if (1) you want to understand more details about the algorithm or (2) you want know why it is so fast. If you don't have time to read these papers, the algorithms are summarized below. CD-HIT web server and CD-HIT-454 are described in these two papers:
-
-  *4. Ying Huang, Beifang Niu, Ying Gao, Limin Fu and Weizhong Li. CD-HIT Suite: a web server for clustering and comparing biological sequences. Bioinformatics, (2010). 26:680 [[http://bioinformatics.oxfordjournals.org/cgi/reprint/btq003v1|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20053844|Pubmed]]
-  *5. Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li, Artificial and natural duplicates in pyrosequencing reads of metagenomic data. BMC Bioinformatics, (2010) 11:187 [[http://www.biomedcentral.com/content/pdf/1471-2105-11-187.pdf|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20388221|Pubmed]]
 
 ==== CD-HIT clustering algorithm ====
 
-Clustering a sequence database requires all-by-all comparisons; therefore it is very time-consuming. Many methods use BLAST to compute the all vs. all similarities. It is very difficult for these methods to cluster large databases. While CD-HIT can avoid many pairwise sequence alignments with a short word filter I developed.
+Clustering a sequence database usually requires all-by-all comparisons; therefore it is very time-consuming. Many methods use BLAST to compute the all vs. all similarities. It is very difficult for these methods to cluster large databases. While CD-HIT can avoid many pairwise sequence alignments with a short word based heuristics. 
 
-In CD-HIT, I use greedy incremental clustering algorithm method. Briefly, sequences are first sorted in order of decreasing length. The longest one becomes the representative of the first cluster. Then, each remaining sequence is compared to the representatives of existing clusters. If the similarity with any representative is above a given threshold, it is grouped into that cluster. Otherwise, a new cluster is defined with that sequence as the representative.
+CD-HIT is a greedy incremental clustering approach. The basic CD-HIT algorithm sorts the input sequences from long to short, and processes them sequentially from the longest to the shortest. The first sequence is automatically classified as the first cluster representative sequence. Then each query sequence of the remaining sequences is compared to the representative sequences found before it, and is classified as redundant or representative based on whether it is similar to one of the existing representative sequences. In default manner (fast mode), a query is grouped into the first representative without comparing to other representatives. In accurate mode, a query is compared to all representatives and grouped to the most similar one.
 
-Here is how the short word filter works. Two proteins with a certain sequence identity must have at least a specific number of identical dipeptides, tripeptides and etc. For example, for two sequences to have 85% identity over a 100-residue window they have to have at least 70 identical dipeptides, 55 identical tripeptides, and 25 identical pentapeptides. By understanding the short word requirement, CD-HIT skips most pairwise alignments because it knows that the similarity of two sequences is below certain threshold by simple word counting. 
+Based on this greedy method, we established several integrated heuristics that make CD-HIT very efficient.
 
-Another reason why CD-HIT is so fast is the use of an index table. I just use very short word with size 2~5. For instance, the total number of possible pentapeptides is only 215 (each position has 21 possibilities, 20 amino acids plus "X"), and the index table requires only 4 million entries, which just matches the RAM scale of current computers. Index table makes the counting of short word very efficiently. And a longer word is more efficient than a shorter one.
+**Index table**: Most sequence alignment tools use short words or k-mer (k is the length) to speed up computation. For example, BLASTN uses 11-mer and BLASTP uses 3-mer by default. An index table, as opposite to a hash table used in most fast alignment methods, uses a unique index for every unique k-mer, therefore an index table is much faster than a hash table. In CD-HIT, we use k=2~5 for proteins and k=8~12 for DNAs, because the all the k-mers can be indexed in computer memory. 
+
+**Short word filter**: Two sequences of a certain identity must share at least a specific number of identical k-mers. It is possible to tell that the identity between two sequences is below a cutoff by counting common k-mers. The filter checks the common k-mers and rejects unnecessary alignments.
+
+**Short word statistics**: It is the key for the high efficiency of a short word filter (Li, et al., 2002). Through statistical analysis of real alignments, we identified the distribution of common k-mer at different sequence lengths and identities, and applied the results to short word filter.
+
+**Banded alignment**: The short word filter not only filters out unnecessary alignment, when alignment is needed, it also identifies a narrow band for banded dynamic programming alignment, which is much faster than regular dynamic programming.
+
+**Reduced alphabet (to be implemented)**: This is for protein clustering. In reduced alphabet, a group of exchangeable residues are reduced to a single residue (I/V/L==>I, S/T==>S, D/E==>D, K/R==>K, F/Y==>F), and then conservative mutations would appear as identities in sequence alignments. It improves the short word filter for clustering at low sequence identity below 50%.
+
+**Gapped word (to be implemented)**: Short word filter using gapped word allows mismatch within a word such as “ACE” vs “AME”, “ACFE” vs “AMYE”, and “AACTT” vs “AAGTT”, which can be written as “101”, “1001” and “11011”. At low identity cutoff, a gapped word is more efficient than an ungapped word for filtering.
+
+
 
 ==== Algorithm limitations ====
 
-A limitation of short word filter is that it can not be used below certain clustering thresholds. In a worst case scenario (figure below), when mismatches are evenly distributed along the alignment, the numbers of common short words are minimal. So theoretically, pentapeptide, tetrapeptide, tripeptide and dipeptide could only be used for thresholds above 80%, 75%, 66.67% and 50% respectively.
+A limitation of short word filter is that it can not be used below certain clustering thresholds. 
+For proteins:
+  * word size 5 is for thresholds 0.7 ~ 1.0
+  * word size 4 is for thresholds 0.6 ~ 0.7
+  * word size 3 is for thresholds 0.5 ~ 0.6
+  * word size 2 is for thresholds 0.4 ~ 0.5 (also see psi-cd-hit)
 
-{{ :Figure1.png }}
+For DNAs:
+  * Word size 10-11 is for thresholds 0.95 ~ 1.0
+  * Word size 8,9 is for thresholds 0.90 ~ 0.95
+  * Word size 7 is for thresholds 0.88 ~ 0.9
+  * Word size 6 is for thresholds 0.85 ~ 0.88
+  * Word size 5 is for thresholds 0.80 ~ 0.85
+  * Word size 4 is for thresholds 0.75 ~ 0.8
 
-Short word filtering is limited to certain clustering thresholds. Evenly distributed mismatches are shown in alignments with 80%, 75%, 66.67% and 50% sequence identities. The number of common pentapeptides in (a), tetrapeptides in (b), tripeptides in <nowiki>(c)</nowiki>, and dipeptides in (d) can be zero.
+Because of the algorithm, cd-hit may not be used for clustering proteins at <40% identity. Cd-hit-est cannot cluster very long sequences either (e.g. genome sized sequences). In such cases, please use PSI-CD-HIT, which will be introduced in following sections.
 
-However, biological sequences are not lines of random letters; proteins usually have more conserved regions and more diverse regions as the result of specific constraints of evolution. Situations such as in above figure are very rare in the real world, and the actual number of common short words is much higher than in the worst case scenarios. We did a large-scale statistical analysis on short words. We found, for example, even at 70% identity, sequences still have statistically significant number of common pentapeptides. Current CD-HIT is based on this short word statistics. But the short word filters are still limited to certain thresholds. The reasonable limits of clustering thresholds for pentapeptide, tetrapeptide, tripeptide and dipeptide are approximately 70%, 60%, 50% and 40%, respectively.
 
-There is another problem introduced by the greedy incremental clustering. Let say, there are two clusters: cluster #1 has A, X and Y where A is the representative, and cluster #2 has B and Z where B is the representative. The problem is that even if Y is more similar to B than to A, it can still in cluster #1, simple because Y first hit A during clustering process. While this problem could be reduced by multiple-step clustering (see following sections).
-
-==== CD-HIT-2D comparing algorithm ====
-
-The above short word filtering and index table can also be used in other sequence comparison tasks, for example, comparing two data sets and reporting the matches between 2 datasets over a certain similarity threshold. This is a very common job, so I developed another program cd-hit-2d for fast comparison of two dataset.
-
-==== DNA/RNA clustering & comparing ====
-
-The original CD-HIT was developed for protein clustering. But the short word filtering and index table implementation can also be applied to DNA/RNA. Therefore, I wrote another two new programs cd-hit-est and cd-hit-est-2d. I believe they can be very useful in handling DNA sequences.
-
-==== PSI-CD-HIT clustering ====
-
-The lowest threshold of CD-HIT is around 40%, in many applications, people need a much lower threshold, like 25%. I am planning to develop such application (may be called CD-HIT-LOW, I don't know yet), but for now, I use PSI-CD-HIT for this purpose.
-
-PSI-CD-HIT is actually a Perl script I wrote, which runs similar algorithm like CD-HIT but using BLAST to calculate similarities. Below are the procedures of PSI-CD-HIT:
-  - Sort sequences by decreasing length 
-  - First one is the first representative
-  - Using 1st one blast all remaining sequences, pick up its neighbors that meet the clustering threshold
-  - Repeat until done
-
-==== CD-HIT-454 clustering ====
-
-We implemented a program called cd-hit-454 to identify duplicated 454 reads by reengineering cd-hit-est. Duplicates are either exactly identical or meet these criteria includes: (1) they start at the same position; (2) their lengths can be different, but shorter one must be fully aligned with the longer one (the seed); (3) they can only have 4% mismatches (insertion, deletion, and substitution); and (4) only 1 base is allowed per insertion or deletion. Here, (3) and (4) can be adjusted by users. We allow mismatches in order to tolerate sequencing errors.
 
  
 ===== User's Guide =====
 
 ==== Installation ==== 
 
+It can be copied under the GNU General Public License version 2 (GPLv2).
+
 Most CD-HIT programs were written in C++. Installing CD-HIT package is very simple:
-  * download current CD-HIT at [[http://bioinformatics.org/cd-hit]], for example cd-hit-2006-0215.tar.gz
-  * unpack the file with " tar xvf cd-hit-2006-0215.tar.gz --gunzip"
-  * change dir by "cd cd-hit-2006"
-  * compile the programs by "make"
-  * you will have all cd-hit programs compiled
+  * download current CD-HIT at [[https://github.com/weizhongli/cdhit/releases]], for example cd-hit-v4.6.2-2015-0511.tar.gz
+  * unpack the file with " tar xvf cd-hit-v4.6.2-2015-0511.tar.gz --gunzip"
+  * change dir by "cd cd-hit-v4.6.2-2015-0511"
+  * compile the programs by "make" with multi-threading (default), or by "make openmp=no" without multi-threading (on old systems without OpenMP)
+  * cd cd-hit-auxtools
+  * compile cd-hit-auxtools by "make"
 
-==== Installation of multiple threaded version ====
-
-You can take advantage of multiple-threaded function of cd-hit to speed up calculation. Please compile the programs by "make openmp=yes". OpenMP is supported in most recent Linux systems.
-
-There are some macros defined in a cd-hi.h that control some basic parameters. I believe, in 99% of the case, that these setting are fine. But you can change them also. I list some of them here:
-
-<code>
-#define MAX_SEQ 65536
-  Max length of sequences.
-  
-#define MAX_DIAG 133000
-  This number should be the double of MAX_SEQ.
-
-#define MAX_GAP 65536
-  Max allowed gap length in dynamic programming subroutine.
-
-#define MAX_LINE_SIZE 300000
-  Max allowed length of a single line from input FASTA file.
-
-#define MAX_FILE_NAME 1280
-  Max allowed length of filename.
-</code>
-
-Please note that, the above values may not reflect the actual values used in the program, please refer to the source file if you want to know the exact values.
-  
 ==== CD-HIT ====
 
 CD-HIT clusters proteins into clusters that meet a user-defined similarity threshold, usually a sequence identity. Each cluster has one representative sequence. The input is a protein dataset in fasta format and the output are two files: a fasta file of representative sequences and a text file of list of clusters.
 
 Basic command:
-  cd-hit -i nr -o nr100 -c 1.00 -n 5 -M 2000
-  cd-hit -i db -o db90 -c 0.9 -n 5
-where\\
-''db'' is the filename of input,\\
-''db90'' is output,\\
-''0.9'' means 90% identity, is the clustering threshold\\
-''5'' is the size of word\\
+  cd-hit -i nr -o nr100 -c 1.00 -n 5 -M 16000 –d 0 -T 8
+  cd-hit -i db -o db90 -c 0.9 -n 5 -M 16000 –d 0 -T 8, 
+
+where\\ 
+''db'' is the filename of input, \\
+''db90'' is output, \\
+''-c 1.0'', means 100% identity, is the clustering threshold\\
+''-c 0.9'', means 90% identity, is the clustering threshold\\
+''-n 5'' is the word size\\
+''-d 0'' use sequence name in fasta header till the first white space\\
+''-M 16000'', to use 16GB RAM\\
+''-T 8'', to use 8 threads\\
 
 Choose of word size:
 
@@ -147,35 +133,67 @@ Complete options:
 __**The most updated options are available from the command line version of the programs. Running the programs without any argument will print out the detailed options.**__
 
 <code>
--i input input filename in fasta format, required
--o output filename, required
--c sequence identity threshold, default 0.9 this is the default cd-hit's "global sequence identity" calculated as: number of identical amino acids in alignment divided by the full length of the shorter sequence
--G use global sequence identity, default 1 if set to 0, then use local sequence identity, calculated as : number of identical amino acids in alignment divided by the length of the alignment NOTE!!! don't use -G 0 unless you use alignment coverage controls see options -aL, -AL, -aS, -AS
--b band_width of alignment, default 20
--M max available memory (Mbyte), default 400
--n word_length, default 5, see user's guide for choosing it
--l length of throw_away_sequences, default 10
--t tolerance for redundance, default 2
--d length of description in .clstr file, default 20 if set to 0, it takes the fasta defline and stops at first space
--s length difference cutoff, default 0.0 if set to 0.9, the shorter sequences need to be at least 90% length of the representative of the cluster
--S length difference cutoff in amino acid, default 999999 if set to 60, the length difference between the shorter sequences and the representative of the cluster can not be bigger than 60
--aL alignment coverage for the longer sequence, default 0.0 if set to 0.9, the alignment must covers 90% of the sequence
--AL alignment coverage control for the longer sequence, default 99999999 if set to 60, and the length of the sequence is 400, then the alignment must be >= 340 (400-60) residues
--aS alignment coverage for the shorter sequence, default 0.0 if set to 0.9, the alignment must covers 90% of the sequence
--AS alignment coverage control for the shorter sequence, default 99999999 if set to 60, and the length of the sequence is 400, then the alignment must be >= 340 (400-60) residues
--uL maximum unmatched percentage for the longer sequence, default 1.0
-    if set to 0.1, the unmatched region (excluding leading and tailing gaps)
-    must not be more than 10% of the sequence
--uS maximum unmatched percentage for the shorter sequence, default 1.0
-    if set to 0.1, the unmatched region (excluding leading and tailing gaps)
-    must not be more than 10% of the sequence
--U  maximum unmatched length, default 99999999
-    if set to 10, the unmatched region (excluding leading and tailing gaps)
-    must not be more than 10 bases
--B 1 or 0, default 0, by default, sequences are stored in RAM if set to 1, sequence are stored on hard drive it is recommended to use -B 1 for huge databases
--p 1 or 0, default 0 if set to 1, print alignment overlap in .clstr file
--T number of threads, default 1; with 0, all CPUs will be used
--g 1 or 0, default 0 By cd-hit's default algorithm, a sequence is clustered to the first cluster that meet the threshold (fast mode). If set to 1, the program will cluster it into the most similar cluster that meet the threshold (accurate but slow mode)
+   -i	input filename in fasta format, required
+   -o	output filename, required
+   -c	sequence identity threshold, default 0.9
+ 	this is the default cd-hit's "global sequence identity" calculated as:
+ 	number of identical amino acids in alignment
+ 	divided by the full length of the shorter sequence
+   -G	use global sequence identity, default 1
+ 	if set to 0, then use local sequence identity, calculated as :
+ 	number of identical amino acids in alignment
+ 	divided by the length of the alignment
+ 	NOTE!!! don't use -G 0 unless you use alignment coverage controls
+ 	see options -aL, -AL, -aS, -AS
+   -b	band_width of alignment, default 20
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -T	number of threads, default 1; with 0, all CPUs will be used
+   -n	word_length, default 5, see user's guide for choosing it
+   -l	length of throw_away_sequences, default 10
+   -t	tolerance for redundance, default 2
+   -d	length of description in .clstr file, default 20
+ 	if set to 0, it takes the fasta defline and stops at first space
+   -s	length difference cutoff, default 0.0
+ 	if set to 0.9, the shorter sequences need to be
+ 	at least 90% length of the representative of the cluster
+   -S	length difference cutoff in amino acid, default 999999
+ 	if set to 60, the length difference between the shorter sequences
+ 	and the representative of the cluster can not be bigger than 60
+   -aL	alignment coverage for the longer sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AL	alignment coverage control for the longer sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -aS	alignment coverage for the shorter sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AS	alignment coverage control for the shorter sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -A	minimal alignment coverage control for the both sequences, default 0
+ 	alignment must cover >= this value for both sequences 
+   -uL	maximum unmatched percentage for the longer sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -uS	maximum unmatched percentage for the shorter sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -U	maximum unmatched length, default 99999999
+ 	if set to 10, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10 bases
+   -B	1 or 0, default 0, by default, sequences are stored in RAM
+ 	if set to 1, sequence are stored on hard drive
+ 	it is recommended to use -B 1 for huge databases
+   -p	1 or 0, default 0
+ 	if set to 1, print alignment overlap in .clstr file
+   -g	1 or 0, default 0
+ 	by cd-hit's default algorithm, a sequence is clustered to the first 
+ 	cluster that meet the threshold (fast cluster). If set to 1, the program
+ 	will cluster it into the most similar cluster that meet the threshold
+ 	(accurate but slow mode)
+ 	but either 1 or 0 won't change the representatives of final clusters
+   -bak	write backup cluster file (1 or 0, default 0)
+   -h	print this help
+
 </code>
 
 Alignment coverage control:
@@ -224,18 +242,19 @@ a "%" is the identity between this sequence and the representative
 CD-HIT-2D compares 2 protein datasets (db1, db2). It identifies the sequences in db2 that are similar to db1 at a certain threshold. The input are two protein datasets (db1, db2) in fasta format and the output are two files: a fasta file of proteins in db2 that are not similar to db1 and a text file that lists similar sequences between db1 & db2.
 
 Basic command:
-  cd-hit-2d -i db1 -i2 db2 -o db2novel -c 0.9 -n 5
+  cd-hit-2d -i db1 -i2 db2 -o db2novel -c 0.9 -n 5 -d 0 -M 16000 -T 8
 where\\
 ''db1'' & ''db2'' are inputs,\\
 ''db2novel'' is output,\\
 ''0.9'' means 90% identity, is the comparing threshold\\
 ''5'' is the size of word
 
-Please note that by default, I only list matches where sequences in db2 are
+Please note that by default, cd-hit only lists matches where sequences in db2 are
 not longer than sequences in db1. You may use options -S2 or -s2 to overwrite
-this default. You can also run command:
+this default. You can also swap db1 and db2:
 
-  cd-hit-2d -i db2 -i2 db1 -o db1novel -c 0.9 -n 5  
+  cd-hit-2d -i db1 -i2 db2 -o db2novel -c 0.9 -n 5 -d 0 -M 16000 -T 8 -s2 0.9
+  cd-hit-2d -i db2 -i2 db1 -o db1novel -c 0.9 -n 5 -d 0 -M 16000 -T 8 (swap db1 and db2)
 
 Choose of word size (same as cd-hit):
 <code>
@@ -270,11 +289,12 @@ difficult to make full-length alignments for these genes. So, CD-HIT-EST is
 good for non-intron containing sequences like EST.  
 
 Basic command:
-  cd-hit-est -i est_human -o est_human95 -c 0.95 -n 8  
+  cd-hit-est -i est_human -o est_human95 -c 0.95 -n 10 -d 0 -M 16000 - T 8  
 
 Choose of word size:
 <code>
--n 8,9,10 for thresholds 0.90 ~ 1.0
+-n 10, 11 for thresholds 0.95 ~ 1.0
+-n 8,9    for thresholds 0.90 ~ 0.95
 -n 7      for thresholds 0.88 ~ 0.9
 -n 6      for thresholds 0.85 ~ 0.88
 -n 5      for thresholds 0.80 ~ 0.85
@@ -286,7 +306,13 @@ More options:
 Options, -b, -M, -l, -d, -t, -s, -S, -B, -p, -aL, -AL, -aS, -AS, -g, -G, -T
 are same to CD-HIT, here are few more cd-hit-est specific options:
 <code>
--r 1 or 0, default 0, if set to 1, comparing both strand (++, +-)
+   -r	1 or 0, default 1, by default do both +/+ & +/- alignments
+ 	if set to 0, only +/+ strand alignment
+   -mask	masking letters (e.g. -mask NX, to mask out both 'N' and 'X')
+   -match	matching score, default 2 (1 for T-U and N-N)
+   -mismatch	mismatching score, default -2
+   -gap	gap opening score, default -6
+   -gap-ext	gap extension score, default -1
 </code>
 
 ==== CD-HIT-EST-2D ====
@@ -300,24 +326,65 @@ For same reason as CD-HIT-EST, CD-HIT-EST-2D is good for non-intron containing
 sequences like EST.  
 
 Basic command:
-  cd-hit-est-2d -i mrna_human -i2 est_human -o est_human_novel -c 0.95 -n 8  
+  cd-hit-est-2d -i mrna_human -i2 est_human -o est_human_novel -c 0.95 -n 10 -d 0 -M 16000 - T 8  
 
-Choose of word size (same as CD-HIT-EST):
+Choose of word size and options are the same as CD-HIT-EST:
+
+cd-hit-est-2d specificnoptions:
 <code>
--n 8,9,10 for thresholds 0.90 ~ 1.0
--n 7      for thresholds 0.88 ~ 0.9
--n 6      for thresholds 0.85 ~ 0.88
--n 5      for thresholds 0.80 ~ 0.85
--n 4      for thresholds 0.75 ~ 0.8 
+   -s2	length difference cutoff for db1, default 1.0
+ 	by default, seqs in db1 >= seqs in db2 in a same cluster
+ 	if set to 0.9, seqs in db1 may just >= 90% seqs in db2
+   -S2	length difference cutoff, default 0
+ 	by default, seqs in db1 >= seqs in db2 in a same cluster
+ 	if set to 60, seqs in db2 may 60aa longer than seqs in db1
 </code>
 
-More options:
 
-Options, -b, -M, -l, -d, -t, -s, -S, -s2, -S2, -B, -p, -aL, -AL, -aS, -AS, -g,
--G, -T are same to CD-HIT-2d, here are few more cd-hit-est-2d specific
-options:
+==== CD-HIT-454 clustering ====
+
+We implemented a program called cd-hit-454 to identify duplicated 454 reads by reengineering cd-hit-est. Duplicates are either exactly identical or meet these criteria includes: (1) they start at the same position; (2) their lengths can be different, but shorter one must be fully aligned with the longer one (the seed); (3) they can only have 4% mismatches (insertion, deletion, and substitution); and (4) only 1 base is allowed per insertion or deletion. Here, (3) and (4) can be adjusted by users. We allow mismatches in order to tolerate sequencing errors. To find duplicates in Illumina reads, please use cd-hit-dup (see later sections)
+
+Basic command:
+  cd-hit-454 -i 454_reads -o 454_reads_95 -c 0.95 -n 10 -d 0 -M 16000 - T 8  
+
+Full list of options:
 <code>
--r 1 or 0, default 0, if set to 1, comparing both strand (++, +-)
+   -i	input filename in fasta format, required
+   -o	output filename, required
+   -c	sequence identity threshold, default 0.98
+ 	this is a "global sequence identity" calculated as :
+ 	number of identical amino acids in alignment
+ 	divided by the full length of the shorter sequence + gaps
+   -b	band_width of alignment, default 10
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -T	number of threads, default 1; with 0, all CPUs will be used
+   -n	word_length, default 10, see user's guide for choosing it
+   -aL	alignment coverage for the longer sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AL	alignment coverage control for the longer sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -aS	alignment coverage for the shorter sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AS	alignment coverage control for the shorter sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -B	1 or 0, default 0, by default, sequences are stored in RAM
+ 	if set to 1, sequence are stored on hard drive
+ 	it is recommended to use -B 1 for huge databases
+   -g	1 or 0, default 0
+ 	by cd-hit's default algorithm, a sequence is clustered to the first 
+ 	cluster that meet the threshold (fast cluster). If set to 1, the program
+ 	will cluster it into the most similar cluster that meet the threshold
+ 	(accurate but slow mode)
+ 	but either 1 or 0 won't change the representatives of final clusters
+   -D	max size per indel, default 1
+   -match	matching score, default 2
+   -mismatch	mismatching score, default -1
+   -gap	gap opening score, default -3
+   -gap-ext	gap extension score, default -1
+   -bak	write backup cluster file (1 or 0, default 0)
 </code>
 
 ==== Multi-threaded programs ====
@@ -325,10 +392,12 @@ options:
 Multi-threaded cd-hit programs were implemented with OpenMP. Option "-T
 n" will enable cd-hit to run in parallel in a single multi-core computer.
 The default value of n is 1 (single thread). "-T 0" will use all the
-cores in that computer. We have run cd-hit on 4-core, 8-core to 32-core
+cores in that computer. We have run cd-hit on 4-core, 8-core to 16-core
 computers and have observed a great speedup.
 
 ==== CD-HIT-PARA ====
+
+__** [CD-HIT-PARA is no longer supported, since the multi-threaded cd-hit become available.] **__
 
 CD-HIT-PARA is a script that runs cd-hit, cd-hit-est in a parallel mode. It
 splits the input database; runs cd-hit or cd-hit-est in parallel on a computer
@@ -381,6 +450,7 @@ More options:
 </code>
 
 ==== CD-HIT-2D-PARA ====
+__** [CD-HIT-2D-PARA is no longer supported, since the multi-threaded cd-hit become available.] **__
 
 CD-HIT-2D-PARA is a script that runs cd-hit-2d, cd-hit-est-2d in a parallel
 mode. It splits the input databases; runs cd-hit-2d or cd-hit-est-2d in
@@ -412,35 +482,6 @@ where
      -h  print this help
 </code>
 
-==== PSI-CD-HIT clustering ====
-
-PSI-CD-HIT clusters proteins into clusters that meet a user-defined similarity
-threshold, which can be identity or expect value. Each cluster has one
-representative sequence. The input is a protein dataset in fasta format and
-the outputs are two files: a fasta file of representative sequences and a text
-file of list of clusters 
-
-Basic command:
-  psi-cd-hit.pl -i nr60 -o nr30 -c 0.3
-  psi-cd-hit.pl -i nr60 -o nr30 -c 0.3 -b hosts 
- 
-More options:
-
-Options, -l, -d, -s, -S are same to CD-HIT, here are few more psi-cd-hit
-specific options:
-<code>
--ce clustering threshold (blast expect), default -1, by default it doesn't use
-    expect threshold, but with positive value, the program cluster sequences if
-    similarities meet either identity threshold or expect value threshold
--L  coverage of shorter sequence (aligned / full), default 0
--M  coverage of longer sequence (aligned / full), default 0
--R  (1/0) use psi-blast profile? default 0, perform psi-blast / pdb-blast type
-    search
--G  (1/0) use global identity? default 1, sequence identity calculated as
-    total identical residues of local alignments / length of shorter sequence
--be blast expect cutoff, default 0.000001
--b  filename of list of hosts, to run this program in parallel with ssh calls
-</code>
 
 ==== Incremental clustering ====
 
@@ -449,33 +490,545 @@ It is easy to make incremental update with cd-hit /cd-hit-2d. For example:
   month is the new sequences of nr of this month
 
 In last month, you ran:
-  cd-hit -i nr -o nr90 -c 0.9 -n 5
+  cd-hit -i nr -o nr90 -c 0.9 -n 5 -d 0 -M 16000 -T 16
 
 This month, you can run incremental clustering
-  cd-hit-2d -i nr90 -i2 month -o month-new -c 0.9 -n 5
-  cd-hit -i month-new -o month90 -c 0.9 -n 5
+  cd-hit-2d -i nr90 -i2 month -o month-new -c 0.9 -n 5 -d 0 -M 16000 -T 16
+  cd-hit -i month-new -o month90 -c 0.9 -n 5 -d 0 -M 16000 -T 16
   cat month90 >> nr90
   clstr_merge.pl nr90.clstr month-new.clstr > temp.clstr
   cat temp.clstr month90.clstr > this_month_nr90.clstr 
 
-This approach is much faster than runing from scratch. It also preserves
+This approach is much faster than running from scratch. It also preserves
 stable cluster structure. 
 
 ==== Hierarchically clustering ====
 
 With multiple-step, iterated runs of CD-HIT, you perform a clustering in a
-neighbor-joining method, which generates a hierarchical structure.  
+neighbor-joining method, which generates a hierarchical structure. The third step use psi-cd-hit, please see psi-cd-hit section for details. 
     
 {{ :Figure4.png }}
 
 Commands:
-  cd-hit -i nr -o nr80 -c 0.8 -n 5
-  cd-hit -i nr80 -o nr60 -c 0.6 -n 4
+  cd-hit -i nr -o nr80 -c 0.8 -n 5 -d 0 -M 16000 -T 16
+this generate nr80 and nr80.clstr
+
+  cd-hit -i nr80 -o nr60 -c 0.6 -n 4 -d 0 -M 16000 -T 16
+this use nr80 to generate nr60 and nr60.clstr
+  
   psi-cd-hit.pl -i nr60 -o nr30 -c 0.3
+this use nr60 to generate nr30 and nr30.clstr  
+  
+  clstr_rev.pl nr80.clstr nr60.clstr > nr80-60.clstr
+nr60.clstr only lists sequences from nr80, script clstr_rev.pl add the original sequences from nr but not in nr80 into the output file nr80-60.clstr
+  
+  clstr_rev.pl nr80-60.clstr nr30.clstr > nr80-60-30.clstr
+nr30.clstr only lists sequences from nr60, script clstr_rev.pl add the original sequences into file nr80-60-30.clstr
 
 This way is faster than one-step run from nr directly to nr30. It can also
-helps correct errors by one-step clustering (see last paragraph in algorithm
-limitation section).  
+more accurate.
+  
+
+
+
+===== CD-HIT AuxTools =====
+
+CD-HIT AuxTools is a set of auxiliary programs that can be used to assist the analysis
+of the next generation sequencing data. It currently includes programs for removing
+read duplicates, finding pairs of overlapping reads or joining pair-end reads etc.
+
+==== cd-hit-dup ====
+
+
+cd-hit-dup is a simple tool for removing duplicates from sequencing reads,
+with optional step to detect and remove chimeric reads.
+A number of options are provided to tune how the duplicates are removed.
+Running the program without arguments should print out the list of available options,
+as the following:
+
+<code>
+Options:
+    -i        Input file;
+    -i2       Second input file;
+    -o        Output file;
+    -d        Description length (default 0, truncate at the first whitespace character)
+    -u        Length of prefix to be used in the analysis (default 0, for full/maximum length);
+    -m        Match length (true/false, default true);
+    -e        Maximum number/percent of mismatches allowed;
+    -f        Filter out chimeric clusters (true/false, default false);
+    -s        Minimum length of common sequence shared between a chimeric read
+              and each of its parents (default 30, minimum 20);
+    -a        Abundance cutoff (default 1 without chimeric filtering, 2 with chimeric filtering);
+    -b        Abundance ratio between a parent read and a chimeric read (default 1);
+    -p        Dissimilarity control for chimeric filtering (default 1);
+</code>
+
+=== Option details ===
+
+== Common options ==
+Here are the more detailed description of the options.
+<code>
+    -i        Input file;
+</code>
+Input file that must be in fasta or fastq format.
+
+<code>
+    -i2       Second input file;
+</code>
+cd-hit-dup can take a pair of files as inputs, assuming they contain sequences of pair-end reads.
+"-i" can be used to specify the file for the first end;
+and "-i2" can be used to specify the file for the second end.
+
+When two files of pair-end reads are used as inputs, each pair of reads will
+be concatenated into a single one. And the following steps of duplicate and chimeric
+detection and removing.
+
+<code>
+    -o        Output file;
+</code>
+Output file which contains a list of reads without duplicates.
+
+<code>
+    -d        Description length (default 0, truncate at the first whitespace character)
+</code>
+The length of description line that should be written to the output.
+
+<code>
+    -u        Length of prefix to be used in the analysis (default 0, for full/maximum length);
+</code>
+For pair-end inputs, the program will take part (whole or prefix) of the first end 
+and part (whole or prefix) of the second read,
+and join them together to form a single read to do the analysis.
+A positive value of this option specifies the length of the prefix to be taken from each read.
+If a read is shorter than this length, letter 'N's will be appended to the read to make up
+for the length.
+When this option is not used or is used with a non-positive value,
+the program will use the length of the longest read as the value of this option.
+
+For single input analysis, only a positive value of this option will be effective.
+It also allows the program to use only the prefix up to the specified length of each read
+to do the analysis. In case that a read is shorter than this length, no 'N' is appended to
+the read since it is not necessary.
+
+
+== Options for duplicate detection ==
+<code>
+    -m        Match length (true/false, default true);
+</code>
+"-m" specifies whether the lengths of two reads should be exactly the same to be considered
+as duplicates.
+
+<code>
+    -e        Maximum number/percent of mismatches allowed;
+</code>
+Maximum number/percent of mismatches can be specified to control the similarity between two reads
+for duplicate and chimeric detection. For duplicate detection, any two reads with number of mismatches
+no greater than the specified value are considered to be duplicates. For chimeric detection,
+this option control how similar a read should be to either of its parents.
+
+
+== Options for chimeric filtering ==
+<code>
+    -f        Filter out chimeric clusters (true/false, default false);
+</code>
+This option specifies whether or not to carry out an additional step to filter out chimeric clusters.
+
+<code>
+    -s        Minimum length of common sequence shared between a chimeric read
+              and each of its parents (default 30, minimum 20);
+</code>
+A read or cluster representative is considered as a potential chimeric only if it shares
+at least the number of bases specified by this option with either of its parents.
+This option is effective only if the option is set to true for filtering chimeric clusters.
+
+<code>
+    -a        Abundance cutoff (default 1 without chimeric filtering, 2 with chimeric filtering);
+</code>
+Each read is associated with an abundance number, which is the number of duplicates for the read.
+cd-hit-dup always assumes the input contains duplicates and perform the duplicate detection step.
+If no duplicate is found, the input is assumed to have duplicates remove in advance, and then,
+the program will try to obtain the abundance information from the descriptions of the reads,
+it interprets the number following "_abundance_" as the abundance number.
+
+The abundance cutoff is mainly used for chimeric filtering to skip chimeric checking on reads with
+abundance below this cutoff.
+
+<code>
+    -b        Abundance ratio between a parent read and a chimeric read (default 1);
+</code>
+This option specifies the abundance ratio between a parent read and a chimeric read. 
+So for a read to be chimeric, either of its parents must have abundance at least as high as
+the ratio times the abundance of the chimeric read.
+
+
+<code>
+    -p        Dissimilarity control for chimeric filtering (default 1);
+</code>
+Internally dissimilarity is measured by percent of mismatches with ungapped alignments.
+By default the percentage cutoff is set to 0.01 (one percent).
+This option specifies a multiplier to this percentage cutoff.
+A higher value will increase the dissimilarity thresholds in chimeric filtering.
+
+
+=== Output files ===
+
+cd-hit-dup will output three files. Two of them are the same as the output files of CD-HIT:
+one (named exactly the same as the file name specified by the "-o" option) is the cluster (or duplicate) representatives, the other is the clustering file (xxx.clstr) relating each duplicate
+to its representative. The third file (xxx2.clstr) contains the chimeric clusters.
+In this file, the description for each chimeric cluster contains cluster ids of its parent clusters
+from the clustering file xxx.clstr.
+
+=== Examples ===
+
+== Duplicate Detection ==
+Remove duplicates using default parameters:
+<code>
+cd-hit-dup -i input.fa -o output
+</code>
+By default, only reads that are identical are considered as duplicates.
+If "-m" is set to false, duplicates will be allowed to have different length,
+but the longer ones must have a prefix that is identical to the shorter ones.
+
+<code>
+cd-hit-dup -i input.fa -o output -u 50
+</code>
+This only compare the first 50 bases of all sequences, considering that in Illumina reads, sequence quality are better at the beginning of the reads.
+
+Remove duplicates with a few mismatches:
+<code>
+cd-hit-dup -i input.fa -o output -e 2
+cd-hit-dup -i input.fa -o output -e 0.01
+</code>
+The former will allow each duplicate read to have up to 2 mismatches when aligned to
+its representative; and the later will allow up to one percent mismatches.
+
+Remove duplicates from pair-end reads:
+<code>
+cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output
+</code>
+Each read from "pair-end1.fa" and "pair-end2.fa" will be joint to form a single read to
+detect duplicates. If they all are of the same length, the full length of each ends will
+be used in forming the single read; otherwise, the default value of option "-u"
+will be used to determine how the single read is created.
+
+<code>
+cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output -u 50
+</code>
+This only consider the first 50 bases from both R1 and R2 reads.
+
+Remove duplicates from pair-end reads with control on how the pair-ends are jointed:
+<code>
+cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output -u 100
+</code>
+With explicit "-u" options, any reads shorter than 100 will be padded with 'N's,
+and the longer ones will be cut down to 100 base long. 
+Then each pair of the 100 base long reads will be jointed to form a single 200 base long read.
+
+
+== Chimeric Filtering ==
+
+cd-hit-dup offers a very efficient way to detect chimeric reads. The basic idea is to find two parent
+reads whose cross-over is sufficient similar to the chimeric read, while each single parent is 
+sufficiently dissimilar to it. 
+
+Such dissimilarity is measured by the percent of mismatches for no-gapped alignments.
+For a given percentage "p" (from option "-p"), a chimeric read must share at least "p" 
+percent mismatches with any other single read, namely, it much be sufficiently dissimilar to 
+any single read.
+
+For more robust detection of chimeric reads, a background percentage "p_bg" is calculated
+as the mismatch percentage shared between the candidate chimeric read and the single read
+that is most similar to the candidate. If "p_bg" is greater than "1.5*p", "1.5*p" will be
+used as "p_bg" instead.
+
+For a read to be classified as chimeric read, there must exist two reads/parents such that,
+the leading part of the read is sufficiently similar to one parent, and the rest is sufficiently
+similar to the other parent, with at most "p+p_bg" percent of mismatches in each part.
+And the crossover between the two parents must share at most "p_bg" mismatches with the 
+chimeric read.
+
+
+Chimeric filtering with default parameters:
+<code>
+cd-hit-dup -i input.fa -o output -f true
+</code>
+
+Chimeric filtering with specified similarity level:
+<code>
+cd-hit-dup -i input.fa -o output -f true -p 1.5
+</code>
+
+Chimeric filtering with specified abundance difference:
+<code>
+cd-hit-dup -i input.fa -o output -f true -a 2
+</code>
+which means each parent of a chimeric read must be a least as twice abundant as the chimeric read.
+
+Chimeric filtering will produce a cluster file named like "xxx2.clstr",
+in which each cluster entry is a chimeric read/cluster. For example,
+<code>
+......
+>Cluster 4 chimeric_parent1=2,chimeric_parent2=8
+0   256nt, >FV9NWLF01CRIR3_abundance_23... *
+>Cluster 5 chimeric_parent1=2,chimeric_parent2=0
+0   250nt, >FV9NWLF01B4TBX_abundance_21... *
+......
+</code>
+here "Cluster 5" contains a chimeric read "FV9NWLF01B4TBX", whose parents are identified
+by cluster numbers "2" and "0" from the associated "xxx.clstr" file,
+<code>
+>Cluster 0
+0   252nt, >FV9NWLF01ANLX2_abundance_2239... *
+>Cluster 1
+0   246nt, >FV9NWLF01C3KOB_abundance_1465... *
+>Cluster 2
+0   260nt, >FV9NWLF01AQOWA_abundance_1284... *
+......
+</code>
+So the parent reads of the chimeric read "FV9NWLF01B4TBX" are "FV9NWLF01AQOWA" and "FV9NWLF01ANLX2".
+
+
+==== cd-hit-lap ====
+
+cd-hit-lap is program for extracting pairs of overlapping reads by clustering based on tail-head
+overlaps (with perfect matching). The basic clustering strategy is the same as that in standard 
+CD-HIT programs.
+In this program, each read is clustered as either a "representative" or a "redundant" read.
+For each "redundant" read, it must have a prefix that is identical a suffix of its representative read.
+
+The options of this program can be obtained by running it it without any arguments:
+<code>
+[compute-0-0 cdhit-dup]$ ./cd-hit-lap
+Options:
+    -i        Input file;
+    -o        Output file;
+    -m        Minimum length of overlapping part (default 20);
+    -p        Minimum percentage of overlapping part (default 0, any percentage);
+    -d        Description length (default 0, truncate at the first whitespace character)
+    -s        Random number seed for shuffling (default 0, no shuffling; shuffled before sorting by length);
+    -stdout   Standard output type (default "log", other options "rep", "clstr");
+</code>
+
+The two options "-m" and "-p" can be used to control the minimum overlap that is required to
+classify them as overlapping reads. Each pair of overlapping reads must have overlap length no less
+than the threshold specified by "-m", and must also not be less than the length threshold computed
+from the "-p" option.
+
+Since the overlapping reads are searched using a greedy strategy, so different sortings of reads may
+lead to different result. So it is advisable to run the program multiple times with read shuffling by different random number seeds, and then collect and merge the results.
+
+Sometimes it may be more convenient to pipe the results of this program as stdout directly
+to the stdin of other programs, to do this, the option "-stdout" can be used to choose
+which type ("log" for program console information, "rep" for representative reads 
+in FASTA or FASTQ format, "clstr" for the clustering output in CD-HIT format) of results 
+to be writen to the stdout.
+
+The output format of this program is the same as the standard CD-HIT. In the .clstr file, the alignment
+positions indicate how the reads are overlapped. For example,
+<code>
+>Cluster 0
+0   75nt, >1_lane2_624... *
+1   75nt, >1_lane2_7169... at 1:65:11:75/+/100.00%
+2   75nt, >1_lane2_36713... at 69:1:1:69/-/100.00%
+3   75nt, >1_lane2_141482... at 1:56:20:75/+/100.00%
+</code>
+The cluster member #0 in cluster #0 is the representative of the cluster, and it overlaps with each
+of the other members in the cluster. For cluster member #1, "1:65:11:75/+" tells that
+the first 65 bases of member #1 overlaps with the last 65 bases of member #0;
+"69:1:1:69/-" indicates that the last 69 bases of member #2 overlaps with 
+the first 69 bases of member #0.
+
+
+==== read-linker ====
+
+read-linker is a very simple program to concatenate pair-end reads into single ones. It support the following options:
+<code>
+[compute-0-0 cdhit-dup]$ ./read-linker 
+Options:
+    -1 file       Input file, first end;
+    -2 file       Input file, second end;
+    -o file       Output file;
+    -l number     Minimum overlapping length (default 10);
+    -e number     Maximum number of errors (mismatches, default 1);
+</code>
+Only the pairs of reads that share at least a minimum overlapping length with mismatched no more
+than the maximum number of errors, are jointed to form a single read.
+
+===== PSI-CD-HIT clustering =====
+
+The lowest threshold of CD-HIT is around 40%, in many applications, 
+we need a much lower threshold, like 25%. Also CD-HIT-EST can not handle very long
+sequences (e.g. genomes, scaffolds). 
+
+PSI-CD-HIT clusters proteins at very low threshold, it also cluster long DNA 
+sequences, through blastp, blastn and metablast. PSI-cd-hit is a Perl script, 
+which runs similar incremental algorithm like CD-HIT, 
+but using BLAST to calculate similarities. Below are the procedures of PSI-CD-HIT:
+
+  - Sort sequences by decreasing length 
+  - First one is the first representative
+  - Using 1st one blast all remaining sequences, pick up its neighbors that meet the clustering threshold
+  - Repeat until done
+
+==== Installation ====
+please download legacy BLAST (not BLAST+) and install the executables in your $PATH. The programs 
+required by psi-cd-hit.pl are blastall, megablast, blastpgp and formatdb. 
+
+==== Usage ====
+
+Basic command:
+  psi-cd-hit.pl -i nr60 -o nr30 -c 0.3
+ 
+More options:
+<code>
+  input/output:
+    -i  in_dbname, required
+    -o  out_dbname, required
+    -l  length_of_throw_away_sequences, default 10
+
+  thresholds:
+    -c  clustering threshold (sequence identity), default 0.3
+    -ce clustering threshold (blast expect), default -1, 
+        it means by default it doesn't use expect threshold, 
+        but with positive value, the program cluster seqs if similarities
+        meet either identity threshold or expect threshold 
+    -G  (1/0) use global identity? default 1
+        two sequences Long (i.e. representative) and Short (redunant) may have multiple
+        alignment fragments (i.e. HSPs), see:
+        seq1  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   Long sequence
+                   ||||||||||||||||||             /////////////          i.e. representative
+                   ||||||||||||||||||            /////////////                sequence
+                   ||||||||HSP 1 ||||           ////HSP 2 ///
+                   ||||||||||||||||||          /////////////
+                   ||||||||||||||||||         /////////////
+        seq2    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx          Short sequence
+                   <<  length 1    >>        <<   len 2 >>               i.e. redundant
+                <<<<<<<<<<<< length of short sequence >>>>>>>>>>>>>>          sequence
+
+                          total identical letters from all co-linear and non-overlapping HSPs
+        Glogal identity = -------------------------------------------------------------------
+                                        length of short sequence
+        Local identity  = identity of the top high score HSP
+        if you prefer to use -G 0, it is suggested that you also
+        use -aS, -aL, such as -aS 0.8, to prevent very short matches.
+    -aL	alignment coverage for the longer sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+    -aS	alignment coverage for the shorter sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+    -g  (1/0), default 0
+        by cd-hit's default algorithm, a sequence is clustered to the first 
+        cluster that meet the threshold (fast cluster). If set to 1, the program
+        will cluster it into the most similar cluster that meet the threshold
+        (accurate but slow mode)
+        but either 1 or 0 won't change the representatives of final clusters
+    -circle (1/0), default 0
+        when set to 1, treat sequences as circular sequence.
+        bacterial genomes, plasmids are circular, but their genome coordinate maybe arbitary, 
+        the 2 HSPs below will be treated as non co-linear with -circle 0
+        the 2 HSPs below will be treated as     co-linear with -circle 1
+              -------------circle-----------    
+              |                            |   
+        seq1  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx      genome / plasmid 1 
+               \\\\      /////////////         
+                \\\\    /////////////                
+                  HSP 2 -> ////HSP 1 ///   <-HSP 2
+                          /////////////     \\\\
+                         /////////////       \\\\
+        seq2           xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   genome / plasmid 2
+                       |                             |
+                       -----------circle--------------
+   program:
+     -prog (blastp, blastn, megablast, blastpgp), default blastp 
+     -p  profile search para, default
+           "-j 3 -F F -e 0.001 -b 500 -v 500"
+     -dprof database for building PSSM, default using input
+         you can also use another database that is more comprehensive like NR80
+     -s  blast search para, default
+           "-F F -e 0.000001 -b 100000 -v 100000"
+     -bs (1/0) default 1
+        pipe blast results from into parser instead of save in hard drive (save time)
+
+   compute:
+     -exec (qsub, local) default local
+          this program writes a shell script to run blast, this script is
+          either performed locally by sh or remotely by qsub
+          with qsub, you can use PBS, SGE etc
+     -host number of hosts for qsub 
+     -core number of cpu cores per computer, default 1
+     -shf a filename for add local settings into the job shell script
+          for example, when you run PBS jobs, you can add quene name etc in this
+          file and this script will add them into the job shell script
+e.g. your file may have followings 
+#PBS -v PATH
+#PBS -l walltime=8:00:00
+#PBS -q jobqueue
+
+  job:
+    -rs steps of save restart file and clustering output, default 5000
+        everytime after process 5000 sequences, program write a 
+        restart file and current clustering information
+    -restart restart file, readin a restart file
+        if program crash, stoped, termitated, you can restart it by
+        add a option "-restart sth.restart"
+    -rf steps of re format blast database, default 200,000
+        if program clustered 200,000 seqs, it remove them from seq
+        pool, and re format blast db to save time
+    -J  job, job_file, exe specific jobs like parse blast outonly
+        DON'T use it, it is only used by this program itself
+    -k (1/0) keep blast raw output file, default 0
+
+    -P path to executables
+
+</code>
+
+==== Examples ====
+
+== Protein clustering ==
+First, we use cd-hit to cluster the input down to 60% identity
+<code>
+cd-hit -i db    -o db_90 -c 0.9 -n 5 -g 1 -G 0 -aS 0.8  -d 0 -p 1 -T 16 -M 0 > db_90.log
+cd-hit -i db_90 -o db_60 -c 0.6 -n 4 -g 1 -G 0 -aS 0.8  -d 0 -p 1 -T 16 -M 0 > db_60.log
+</code>
+
+Cluster on a single computer
+<code>
+  ./psi-cd-hit.pl -i db_60 -o db_30 -c 0.3 -ce 1e-6 -aS 0.8 -G 0 -g 1 -exec local -core 16
+  clstr_rev.pl db_90.clstr db_60.clstr > db90-60.clstr
+  clstr_rev.pl db90-60.clstr db_30.clstr > db90-60-30.clstr
+</code>
+Here, 
+  -ce 1e-6 and -c 0.3 means cutoff at either 30% identity or 1e-6 e.value
+  -G 0 means global identity
+  -aS 0.8 means that alignment must cover 80% of shorter (redundant) sequence
+  -g 1, slow but accurate mode, allowing sequences to be grouped to its most similar cluster
+  -core 16, use 16 threads for blast search
+  -clstr_rev.pl will combined all the cd-hit runs, see Hierarchically clustering
+
+Cluster on a computer cluster (with qsub)
+<code>
+  ./psi-cd-hit.pl -i db_60 -o db_30 -c 0.3 -ce 1e-6 -aS 0.8 -G 0 -g 1 -exec qsub -host 8 -core 8 -shf qsub_sh_template
+  clstr_rev.pl db_90.clstr db_60.clstr > db90-60.clstr
+  clstr_rev.pl db90-60.clstr db_30.clstr > db90-60-30.clstr  
+</code>
+
+Restart:
+<code>
+  ./psi-cd-hit.pl -i db_60 -o db_30 -c 0.3 -ce 1e-6 -aS 0.8 -G 0 -g 1 -exec local -core 16 -restart db_30.restart 
+  ./psi-cd-hit.pl -i db_60 -o db_30 -c 0.3 -ce 1e-6 -aS 0.8 -G 0 -g 1 -exec qsub -host 8 -core 8 -shf qsub_sh_template -restart db_30.restart
+</code>
+In case of program crash, it restart from where it stops without re-running blast searches.
+
+
+== Clustering very long DNA sequences ==
+<code>
+  ./psi-cd-hit.pl -i db.fna -o db90.fna -c 0.9 -G 1 -g 1 -prog megablast -s "-F F -e 0.000001 -b 100000 -v 100000" -exec local -core 32
+  ./psi-cd-hit.pl -i db.fna -o db90.fna -c 0.9 -G 1 -g 1 -prog blastn -circle 1 -exec local -core 32
+</code>
+Here,
+  First example uses megablast
+  Second example uses blastn
+  -circle 1 means consider circular genome (see psi-cd-hit options above)
+  
 
 ===== CD-HIT tools =====
 
@@ -521,7 +1074,7 @@ Total   1268096 391833  37449   121327  167689  62284   3084
 This script sort clusters in .clstr file by length, size
 
 Commands:
-  Clstr_sort_by.pl input.clstr no > input_sort.clstr
+  Clstr_sort_by.pl < input.clstr no > input_sort.clstr
 Where, "no" means by size of the cluster
 
 
@@ -599,13 +1152,17 @@ server performs hierarchical clustering up to 3 steps.
 
 The CD-HIT-454 web server is also available from [[http://cd-hit.org]]. 
 
-
+﻿
 ===== References =====
 
 If you find cd-hit helpful to your research and study, please kindly cite the
 relevant references from the list below. 
-  - Clustering of highly homologous sequences to reduce the size of large protein databases. Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics (2001) 17:282-283, [[http://bioinformatics.oupjournals.org/cgi/reprint/17/3/282.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11294794|Pubmed]]
-  - Tolerating some redundancy significantly speeds up clustering of large protein databases. Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics (2002) 18: 77-82, [[http://bioinformatics.oupjournals.org/cgi/reprint/18/1/77.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11836214|Pubmed]]
-  - Cd-hit: a fast program for clustering and comparing large sets of protein or nucleotide sequences. Weizhong Li & Adam Godzik. . Bioinformatics (2006) 22:1658-1659, [[http://bioinformatics.oxfordjournals.org/cgi/reprint/22/13/1658|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=Abstract&list_uids=16731699|Pubmed]]
+  - Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Clustering of highly homologous sequences to reduce the size of large protein databases. Bioinformatics (2001) 17:282-283, [[http://bioinformatics.oupjournals.org/cgi/reprint/17/3/282.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11294794|Pubmed]]
+  - Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Tolerating some redundancy significantly speeds up clustering of large protein databases. Bioinformatics (2002) 18: 77-82, [[http://bioinformatics.oupjournals.org/cgi/reprint/18/1/77.pdf|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=11836214|Pubmed]]
+  - Weizhong Li & Adam Godzik. Cd-hit: a fast program for clustering and comparing large sets of protein or nucleotide sequences. Bioinformatics (2006) 22:1658-1659, [[http://bioinformatics.oxfordjournals.org/cgi/reprint/22/13/1658|PDF]], [[http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=Abstract&list_uids=16731699|Pubmed]]
   - Ying Huang, Beifang Niu, Ying Gao, Limin Fu and Weizhong Li. CD-HIT Suite: a web server for clustering and comparing biological sequences. Bioinformatics, (2010). 26:680 [[http://bioinformatics.oxfordjournals.org/cgi/reprint/btq003v1|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20053844|Pubmed]]
   - Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li, Artificial and natural duplicates in pyrosequencing reads of metagenomic data. BMC Bioinformatics, (2010), 11:187 [[http://www.biomedcentral.com/content/pdf/1471-2105-11-187.pdf|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20388221|Pubmed]]
+  - Limin Fu, Beifang Niu, Zhengwei Zhu, Sitao Wu and Weizhong Li, CD-HIT: accelerated for clustering the next generation sequencing data. Bioinformatics, (2012), 28 (23): 3150-3152. doi: 10.1093/bioinformatics/bts565, [[http://bioinformatics.oxfordjournals.org/content/28/23/3150|PDF]], [[http://www.ncbi.nlm.nih.gov/pubmed/23060610|Pubmed]]
+  - Weizhong Li, Limin Fu, Beifang Niu, Sitao Wu and John Wooley. Ultrafast clustering algorithms for metagenomic sequence analysis. Briefings in Bioinformatics, (2012) 13 (6): 656-668. doi: 10.1093/bib/bbs035 [[http://bib.oxfordjournals.org/content/13/6/656|PDF]]
+
+

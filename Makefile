@@ -4,13 +4,14 @@ CC = g++ -pg
 CC = g++
 
 # without OpenMP
-CCFLAGS = -DNO_OPENMP
 
 # with OpenMP
 # in command line: 
 # make openmp=yes
-ifeq ($(openmp),yes)
-CCFLAGS = -fopenmp
+ifeq ($(openmp),no)
+  CCFLAGS = -DNO_OPENMP
+else
+  CCFLAGS = -fopenmp
 endif
 
 # support debugging
