@@ -106,6 +106,22 @@ void WriteClusters( Array<SequenceCluster> & clusters, const String & name = "te
 	fclose( fout3 );
 }
 
+void WriteClusters_seqonly( Array<SequenceCluster> & clusters, const String & name = "temp.txt", int deslen = 0 )
+{
+	FILE *fout1 = fopen( name.Data(), "w" );
+	int i, n = clusters.Size();
+	for(i=0; i<n; i++){
+		SequenceCluster & cluster = clusters[i];
+		int head = cluster.GetChimericParent1();
+		int tail = cluster.GetChimericParent2();
+		if( cluster.Size() == 0 ) continue;
+		if( head == tail ){
+			cluster[0]->Print( fout1 );
+		}
+	}
+	fclose( fout1 );
+}
+
 
 void SortByAbundance( Array<SequenceCluster> & clusters )
 {
@@ -692,10 +708,17 @@ void DetectChimeric( Array<SequenceCluster> & clusters, Array<ChimericSource> & 
 
 
 const char *help =
+"CD-HIT-DUP\n\n"
+"Usage:\n"
+"cd-hit-dup -i input.fa -o output [other options] (for single reads FASTQ)\n"
+"cd-hit-dup -i input.fq -o output [other options] (for single reads FASTA)\n"
+"cd-hit-dup -i R1.fq -i2 R2.fq -o output -o2 output-R2 [other options] (for PE reads FASTQ)\n"
+"cd-hit-dup -i R1.fa -i2 R2.fa -o output -o2 output-R2 [other options] (for PE reads FASTA)\n\n"
 "Options:\n"
-"    -i        Input file;\n"
-"    -i2       Second input file;\n"
+"    -i        Input file (FASTQ or FASTA);\n"
+"    -i2       Second input file (FASTQ or FASTA);\n"
 "    -o        Output file;\n"
+"    -o2       Output file for R2;\n"
 "    -d        Description length (default 0, truncate at the first whitespace character)\n"
 "    -u        Length of prefix to be used in the analysis (default 0, for full/maximum length);\n"
 "    -m        Match length (true/false, default true);\n"
@@ -714,7 +737,7 @@ int main( int argc, char *argv[] )
 		printf( "%s\n", help );
 		return 1;
 	}
-	String input, input2, output;
+	String input, input2, output, output2;
 	bool matchLength = true;
 	bool nochimeric = false;
 	int abundance = -1;
@@ -736,6 +759,7 @@ int main( int argc, char *argv[] )
 		if( strcmp( argv[i], "-i" ) == 0 ) input = argv[i+1];
 		else if( strcmp( argv[i], "-i2" ) == 0 ) input2 = argv[i+1];
 		else if( strcmp( argv[i], "-o" ) == 0 ) output = argv[i+1];
+		else if( strcmp( argv[i], "-o2" ) == 0 ) output2 = argv[i+1];
 		else if( strcmp( argv[i], "-a" ) == 0 ) abundance = strtol( argv[i+1], NULL, 10 );
 		else if( strcmp( argv[i], "-d" ) == 0 ) deslen = strtol( argv[i+1], NULL, 10 );
 		else if( strcmp( argv[i], "-u" ) == 0 ) uselen = strtol( argv[i+1], NULL, 10 );
@@ -760,9 +784,14 @@ int main( int argc, char *argv[] )
 		printf( "ERROR: Chimeric filtering can only be done with single (-i) input file!\n" );
 		return 1;
 	}
+        if (input2.Size() && ( ! output2.Size())) {
+                output2 = output + ".2";
+        }
 
 	SequenceList seqlist;
 	SequenceList seqlist2;
+        int seqlist_modified = 0;
+        int seqlist2_modified = 0;
 	if( not seqlist.ReadFastAQ( input ) ){
 		printf( "File openning failed: %s\n", input.Data() );
 		return 1;
@@ -815,6 +844,7 @@ int main( int argc, char *argv[] )
 			if( n2 < uselen ){
 				s2.Resize( uselen, 'N' );
 				qs2.Resize( uselen, 0 );
+                                seqlist2_modified = 1;
 			}
 
 			seqlist[k]->SequenceData().Chop( n1 - uselen );
@@ -826,6 +856,7 @@ int main( int argc, char *argv[] )
 				seqlist[k]->QualityScore().Chop( n2 - uselen );
 			}
 		}
+                seqlist_modified = 1;
 	}else if( uselen > 0 ){
 		N = seqlist.Count();
 		for(k=0; k<N; k++){
@@ -837,6 +868,8 @@ int main( int argc, char *argv[] )
 			int i, j, m = 1;
 
 			if( n1 < uselen ) continue;
+
+                	seqlist_modified = 1;
 
 			seqlist[k]->SequenceData().Chop( n1 - uselen );
 			if( qs ) seqlist[k]->QualityScore().Chop( n1 - uselen );
@@ -856,6 +889,7 @@ int main( int argc, char *argv[] )
 	Array<ChimericSource> chistat;
 	printf( "Start clustering duplicated sequences ...\n" );
 	ClusterDuplicate( seqlist, clusters, matchLength, errors, errors2 );
+	printf( "Number of reads: %i\n", seqlist.Count() );
 	printf( "Number of clusters found: %i\n", clusters.Size() );
 
 	for(i=0, m=clusters.Size(); i<m; i++){
@@ -894,7 +928,70 @@ int main( int argc, char *argv[] )
 	printf( "Number of clusters with abundance above the cutoff (=%i): %i\n", abundance, above );
 	printf( "Number of clusters with abundance below the cutoff (=%i): %i\n", abundance, below );
 	printf( "Writing clusters to files ...\n" );
+	// Write .clstr file and merged output, the later will be overwritten if R1 is modified
+	// need to write .clstr file now so that the .clstr has correct info, e.g. identity %
 	WriteClusters( clusters, output, deslen );
+        // liwz:
+        // 1. for PE reads, previous code connect R1 and R2 and output R1 and R2 together
+        //    now we need to output R1 and R2 in two different files
+        // 2. with -u option, the original reads are cut, previous code output cut reads
+        //    now we need to output full-length reads
+        // since seqlist2 is already read in, 
+        // we output R2 first
+        if( input2.Size() ){
+		//re-read seqlist2 if modified due to padding
+		if (seqlist2_modified) {
+                	seqlist2.Clear();
+			if( input2.Size() and not seqlist2.ReadFastAQ( input2 ) ){
+				printf( "File openning failed: %s\n", input2.Data() );
+				return 1;
+			}
+                }
+		
+		// copy seqlist2 => seqlist
+		N = seqlist.Count();
+		for(k=0; k<N; k++){
+			int qs = seqlist[k]->QualityScore().Size();
+			seqlist[k]->SequenceData().Reset();
+                        seqlist[k]->SequenceData() += seqlist2[k]->SequenceData();
+			seqlist[k]->Description().Reset();
+                        seqlist[k]->Description() += seqlist2[k]->Description();
+			if( qs ){
+				seqlist[k]->QualityScore().Reset();
+				seqlist[k]->QualityScore() += seqlist2[k]->QualityScore();
+			}
+			 seqlist_modified = 1;
+		}
+
+           // write R2
+	   printf( "Write R2 reads\n" );
+           WriteClusters_seqonly( clusters, output2, deslen );
+        } 
+	if (seqlist_modified){
+		// since seqlist was nodified, re-read from file, this time use seqlist2 as storage
+		seqlist2.Clear();
+		if( not seqlist2.ReadFastAQ( input ) ){
+			printf( "File openning failed: %s\n", input.Data() );
+			return 1;
+		}
+		// copy seqlist2 => seqlist
+		N = seqlist.Count();
+		for(k=0; k<N; k++){
+			int qs = seqlist[k]->QualityScore().Size();
+			seqlist[k]->SequenceData().Reset();
+                        seqlist[k]->SequenceData() += seqlist2[k]->SequenceData();
+			seqlist[k]->Description().Reset();
+                        seqlist[k]->Description() += seqlist2[k]->Description();
+			if( qs ){
+				seqlist[k]->QualityScore().Reset();
+				seqlist[k]->QualityScore() += seqlist2[k]->QualityScore();
+			}
+		}
+		// overwrite R1 if R1 was modified
+	   	printf( "Write R1 reads\n" );
+        	WriteClusters_seqonly( clusters, output, deslen );
+	}
+
 	printf( "Done!\n" );
 	return 0;
 }

@@ -547,10 +547,17 @@ Running the program without arguments should print out the list of available opt
 as the following:
 
 <code>
+Usage:
+cd-hit-dup -i input.fa -o output.fa [other options] (for single reads FASTQ)
+cd-hit-dup -i input.fq -o output.fq [other options] (for single reads FASTA)
+cd-hit-dup -i R1.fq -i2 R2.fq -o output-R1.fq -o2 output-R2.fq [other options] (for PE reads FASTQ)
+cd-hit-dup -i R1.fa -i2 R2.fa -o output-R1.fa -o2 output-R2.fa [other options] (for PE reads FASTA)
+
 Options:
-    -i        Input file;
-    -i2       Second input file;
+    -i        Input file (FASTQ or FASTA);
+    -i2       Second input file (FASTQ or FASTA);
     -o        Output file;
+    -o2       Output file for R2;
     -d        Description length (default 0, truncate at the first whitespace character)
     -u        Length of prefix to be used in the analysis (default 0, for full/maximum length);
     -m        Match length (true/false, default true);
@@ -575,11 +582,11 @@ Input file that must be in fasta or fastq format.
 <code>
     -i2       Second input file;
 </code>
-cd-hit-dup can take a pair of files as inputs, assuming they contain sequences of pair-end reads.
-"-i" can be used to specify the file for the first end;
-and "-i2" can be used to specify the file for the second end.
+cd-hit-dup can take 2 files of paired end reads.
+"-i" can be used to specify the file for the R1;
+and "-i2" can be used to specify the file for R2.
 
-When two files of pair-end reads are used as inputs, each pair of reads will
+When two files of paired end reads are used as inputs, each pair of reads will
 be concatenated into a single one. And the following steps of duplicate and chimeric
 detection and removing.
 
@@ -587,6 +594,10 @@ detection and removing.
     -o        Output file;
 </code>
 Output file which contains a list of reads without duplicates.
+
+<code>
+    -o2        Output file for R2, with paired end reads;
+</code>
 
 <code>
     -d        Description length (default 0, truncate at the first whitespace character)
@@ -672,9 +683,10 @@ A higher value will increase the dissimilarity thresholds in chimeric filtering.
 
 === Output files ===
 
-cd-hit-dup will output three files. Two of them are the same as the output files of CD-HIT:
+cd-hit-dup will output three or four files. Two of them are the same as the output files of CD-HIT:
 one (named exactly the same as the file name specified by the "-o" option) is the cluster (or duplicate) representatives, the other is the clustering file (xxx.clstr) relating each duplicate
-to its representative. The third file (xxx2.clstr) contains the chimeric clusters.
+to its representative. For paired end reads, another file by the "-o2" option is the cluster representatives for R2 reads. 
+The last file (xxx2.clstr) contains the chimeric clusters.
 In this file, the description for each chimeric cluster contains cluster ids of its parent clusters
 from the clustering file xxx.clstr.
 
@@ -702,9 +714,9 @@ cd-hit-dup -i input.fa -o output -e 0.01
 The former will allow each duplicate read to have up to 2 mismatches when aligned to
 its representative; and the later will allow up to one percent mismatches.
 
-Remove duplicates from pair-end reads:
+Remove duplicates from paired end reads:
 <code>
-cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output
+cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output -o2 output-R2
 </code>
 Each read from "pair-end1.fa" and "pair-end2.fa" will be joint to form a single read to
 detect duplicates. If they all are of the same length, the full length of each ends will
@@ -712,13 +724,13 @@ be used in forming the single read; otherwise, the default value of option "-u"
 will be used to determine how the single read is created.
 
 <code>
-cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output -u 50
+cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output -o2 output-R2 -u 50
 </code>
 This only consider the first 50 bases from both R1 and R2 reads.
 
-Remove duplicates from pair-end reads with control on how the pair-ends are jointed:
+Remove duplicates from paired end reads with control on how the paired end are jointed:
 <code>
-cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output -u 100
+cd-hit-dup -i pair-end1.fa -i2 pair-end2.fa -o output -o2 output-R2 -u 100
 </code>
 With explicit "-u" options, any reads shorter than 100 will be padded with 'N's,
 and the longer ones will be cut down to 100 base long. 
@@ -1163,6 +1175,5 @@ relevant references from the list below.
   - Ying Huang, Beifang Niu, Ying Gao, Limin Fu and Weizhong Li. CD-HIT Suite: a web server for clustering and comparing biological sequences. Bioinformatics, (2010). 26:680 [[http://bioinformatics.oxfordjournals.org/cgi/reprint/btq003v1|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20053844|Pubmed]]
   - Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li, Artificial and natural duplicates in pyrosequencing reads of metagenomic data. BMC Bioinformatics, (2010), 11:187 [[http://www.biomedcentral.com/content/pdf/1471-2105-11-187.pdf|PDF]] [[http://www.ncbi.nlm.nih.gov/pubmed/20388221|Pubmed]]
   - Limin Fu, Beifang Niu, Zhengwei Zhu, Sitao Wu and Weizhong Li, CD-HIT: accelerated for clustering the next generation sequencing data. Bioinformatics, (2012), 28 (23): 3150-3152. doi: 10.1093/bioinformatics/bts565, [[http://bioinformatics.oxfordjournals.org/content/28/23/3150|PDF]], [[http://www.ncbi.nlm.nih.gov/pubmed/23060610|Pubmed]]
-  - Weizhong Li, Limin Fu, Beifang Niu, Sitao Wu and John Wooley. Ultrafast clustering algorithms for metagenomic sequence analysis. Briefings in Bioinformatics, (2012) 13 (6): 656-668. doi: 10.1093/bib/bbs035 [[http://bib.oxfordjournals.org/content/13/6/656|PDF]]
-
+  - Weizhong Li, Limin Fu, Beifang Niu, Sitao Wu and John Wooley. Ultrafast clustering algorithms for metagenomic sequence analysis. Briefings in Bioinformatics, (2012) 13 (6): 656-668. doi: 10.1093/bib/bbs035 [[http://bib.oxfordjournals.org/content/13/6/656|PDF]]  
 
