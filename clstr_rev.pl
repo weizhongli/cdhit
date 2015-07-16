@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # if nr90 from nr100 and
 #    nr80 from nr90, so I have nr90.clstr and nr80.clstr
 # but, in nr80.clstr, some gi numbers whose from nr100 are there

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 $clstr = shift;
 $fr = shift; # for nr80.clstr $fr = 0.8

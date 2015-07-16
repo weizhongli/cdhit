@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 my $sort_by_what = shift;
    $sort_by_what = "no" unless $sort_by_what;

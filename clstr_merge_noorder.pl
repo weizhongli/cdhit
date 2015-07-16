@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # order of clusters don't need to be the same
 # but then I have to read everything into memory

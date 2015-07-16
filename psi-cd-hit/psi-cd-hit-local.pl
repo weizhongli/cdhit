@@ -1,7 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ################################################################################
 ######### PSI-cd-hit written by Weizhong Li at http://cd-hit.org
 ################################################################################
+use warnings;
 our $pid       = $$;
 our $db_in     = "";   ###################
 our $db_out    = "";   # input / output

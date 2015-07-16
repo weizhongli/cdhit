@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 my $sort_by = shift;
    $sort_by = "len" unless ($sort_by);

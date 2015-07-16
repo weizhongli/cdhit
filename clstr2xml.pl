@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #usage: clstr_xml.pl [-len|-size] level1.clstr [level2.clstr level3.clstr ...]
 #purpose: to create xml file from cd-hit or hierarchical cd-hit(h-cd-hit) results
