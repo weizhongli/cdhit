@@ -2536,6 +2536,14 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 		}
 	}
 
+        //liwz 2016 01, seq is too short for the shortest (longer) seq in word_table to satisfy -aL option
+        //longer seqeunce * -aL -band_width
+        if ( S ) {
+		int min = table.sequences[S-1]->size;
+		int min_red = min * options.long_coverage - options.band_width;
+		if (len < min_red) return 0; // return flag=0
+	} 
+
 	param.ControlShortCoverage( len_eff, options );
 	param.ComputeRequiredBases( options.NAA, 2, options );
 
@@ -2694,6 +2702,16 @@ int SequenceDB::CheckOneEST( Sequence *seq, WordTable & table, WorkingParam & pa
 			len_eff = min;
 		}
 	}
+
+
+        //liwz 2016 01, seq is too short for the shortest (longer) seq in word_table to satisfy -aL option
+        //longer seqeunce * -aL -band_width
+        if ( S ) {
+		int min = table.sequences[S-1]->size;
+		int min_red = min * options.long_coverage - options.band_width;
+		if (len < min_red) return 0; // return flag=0
+	} 
+
 
 	param.ControlShortCoverage( len_eff, options );
 	param.ComputeRequiredBases( options.NAA, 4, options );
