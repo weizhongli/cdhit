@@ -2281,6 +2281,15 @@ size_t MemoryLimit( size_t mem_need, const Options & options )
 }
 void Options::ComputeTableLimits( int min_len, int max_len, int typical_len, size_t mem_need )
 {
+//liwz Fri Jan 15 15:44:47 PST 2016
+//T=1 scale=1
+//T=2 scale=0.6035
+//T=4 scale=0.375
+//T=8 scale=0.2392
+//T=16 scale=0.1562
+//T=32 scale=0.104
+//T=64 scale=0.0703
+
 	double scale = 0.5/threads + 0.5/sqrt(threads);
 	max_sequences = (size_t)(scale * MAX_TABLE_SEQ);
 	max_entries = (size_t)(scale * (500*max_len + 500000*typical_len + 50000000));
