@@ -1,9 +1,8 @@
+CXX ?= g++
 
-CC = g++
-
-CFLAGS = -Wall -Wno-unused -I. -Imintlib
+CXXFLAGS ?= -Wall -Wno-unused
 LFLAGS = -fPIC
-
+CPPFLAGS = -I. -Imintlib
 
 UNAME = $(shell uname)
 
@@ -18,7 +17,7 @@ endif
 ifeq ($(debug),yes)
 CFLAGS += -ggdb
 else
-CFLAGS += -O2
+CXXFLAGS ?= -O2
 endif
 
 
@@ -32,16 +31,16 @@ all: cd-hit-dup cd-hit-lap read-linker
 .SUFFIXES: .c .obj .cpp .cc .cxx .C
 
 .cxx.o:
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 cd-hit-dup: $(OBJECTS) cdhit-dup.o
-	$(CC) $(LFLAGS) $(OBJECTS) cdhit-dup.o -o cd-hit-dup
+	$(CXX) $(CXXFLAGS) $(LFLAGS) $(OBJECTS) cdhit-dup.o -o cd-hit-dup
 
 cd-hit-lap: $(OBJECTS) cdhit-lap.o
-	$(CC) $(LFLAGS) $(OBJECTS) cdhit-lap.o -o cd-hit-lap
+	$(CXX) $(CXXFLAGS) $(LFLAGS) $(OBJECTS) cdhit-lap.o -o cd-hit-lap
 
 read-linker: $(OBJECTS) read-linker.o
-	$(CC) $(LFLAGS) $(OBJECTS) read-linker.o -o read-linker
+	$(CXX) $(CXXFLAGS) $(LFLAGS) $(OBJECTS) read-linker.o -o read-linker
 
 clean:
 	rm $(OBJECTS) cdhit-dup.o cdhit-lap.o read-linker.o
