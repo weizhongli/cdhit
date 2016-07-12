@@ -75,6 +75,7 @@ void SequenceCluster::Write( FILE *fout, int id, int deslen, const char *cdes )
 				i, len, des.Data(), len, len, 100*(len-mm)/(float)len );
 	}
 }
+
 void WriteClusters( Array<SequenceCluster> & clusters, const String & name = "temp.txt", int deslen = 0 )
 {
 	String cfile = name + ".clstr";
@@ -102,6 +103,39 @@ void WriteClusters( Array<SequenceCluster> & clusters, const String & name = "te
 		}
 	}
 	fclose( fout1 );
+	fclose( fout2 );
+	fclose( fout3 );
+}
+
+//liwz
+//skip fout1 since R1 being modified due to padding
+void WriteClusters_clstronly( Array<SequenceCluster> & clusters, const String & name = "temp.txt", int deslen = 0 )
+{
+	String cfile = name + ".clstr";
+	String cfile2 = name + "2.clstr";
+//	FILE *fout1 = fopen( name.Data(), "w" );
+	FILE *fout2 = fopen( cfile.Data(), "w" );
+	FILE *fout3 = fopen( cfile2.Data(), "w" );
+	char cdes[200];
+	int i, n = clusters.Size();
+	int k1 = 0, k2 = 0;
+	for(i=0; i<n; i++){
+		SequenceCluster & cluster = clusters[i];
+		int head = cluster.GetChimericParent1();
+		int tail = cluster.GetChimericParent2();
+		if( cluster.Size() == 0 ) continue;
+		if( head == tail ){
+			//cluster[0]->Print( fout1 );
+			cluster.SetID( k1 );
+			cluster.Write( fout2, k1++, deslen );
+		}else{
+			head = clusters[head].GetID();
+			tail = clusters[tail].GetID();
+			sprintf( cdes, " chimeric_parent1=%i,chimeric_parent2=%i", head, tail );
+			cluster.Write( fout3, k2++, deslen, cdes );
+		}
+	}
+//	fclose( fout1 );
 	fclose( fout2 );
 	fclose( fout3 );
 }
@@ -930,7 +964,10 @@ int main( int argc, char *argv[] )
 	printf( "Writing clusters to files ...\n" );
 	// Write .clstr file and merged output, the later will be overwritten if R1 is modified
 	// need to write .clstr file now so that the .clstr has correct info, e.g. identity %
-	WriteClusters( clusters, output, deslen );
+
+	// by liwz - avoid modified R1 being write to file. padded R1 may crash in Print(fout1)
+	// WriteClusters( clusters, output, deslen );
+        seqlist_modified ? WriteClusters_clstronly( clusters, output, deslen ) : WriteClusters( clusters, output, deslen );
         // liwz:
         // 1. for PE reads, previous code connect R1 and R2 and output R1 and R2 together
         //    now we need to output R1 and R2 in two different files
