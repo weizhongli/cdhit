@@ -226,6 +226,8 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-S" ) == 0) diff_cutoff_aa  = intval;
 	else if (strcmp(flag, "-B" ) == 0) store_disk  = intval;
 	else if (strcmp(flag, "-P" ) == 0) PE_mode  = intval;
+	else if (strcmp(flag, "-cx") == 0) trim_len = intval;
+	else if (strcmp(flag, "-cy") == 0) trim_len_R2 = intval;
 	else if (strcmp(flag, "-p" ) == 0) print  = intval;
 	else if (strcmp(flag, "-g" ) == 0) cluster_best  = intval;
 	else if (strcmp(flag, "-G" ) == 0) global_identity  = intval;
@@ -1586,6 +1588,11 @@ void Sequence::Reserve( int n )
 	}
 	if( size ) data[size] = 0;
 }
+void Sequence::trim(int trim_len) {
+    if (trim_len >= size) return;
+    size = trim_len;
+    if (size) data[size]=0;
+}
 void Sequence::ConvertBases()
 {
 	int i;
@@ -1707,6 +1714,7 @@ void SequenceDB::Read( const char *file, const Options & options )
                 }
                 one.index = sequences.size();
                 if( one.size > option_l ) {
+                    if (options.trim_len    > 0) one.trim(options.trim_len);
                     sequences.Append( new Sequence( one ) ); 
                 }
             }
@@ -1839,6 +1847,8 @@ void SequenceDB::Read( const char *file, const char *file2, const Options & opti
                 }
                 one.index = sequences.size();
                 if( (one.size + two.size)> option_l ) {
+                    if (options.trim_len    > 0) one.trim(options.trim_len);
+                    if (options.trim_len_R2 > 0) two.trim(options.trim_len_R2);
                     sequences.Append( new Sequence( one, two, 1 ) ); 
                 }
             }

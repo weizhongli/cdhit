@@ -97,6 +97,13 @@ char txt_option_B[] =
 char txt_option_P[] =
 "\tinput paired end (PE) reads, default 0, single file\n \
 \tif set to 1, please use -i R1 -j R2 to input both PE files\n";
+char txt_option_cx[] =
+"\tlength to keep after trimming the tail of sequence, default 0, not trimming\n \
+\tif set to 50, the program only uses the first 50 letters of input sequence\n";
+char txt_option_cy[] =
+"\tlength to keep after trimming the tail of R2 sequence, default 0, not trimming\n \
+\tif set to 50, the program only uses the first 50 letters of input R2 sequence\n \
+\te.g. -cx 100 -cy 80 for paired end reads\n";
 char txt_option_uL[] = 
 "\tmaximum unmatched percentage for the longer sequence, default 1.0\n \
 \tif set to 0.1, the unmatched region (excluding leading and tailing gaps)\n \
@@ -230,6 +237,8 @@ int print_usage_est (char *arg) {
   cout << "   -U" << txt_option_U;
   cout << "   -B" << txt_option_B;
   cout << "   -P" << txt_option_P;
+  cout << "   -cx"<< txt_option_cx;
+  cout << "   -cy"<< txt_option_cy;
   cout << "   -p" << txt_option_p;
   cout << "   -g" << txt_option_g;
   cout << "   -r" << txt_option_r;

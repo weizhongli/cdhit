@@ -280,7 +280,9 @@ struct Options
 	int     frag_size;
 	int     option_r;
 	int     threads;
-	int	PE_mode; // -P
+	int	PE_mode;     // -P
+        int     trim_len;    // -cx
+        int     trim_len_R2; // -cy
 
 	size_t  max_entries;
 	size_t  max_sequences;
@@ -336,6 +338,8 @@ struct Options
 		des_len = 20;
 		threads = 1;
                 PE_mode = 0;
+                trim_len = 0;
+                trim_len_R2 = 0;
 		max_entries = 0;
 		max_sequences = 1<<20;
 		mem_limit = 100000000;
@@ -405,6 +409,7 @@ struct Sequence
 	int Format();
 
 	void ConvertBases();
+        void trim(int trim_len);
 
 	void SwapIn();
 	void SwapOut();
