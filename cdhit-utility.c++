@@ -20,9 +20,14 @@ char contacts[] =
   "   If you find cd-hit useful, please kindly cite:\n\n";
 
 char txt_option_i[] = "\tinput filename in fasta format, required\n";
+char txt_option_j[] = 
+"\tinput filename in fasta/fastq format for R2 reads if input are paired end (PE) files\n \
+\t -i R1.fq -j R2.fq -o output_R1 -op output_R2 or\n \
+\t -i R1.fa -j R2.fa -o output_R1 -op output_R2 \n";
 char txt_option_i_2d[] = "\tinput filename for db1 in fasta format, required\n";
 char txt_option_i2[] = "\tinput filename for db2 in fasta format, required\n";
 char txt_option_o[] = "\toutput filename, required\n";
+char txt_option_op[] = "\toutput filename for R2 reads if input are paired end (PE) files\n";
 char txt_option_c[] = 
 "\tsequence identity threshold, default 0.9\n \
 \tthis is the default cd-hit's \"global sequence identity\" calculated as:\n \
@@ -88,7 +93,10 @@ char txt_option_A[] =
 char txt_option_B[] =
 "\t1 or 0, default 0, by default, sequences are stored in RAM\n \
 \tif set to 1, sequence are stored on hard drive\n \
-\tit is recommended to use -B 1 for huge databases\n";
+\t!! No longer supported !!\n";
+char txt_option_P[] =
+"\tinput paired end (PE) reads, default 0, single file\n \
+\tif set to 1, please use -i R1 -j R2 to input both PE files\n";
 char txt_option_uL[] = 
 "\tmaximum unmatched percentage for the longer sequence, default 1.0\n \
 \tif set to 0.1, the unmatched region (excluding leading and tailing gaps)\n \
@@ -199,7 +207,9 @@ int print_usage_est (char *arg) {
   cout << cd_hit_ver << "\n\n" ;
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
   cout << "   -i" << txt_option_i;
+  cout << "   -j" << txt_option_j;
   cout << "   -o" << txt_option_o;
+  cout << "   -op" << txt_option_op;
   cout << "   -c" << txt_option_c;
   cout << "   -G" << txt_option_G;
   cout << "   -b" << txt_option_b;
@@ -219,6 +229,7 @@ int print_usage_est (char *arg) {
   cout << "   -uS" << txt_option_uS;
   cout << "   -U" << txt_option_U;
   cout << "   -B" << txt_option_B;
+  cout << "   -P" << txt_option_P;
   cout << "   -p" << txt_option_p;
   cout << "   -g" << txt_option_g;
   cout << "   -r" << txt_option_r;

@@ -43,6 +43,8 @@ int main(int argc, char **argv)
 {
 	string db_in;
 	string db_out;
+	string db_in_pe;
+	string db_out_pe;
 
 	options.cluster_thd = 0.95;
 	options.NAA = 10;
@@ -60,8 +62,10 @@ int main(int argc, char **argv)
 	if (options.SetOptions( argc, argv, false, true ) == 0) print_usage_est(argv[0]);
 	options.Validate();
 
-	db_in = options.input;
-	db_out = options.output;
+	db_in     = options.input;
+	db_in_pe  = options.input_pe;
+	db_out    = options.output;
+	db_out_pe = options.output_pe;
 
 	InitNAA( MAX_UAA );
 	seq_db.NAAN = NAAN_array[options.NAA];
@@ -71,13 +75,16 @@ int main(int argc, char **argv)
 		make_comp_short_word_index(options.NAA, NAAN_array, Comp_AAN_idx);
 	}
 
-	seq_db.Read( db_in.c_str(), options );
+        if ( options.PE_mode ) {seq_db.Read( db_in.c_str(), db_in_pe.c_str(), options );}
+        else                   {seq_db.Read( db_in.c_str(),                   options );} 
+
 	cout << "total seq: " << seq_db.sequences.size() << endl;
 	seq_db.SortDivide( options );
 	seq_db.DoClustering( options );
 
 	printf( "writing new database\n" );
-	seq_db.WriteClusters( db_in.c_str(), db_out.c_str(), options );
+        if ( options.PE_mode ) { seq_db.WriteClusters( db_in.c_str(), db_in_pe.c_str(), db_out.c_str(), db_out_pe.c_str(), options ); }
+        else                   { seq_db.WriteClusters( db_in.c_str(),                   db_out.c_str(),                    options ); }
 
 	// write a backup clstr file in case next step crashes
 	seq_db.WriteExtra1D( options );

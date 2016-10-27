@@ -280,6 +280,7 @@ struct Options
 	int     frag_size;
 	int     option_r;
 	int     threads;
+	int	PE_mode; // -P
 
 	size_t  max_entries;
 	size_t  max_sequences;
@@ -293,8 +294,10 @@ struct Options
 	bool    backupFile;
 
 	string  input;
+	string  input_pe;
 	string  input2;
 	string  output;
+	string  output_pe;
 
 	Options(){
 		backupFile = false;
@@ -332,6 +335,7 @@ struct Options
 		frag_size = 0;
 		des_len = 20;
 		threads = 1;
+                PE_mode = 0;
 		max_entries = 0;
 		max_sequences = 1<<20;
 		mem_limit = 100000000;
@@ -358,6 +362,7 @@ struct Sequence
 	// length of the sequence:
 	int   size;
 	int   bufsize;
+        int   size_R2; // size = size.R1 + size.R2 for back-to-back merged seq
 
 	//uint32_t stats;
 
@@ -369,13 +374,9 @@ struct Sequence
 	int   offset;
 
 	// stream offset of the description string in the database:
-	size_t   des_begin;
-	// length of the description:
-	int   des_length;
-	// length of the description in quality score part:
-	int   des_length2;
-	// length of data in fasta file, including line wrapping:
-	int   dat_length;
+	size_t   des_begin, des_begin2;
+        // total record length
+        int   tot_length, tot_length2;
 
 	char *identifier;
 
@@ -389,6 +390,7 @@ struct Sequence
 
 	Sequence();
 	Sequence( const Sequence & other );
+	Sequence( const Sequence & other, const Sequence & other2, int mode );
 	~Sequence();
 
 	void Clear();
@@ -544,7 +546,9 @@ class SequenceDB
 		~SequenceDB(){ Clear(); }
 
 		void Read( const char *file, const Options & options );
+		void Read( const char *file, const char *file2, const Options & options );
 		void WriteClusters( const char *db, const char *newdb, const Options & options );
+		void WriteClusters( const char *db, const char *db_pe, const char *newdb, const char *newdb_pe, const Options & options );
 		void WriteExtra1D( const Options & options );
 		void WriteExtra2D( SequenceDB & other, const Options & options );
 		void DivideSave( const char *db, const char *newdb, int n, const Options & options );
@@ -590,6 +594,7 @@ int local_band_align( char query[], char ref[], int qlen, int rlen, ScoreMatrix 
 		int &best_score, int &iden_no, int &alnln, float &dist, int *alninfo,
 		int band_left, int band_center, int band_right, WorkingBuffer & buffer);
 
+void strrev(char *p);
 int print_usage_2d (char *arg);
 int print_usage_est (char *arg);
 int print_usage_div (char *arg);

@@ -212,7 +212,9 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 {
 	int intval = atoi( value );
 	if      (strcmp(flag, "-i" ) == 0) input = value;
+	else if (strcmp(flag, "-j" ) == 0) input_pe = value;
 	else if (strcmp(flag, "-o" ) == 0) output = value;
+	else if (strcmp(flag, "-op") == 0) output_pe = value;
 	else if (strcmp(flag, "-M" ) == 0) max_memory  = atoll(value) * 1000000;
 	else if (strcmp(flag, "-l" ) == 0) min_length  = intval;
 	else if (strcmp(flag, "-c" ) == 0) cluster_thd  = atof(value), useIdentity = true;
@@ -223,6 +225,7 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-s" ) == 0) diff_cutoff  = atof(value);
 	else if (strcmp(flag, "-S" ) == 0) diff_cutoff_aa  = intval;
 	else if (strcmp(flag, "-B" ) == 0) store_disk  = intval;
+	else if (strcmp(flag, "-P" ) == 0) PE_mode  = intval;
 	else if (strcmp(flag, "-p" ) == 0) print  = intval;
 	else if (strcmp(flag, "-g" ) == 0) cluster_best  = intval;
 	else if (strcmp(flag, "-G" ) == 0) global_identity  = intval;
@@ -468,6 +471,15 @@ void format_seq(char *seq)
 	seq[j] = 0;
 } // END void format_seq
 
+void strrev(char *p)
+{
+  char *q = p;
+  while(q && *q) ++q;
+  for(--q; p < q; ++p, --q)
+    *p = *p ^ *q,
+    *q = *p ^ *q,
+    *p = *p ^ *q;
+}
 
 ////For smiple len1 <= len2, len2 is for existing representative
 ////walk along all diag path of two sequences,
@@ -1458,6 +1470,7 @@ Sequence::Sequence( const Sequence & other )
 	distance = 2.0;
 	if( other.data ){
 		size = bufsize = other.size;
+                size_R2 = 0;
 		data = new char[size+1];
 		//printf( "data: %p  %p\n", data, other.data );
 		data[size] = 0;
@@ -1471,6 +1484,49 @@ Sequence::Sequence( const Sequence & other )
 		identifier[len] = 0;
 	}
 }
+
+// back to back merge for PE
+// R1 -> XXXXXXABC ------------------- NMLYYYYYY <--R2
+// >R1           >R2
+// XXXXXXABC     YYYYYYLMN =====> Merge into
+// >R12
+// NMLYYYYYYXXXXXXABC
+Sequence::Sequence( const Sequence & other, const Sequence & other2, int mode )
+{
+	int i;
+        if (mode != 1) bomb_error("unknown mode");
+
+	//printf( "new: %p  %p\n", this, & other );
+	memcpy( this, & other, sizeof( Sequence ) );
+	distance = 2.0;
+
+	if( other.data && other2.data ){
+		size = bufsize = (other.size + other2.size);
+                size_R2 = other2.size;
+		data = new char[size+1];
+		//printf( "data: %p  %p\n", data, other.data );
+		data[size] = 0;     
+                data[size_R2] = 0;  
+                memcpy( data, other2.data, size_R2); // copy R2 first
+                strrev( data );                      // reverse R2 on data
+		memcpy( data+size_R2, other.data, size-size_R2 ); // copy R1 to end of R2
+		//for (i=0; i<size; i++) data[i] = other.data[i];
+		des_begin2 = other2.des_begin;
+                tot_length2= other2.tot_length;
+	}
+        else if ( other.data || other2.data ) {
+                bomb_error("Not both PE sequences have data");
+        }
+
+	if( other.identifier ){ // only use R1
+		int len = strlen( other.identifier );
+		identifier = new char[len+1];
+		memcpy( identifier, other.identifier, len );
+		identifier[len] = 0;
+	}
+}
+
+
 Sequence::~Sequence()
 {
 	//printf( "delete: %p\n", this );
@@ -1600,110 +1656,251 @@ void Sequence::PrintInfo( int id, FILE *fout, const Options & options, char *buf
 	}
 }
 
+// by liwz
+// disable swap option
+// change des_begin, des_length, des_length2, dat_length => des_begin, tot_length
+// where des_begin is the FILE pointer of sequence record start
+//       tot_length is the total bytes of sequence record 
 void SequenceDB::Read( const char *file, const Options & options )
 {
-	Sequence one;
-	Sequence dummy;
-	Sequence des;
-	Sequence *last = NULL;
-	FILE *swap = NULL;
-	FILE *fin = fopen( file, "rb" );
-	char *buffer = NULL;
-	char *res = NULL;
-	size_t swap_size = 0;
-	int option_l = options.min_length;
-	if( fin == NULL ) bomb_error( "Failed to open the database file" );
-	if( options.store_disk ) swap = OpenTempFile( temp_dir );
-	Clear();
-	dummy.swap = swap;
-	buffer = new char[ MAX_LINE_SIZE+1 ];
+    Sequence one;
+    Sequence des;
+    FILE *fin = fopen( file, "rb" );
+    char *buffer = NULL;
+    char *res = NULL;
+    int option_l = options.min_length;
+    if( fin == NULL ) bomb_error( "Failed to open the database file" );
+    Clear();
+    buffer = new char[ MAX_LINE_SIZE+1 ];
 
-	while (not feof( fin ) || one.size) { /* do not break when the last sequence is not handled */
-		buffer[0] = '>';
-		if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL && one.size == 0) break;
-		if( buffer[0] == '+' ){
-			int len = strlen( buffer );
-			int len2 = len;
-			while( len2 && buffer[len2-1] != '\n' ){
-				if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
-				len2 = strlen( buffer );
-				len += len2;
-			}
-			one.des_length2 = len;
-			dummy.des_length2 = len;
-			fseek( fin, one.size, SEEK_CUR );
-		}else if (buffer[0] == '>' || buffer[0] == '@' || (res==NULL && one.size)) {
-			if ( one.size ) { // write previous record
-				one.dat_length = dummy.dat_length = one.size;
-				if( one.identifier == NULL || one.Format() ){
-					printf( "Warning: from file \"%s\",\n", file );
-					printf( "Discarding invalid sequence or sequence without identifier and description!\n\n" );
-					if( one.identifier ) printf( "%s\n", one.identifier );
-					printf( "%s\n", one.data );
-					one.size = 0;
-				}
-				one.index = dummy.index = sequences.size();
-				if( one.size > option_l ) {
-					if ( swap ) {
-						swap_size += one.size;
-						// so that size of file < MAX_BIN_SWAP about 2GB
-						if ( swap_size >= MAX_BIN_SWAP) {
-							dummy.swap = swap = OpenTempFile( temp_dir );
-							swap_size = one.size;
-						}
-						dummy.size = one.size;
-						dummy.offset = ftell( swap );
-						dummy.des_length = one.des_length;
-						sequences.Append( new Sequence( dummy ) ); 
-						one.ConvertBases();
-						fwrite( one.data, 1, one.size, swap );
-					}else{
-						//printf( "==================\n" );
-						sequences.Append( new Sequence( one ) ); 
-						//printf( "------------------\n" );
-						//if( sequences.size() > 10 ) break;
-					}
-					//if( sequences.size() >= 10000 ) break;
-				}
-			}
-			one.size = 0;
-			one.des_length2 = 0;
+    while (not feof( fin ) || one.size) { /* do not break when the last sequence is not handled */
+        buffer[0] = '>';
+        if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL && one.size == 0) break;
+        if( buffer[0] == '+' ){
+            int len = strlen( buffer );
+            int len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
 
-			int len = strlen( buffer );
-			int len2 = len;
-			des.size = 0;
-			des += buffer;
-			while( len2 && buffer[len2-1] != '\n' ){
-				if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
-				des += buffer;
-				len2 = strlen( buffer );
-				len += len2;
-			}
-			size_t offset = ftell( fin );
-			one.des_begin = dummy.des_begin = offset - len;
-			one.des_length = dummy.des_length = len;
+            // read next line quality score
+            if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) bomb_error("can not read quality score after");
+            len = strlen( buffer );
+            len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
+        }else if (buffer[0] == '>' || buffer[0] == '@' || (res==NULL && one.size)) {
+            if ( one.size ) { // write previous record
+                if( one.identifier == NULL || one.Format() ){
+                    printf( "Warning: from file \"%s\",\n", file );
+                    printf( "Discarding invalid sequence or sequence without identifier and description!\n\n" );
+                    if( one.identifier ) printf( "%s\n", one.identifier );
+                    printf( "%s\n", one.data );
+                    one.size = 0;
+                }
+                one.index = sequences.size();
+                if( one.size > option_l ) {
+                    sequences.Append( new Sequence( one ) ); 
+                }
+            }
+            one.size = 0;
+            one.tot_length = 0;
 
-			int i = 0;
-			if( des.data[i] == '>' || des.data[i] == '@' || des.data[i] == '+' ) i += 1;
-			if( des.data[i] == ' ' or des.data[i] == '\t' ) i += 1;
-			if( options.des_len and options.des_len < des.size ) des.size = options.des_len;
-			while( i < des.size and ! isspace( des.data[i] ) ) i += 1;
-			des.data[i] = 0;
-			one.identifier = dummy.identifier = des.data;
-		} else {
-			one += buffer;
-		}
-	}
+            int len = strlen( buffer );
+            int len2 = len;
+            des.size = 0;
+            des += buffer;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+                des += buffer;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            size_t offset = ftell( fin );
+            one.des_begin = offset - len;
+            one.tot_length += len;              // count first line
+
+            int i = 0;
+            if( des.data[i] == '>' || des.data[i] == '@' || des.data[i] == '+' ) i += 1;
+            if( des.data[i] == ' ' or des.data[i] == '\t' ) i += 1;
+            if( options.des_len and options.des_len < des.size ) des.size = options.des_len;
+            while( i < des.size and ! isspace( des.data[i] ) ) i += 1;
+            des.data[i] = 0;
+            one.identifier = des.data;
+        } else {
+            one.tot_length += strlen(buffer);  one += buffer;
+        }
+    }
 #if 0
-	int i, n = 0;
-	for(i=0; i<sequences.size(); i++) n += sequences[i].bufsize + 4;
-	cout<<n<<"\t"<<sequences.capacity() * sizeof(Sequence)<<endl;
-	int i;
-	scanf( "%i", & i );
+    int i, n = 0;
+    for(i=0; i<sequences.size(); i++) n += sequences[i].bufsize + 4;
+    cout<<n<<"\t"<<sequences.capacity() * sizeof(Sequence)<<endl;
+    int i;
+    scanf( "%i", & i );
 #endif
-	one.identifier = dummy.identifier = NULL;
-	delete[] buffer;
-	fclose( fin );
+    one.identifier = NULL;
+    delete[] buffer;
+    fclose( fin );
+}
+
+// PE reads liwz, disable swap option
+void SequenceDB::Read( const char *file, const char *file2, const Options & options )
+{
+    Sequence one, two;
+    Sequence des;
+    FILE *fin = fopen( file, "rb" );
+    FILE *fin2= fopen( file2,"rb" );
+    char *buffer = NULL;
+    char *buffer2= NULL;
+    char *res = NULL;
+    char *res2= NULL;
+    int option_l = options.min_length;
+    if( fin == NULL ) bomb_error( "Failed to open the database file" );
+    if( fin2== NULL ) bomb_error( "Failed to open the database file" );
+    Clear();
+    buffer = new char[ MAX_LINE_SIZE+1 ];
+    buffer2= new char[ MAX_LINE_SIZE+1 ];
+
+    while (((not feof( fin )) && (not feof( fin2)) ) || (one.size && two.size)) { /* do not break when the last sequence is not handled */
+        buffer[0] = '>'; res =fgets( buffer,  MAX_LINE_SIZE, fin  );
+        buffer2[0]= '>'; res2=fgets( buffer2, MAX_LINE_SIZE, fin2 );
+
+        if ( (res      == NULL) && (res2     != NULL)) bomb_error( "Paired input files have different number sequences" );
+        if ( (res      != NULL) && (res2     == NULL)) bomb_error( "Paired input files have different number sequences" );
+        if ( (one.size == 0   ) && (two.size >     0)) bomb_error( "Paired input files have different number sequences" );
+        if ( (one.size >  0   ) && (two.size ==    0)) bomb_error( "Paired input files have different number sequences" );
+        if ( (res      == NULL) && (one.size ==    0)) break;
+
+        if( buffer[0] == '+' ){ // fastq 3rd line
+            // file 1
+            int len = strlen( buffer ); 
+            int len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){ // read until the end of the line
+                if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
+
+            // read next line quality score
+            if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) bomb_error("can not read quality score after");
+            len = strlen( buffer );
+            len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
+
+            // file 2
+            len = strlen( buffer2 );
+            len2 = len;
+            while( len2 && buffer2[len2-1] != '\n' ){ // read until the end of the line
+                if ( (res2=fgets( buffer2, MAX_LINE_SIZE, fin2 )) == NULL ) break;
+                len2 = strlen( buffer2 );
+                len += len2;
+            }
+            two.tot_length += len;
+
+            // read next line quality score
+            if ( (res2=fgets( buffer2, MAX_LINE_SIZE, fin2 )) == NULL ) bomb_error("can not read quality score after");
+            len = strlen( buffer2 );
+            len2 = len;
+            while( len2 && buffer2[len2-1] != '\n' ){
+                if ( (res2=fgets( buffer2, MAX_LINE_SIZE, fin2 )) == NULL ) break;
+                len2 = strlen( buffer2 );
+                len += len2;
+            }
+            two.tot_length += len;
+
+        }else if (buffer[0] == '>' || buffer[0] == '@' || (res==NULL && one.size)) {
+            if ( one.size && two.size ) { // write previous record
+                if( one.identifier == NULL || one.Format() ){
+                    printf( "Warning: from file \"%s\",\n", file );
+                    printf( "Discarding invalid sequence or sequence without identifier and description!\n\n" );
+                    if( one.identifier ) printf( "%s\n", one.identifier );
+                    printf( "%s\n", one.data );
+                    one.size=0; two.size=0;
+                }
+                if( two.identifier == NULL || two.Format() ){
+                    printf( "Warning: from file \"%s\",\n", file2 );
+                    printf( "Discarding invalid sequence or sequence without identifier and description!\n\n" );
+                    if( two.identifier ) printf( "%s\n", two.identifier );
+                    printf( "%s\n", two.data );
+                    one.size=0; two.size = 0;
+                }
+                one.index = sequences.size();
+                if( (one.size + two.size)> option_l ) {
+                    sequences.Append( new Sequence( one, two, 1 ) ); 
+                }
+            }
+            // R1
+            one.size = 0;
+            one.tot_length = 0;
+
+            int len = strlen( buffer );
+            int len2 = len;
+            des.size = 0;
+            des += buffer;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=fgets( buffer, MAX_LINE_SIZE, fin )) == NULL ) break;
+                des += buffer;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            size_t offset = ftell( fin );    
+            one.des_begin = offset - len; // offset of ">" or "@" 
+            one.tot_length += len;              // count first line
+
+            int i = 0;
+            if( des.data[i] == '>' || des.data[i] == '@' || des.data[i] == '+' ) i += 1;
+            if( des.data[i] == ' ' or des.data[i] == '\t' ) i += 1;
+            if( options.des_len and options.des_len < des.size ) des.size = options.des_len;
+            while( i < des.size and ! isspace( des.data[i] ) ) i += 1;
+            des.data[i] = 0;                   // find first non-space letter
+            one.identifier = des.data;
+
+            // R2
+            two.size = 0;
+            two.tot_length = 0;
+
+            len = strlen( buffer2 );
+            len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=fgets( buffer2, MAX_LINE_SIZE, fin2 )) == NULL ) break;
+                len2 = strlen( buffer2 );
+                len += len2;
+            }
+            offset = ftell( fin2 );
+            two.des_begin = offset - len;
+            two.tot_length += len;              // count first line
+            two.identifier = des.data;
+        } else {
+            one.tot_length += strlen(buffer);  one += buffer;
+            two.tot_length+= strlen(buffer2); two+= buffer2;
+        }
+    }
+#if 0
+    int i, n = 0;
+    for(i=0; i<sequences.size(); i++) n += sequences[i].bufsize + 4;
+    cout<<n<<"\t"<<sequences.capacity() * sizeof(Sequence)<<endl;
+    int i;
+    scanf( "%i", & i );
+#endif
+    one.identifier = NULL;
+    two.identifier = NULL;
+    delete[] buffer;
+    fclose( fin );
+    delete[] buffer2;
+    fclose( fin2 );
 }
 
 #if 0
@@ -1827,7 +2024,6 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 	n = sequences.size();
 	for (i=0; i<n; i++){
 		Sequence *seq = sequences[i];
-		int qs = seq->des_length2 ? seq->des_length2 + seq->dat_length : 0;
 		fseek( fin, seq->des_begin, SEEK_SET );
 
 		seg_size += seq->size;
@@ -1839,8 +2035,8 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 			seg_size = seq->size;
 		}
 
-		count = (seq->des_length + seq->dat_length + qs) / MAX_LINE_SIZE;
-		rest = (seq->des_length + seq->dat_length + qs) % MAX_LINE_SIZE;
+		count = seq->tot_length / MAX_LINE_SIZE;
+		rest  = seq->tot_length % MAX_LINE_SIZE;
 		//printf( "count = %6i,  rest = %6i\n", count, rest );
 		for (j=0; j<count; j++){
 			if( fread( buf, 1, MAX_LINE_SIZE, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
@@ -1868,11 +2064,10 @@ void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options
 	std::sort( sorting.begin(), sorting.end() );
 	for (i=0; i<n; i++){
 		Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
-		int qs = seq->des_length2 ? seq->des_length2 + seq->dat_length : 0;
 		fseek( fin, seq->des_begin, SEEK_SET );
 
-		count = (seq->des_length + seq->dat_length + qs) / MAX_LINE_SIZE;
-		rest = (seq->des_length + seq->dat_length + qs) % MAX_LINE_SIZE;
+		count = seq->tot_length / MAX_LINE_SIZE;
+		rest  = seq->tot_length % MAX_LINE_SIZE;
 		//printf( "count = %6i,  rest = %6i\n", count, rest );
 		for (j=0; j<count; j++){
 			if( fread( buf, 1, MAX_LINE_SIZE, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
@@ -1887,6 +2082,61 @@ void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options
 	fclose( fout );
 	delete []buf;
 }
+// liwz PE output
+void SequenceDB::WriteClusters( const char *db, const char *db_pe, const char *newdb, const char *newdb_pe, const Options & options )
+{
+	FILE *fin = fopen( db, "rb" );
+	FILE *fout = fopen( newdb, "w+" );
+	FILE *fin_pe = fopen( db_pe, "rb" );
+	FILE *fout_pe = fopen( newdb_pe, "w+" );
+	int i, j, n = rep_seqs.size();
+	int count, rest;
+	char *buf = new char[MAX_LINE_SIZE+1];
+	vector<uint64_t> sorting( n );
+	if( fin == NULL || fout == NULL ) bomb_error( "file opening failed" );
+	if( fin_pe == NULL || fout_pe == NULL ) bomb_error( "file opening failed" );
+	for (i=0; i<n; i++) sorting[i] = ((uint64_t)sequences[ rep_seqs[i] ]->index << 32) | rep_seqs[i];
+	std::sort( sorting.begin(), sorting.end() );
+	for (i=0; i<n; i++){
+		Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
+                //R1
+		fseek( fin, seq->des_begin, SEEK_SET );
+
+		count = seq->tot_length / MAX_LINE_SIZE;
+		rest  = seq->tot_length % MAX_LINE_SIZE;
+		//printf( "count = %6i,  rest = %6i\n", count, rest );
+		for (j=0; j<count; j++){
+			if( fread( buf, 1, MAX_LINE_SIZE, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, MAX_LINE_SIZE, fout );
+		}
+		if( rest ){
+			if( fread( buf, 1, rest, fin ) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, rest, fout );
+		}
+
+                //R2
+		fseek( fin_pe, seq->des_begin2, SEEK_SET );
+
+		count = seq->tot_length2 / MAX_LINE_SIZE;
+		rest  = seq->tot_length2 % MAX_LINE_SIZE;
+		//printf( "count = %6i,  rest = %6i\n", count, rest );
+		for (j=0; j<count; j++){
+			if( fread( buf, 1, MAX_LINE_SIZE, fin_pe ) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, MAX_LINE_SIZE, fout_pe );
+		}
+		if( rest ){
+			if( fread( buf, 1, rest, fin_pe ) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, rest, fout_pe );
+		}
+
+	}
+	fclose( fin );
+	fclose( fout );
+	fclose( fin_pe );
+	fclose( fout_pe );
+	delete []buf;
+}
+
 void SequenceDB::WriteExtra1D( const Options & options )
 {
 	string db_clstr = options.output + ".clstr";
