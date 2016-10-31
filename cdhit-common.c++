@@ -356,6 +356,13 @@ void Options::Validate()
 		if ((cluster_thd > 1.0) || (cluster_thd < 0.4)) bomb_error("invalid clstr");
 	}
 
+        if (input.size()  == 0) bomb_error("no input file");
+        if (output.size() == 0) bomb_error("no output file");
+        if (PE_mode) {
+          if (input_pe.size()  == 0) bomb_error("no input file for R2 sequences in PE mode");
+          if (output_pe.size() == 0) bomb_error("no output file for R2 sequences in PE mode");
+        }
+
 	if (band_width < 1 ) bomb_error("invalid band width");
 	if (NAA < 2 || NAA > NAA_top_limit) bomb_error("invalid word length");
 	if (des_len < 0 ) bomb_error("too short description, not enough to identify sequences");
