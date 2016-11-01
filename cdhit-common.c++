@@ -229,6 +229,7 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-cx") == 0) trim_len = intval;
 	else if (strcmp(flag, "-cy") == 0) trim_len_R2 = intval;
 	else if (strcmp(flag, "-sc") == 0) sort_output = intval;
+	else if (strcmp(flag, "-sf") == 0) sort_outputf = intval;
 	else if (strcmp(flag, "-p" ) == 0) print  = intval;
 	else if (strcmp(flag, "-g" ) == 0) cluster_best  = intval;
 	else if (strcmp(flag, "-G" ) == 0) global_identity  = intval;
@@ -2115,8 +2116,31 @@ void SequenceDB::WriteClusters( const char *db, const char *db_pe, const char *n
 	if( fin_pe == NULL || fout_pe == NULL ) bomb_error( "file opening failed" );
 	for (i=0; i<n; i++) sorting[i] = ((uint64_t)sequences[ rep_seqs[i] ]->index << 32) | rep_seqs[i];
 	std::sort( sorting.begin(), sorting.end() );
+
+        //sort fasta / fastq
+        int *clstr_size;
+        int *clstr_idx1;
+        if (options.sort_outputf) {
+            clstr_size = new int[n];
+            clstr_idx1 = new int[n];
+            for (i=0; i<n; i++) { 
+                clstr_size[i] = 0;
+                clstr_idx1[i]  = i;
+            }
+
+            int N = sequences.size();
+            for (i=0; i<N; i++) { 
+                int id = sequences[i]->cluster_id;
+                if (id < 0) continue;
+                if (id >=n) continue;
+                clstr_size[id]++;
+            }
+            quick_sort_idxr(clstr_size, clstr_idx1, 0, n-1);
+        }
+
 	for (i=0; i<n; i++){
 		Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
+                if (options.sort_outputf) seq = sequences[  rep_seqs[ clstr_idx1[i] ] ];
                 //R1
 		fseek( fin, seq->des_begin, SEEK_SET );
 

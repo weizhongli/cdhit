@@ -301,7 +301,8 @@ struct Options
 	string  output;
 	string  output_pe;
         
-        int     sort_output; // -sc
+        int     sort_output;  // -sc
+        int     sort_outputf; // -sf
 
 	Options(){
 		backupFile = false;
@@ -342,6 +343,8 @@ struct Options
                 PE_mode = 0;
                 trim_len = 0;
                 trim_len_R2 = 0;
+                sort_output = 0;
+                sort_outputf = 0;
 		max_entries = 0;
 		max_sequences = 1<<20;
 		mem_limit = 100000000;

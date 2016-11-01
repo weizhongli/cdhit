@@ -126,6 +126,9 @@ char txt_option_bak[] =
 char txt_option_sc[] =
 "\tsort clusters by size (number of sequences), default 0, output clusters by decreasing length\n \
 \tif set to 1, output clusters by decreasing size\n";
+char txt_option_sf[] =
+"\tsort fasta/fastq by cluster size (number of sequences), default 0, no sorting\n \
+\tif set to 1, output sequences by decreasing cluster size\n";
 
 char txt_option_mask[] = "\tmasking letters (e.g. -mask NX, to mask out both 'N' and 'X')\n";
 char txt_option_match[] = "\tmatching score, default 2 (1 for T-U and N-N)\n";
@@ -164,6 +167,7 @@ int print_usage (char *arg) {
   cout << "   -p" << txt_option_p;
   cout << "   -g" << txt_option_g;
   cout << "   -sc"<< txt_option_sc;
+  cout << "   -sf"<< txt_option_sf;
   cout << "   -bak" << txt_option_bak;
   cout << "   -h\tprint this help\n\n";
   cout << contacts;
@@ -253,6 +257,7 @@ int print_usage_est (char *arg) {
   cout << "   -gap-ext" << txt_option_gap_ext;
   cout << "   -bak" << txt_option_bak;
   cout << "   -sc"<< txt_option_sc;
+  cout << "   -sf"<< txt_option_sf;
   cout << "   -h\tprint this help\n\n";
   cout << contacts;
   cout << "   " << cd_hit_ref1 << "\n";
