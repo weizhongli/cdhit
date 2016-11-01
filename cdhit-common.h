@@ -300,6 +300,8 @@ struct Options
 	string  input2;
 	string  output;
 	string  output_pe;
+        
+        int     sort_output; // -sc
 
 	Options(){
 		backupFile = false;
@@ -616,3 +618,7 @@ void update_aax_cutoff(double &aa1_cutoff, double &aa2_cutoff, double &aan_cutof
 int calc_ann_list(int len, char *seqi, int NAA, int& aan_no, Vector<int> & aan_list, Vector<INTs> & aan_list_no, bool est=false);
 
 float current_time();
+
+//some functions from very old cd-hit
+int quick_sort_idx(int *a, int *idx, int lo0, int hi0 );
+int quick_sort_idxr(int *a, int *idx, int lo0, int hi0 );

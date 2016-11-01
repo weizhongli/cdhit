@@ -228,6 +228,7 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-P" ) == 0) PE_mode  = intval;
 	else if (strcmp(flag, "-cx") == 0) trim_len = intval;
 	else if (strcmp(flag, "-cy") == 0) trim_len_R2 = intval;
+	else if (strcmp(flag, "-sc") == 0) sort_output = intval;
 	else if (strcmp(flag, "-p" ) == 0) print  = intval;
 	else if (strcmp(flag, "-g" ) == 0) cluster_best  = intval;
 	else if (strcmp(flag, "-G" ) == 0) global_identity  = intval;
@@ -2158,7 +2159,7 @@ void SequenceDB::WriteExtra1D( const Options & options )
 {
 	string db_clstr = options.output + ".clstr";
 	string db_clstr_bak = options.output + ".bak.clstr";
-	int i, k, N = sequences.size();
+	int i, i0, k, N = sequences.size();
 	vector<long long> sorting( N );
 	for (i=0; i<N; i++) sorting[i] = ((long long)sequences[i]->index << 32) | i;
 	std::sort( sorting.begin(), sorting.end() );
@@ -2185,11 +2186,33 @@ void SequenceDB::WriteExtra1D( const Options & options )
 	}
 
 	fout = fopen( db_clstr.c_str(), "w+" );
-	for (i=0; i<M; i++) {
+
+        if (options.sort_output) {
+            int *clstr_size = new int[M];
+            int *clstr_idx1 = new int[M];
+
+            for (i=0; i<M; i++) { 
+                clstr_size[i] = (int)clusters[i].size();
+                clstr_idx1[i]  = i;
+            }
+            quick_sort_idxr(clstr_size, clstr_idx1, 0, M-1);
+
+  	    for (i=0; i<M; i++) {
+                i0 = clstr_idx1[i];
+		fprintf( fout, ">Cluster %i\n", i );
+		for (k=0; k<(int)clusters[i0].size(); k++)
+			sequences[ clusters[i0][k] ]->PrintInfo( k, fout, options, buf );
+	    }   
+        }
+        else {
+  	    for (i=0; i<M; i++) {
 		fprintf( fout, ">Cluster %i\n", i );
 		for (k=0; k<(int)clusters[i].size(); k++)
 			sequences[ clusters[i][k] ]->PrintInfo( k, fout, options, buf );
-	}
+	    }   
+
+        }
+
 	delete []buf;
 }
 void SequenceDB::WriteExtra2D( SequenceDB & other, const Options & options )
@@ -3551,7 +3574,63 @@ void make_comp_short_word_index(int NAA, int *NAAN_array, Vector<int> &Comp_AAN_
 	}
 } // make_comp_short_word_index
 
+//quick_sort_idx calling (a, idx, 0, no-1)
+//sort a with another array idx
+//so that idx rearranged
+int quick_sort_idx (int *a, int *idx, int lo0, int hi0 ) {
+  int lo = lo0;
+  int hi = hi0;
+  int mid;
+  int tmp;
 
+  if ( hi0 > lo0) {
+    mid = a[ ( lo0 + hi0 ) / 2 ];
+
+    while( lo <= hi ) {
+      while( ( lo < hi0 ) && ( a[lo] < mid ) ) lo++;
+      while( ( hi > lo0 ) && ( a[hi] > mid ) ) hi--;
+      if( lo <= hi ) {
+        tmp=a[lo];   a[lo]=a[hi];     a[hi]=tmp;
+        tmp=idx[lo]; idx[lo]=idx[hi]; idx[hi]=tmp;
+        lo++; hi--;
+      }
+    } // while
+
+    if( lo0 < hi ) quick_sort_idx(a, idx, lo0, hi );
+    if( lo < hi0 ) quick_sort_idx(a, idx, lo, hi0 );
+  } // if ( hi0 > lo0)
+  return 0;
+} // quick_sort_idx
+
+
+//decreasing can not use reverse of quick_sort_idx due to tie
+//quick_sort_idxr calling (a, idx, 0, no-1)
+//sort a with another array idx
+//so that idx rearranged
+int quick_sort_idxr (int *a, int *idx, int lo0, int hi0 ) {
+  int lo = lo0;
+  int hi = hi0;
+  int mid;
+  int tmp;
+
+  if ( hi0 > lo0) {
+    mid = a[ ( lo0 + hi0 ) / 2 ];
+
+    while( lo <= hi ) {
+      while( ( lo < hi0 ) && ( a[lo] > mid ) ) lo++;
+      while( ( hi > lo0 ) && ( a[hi] < mid ) ) hi--;
+      if( lo <= hi ) {
+        tmp=a[lo];   a[lo]=a[hi];     a[hi]=tmp;
+        tmp=idx[lo]; idx[lo]=idx[hi]; idx[hi]=tmp;
+        lo++; hi--;
+      }
+    } // while
+
+    if( lo0 < hi ) quick_sort_idxr(a, idx, lo0, hi );
+    if( lo < hi0 ) quick_sort_idxr(a, idx, lo, hi0 );
+  } // if ( hi0 > lo0)
+  return 0;
+} // quick_sort_idxr
 
 /////////////////////////// END ALL ////////////////////////
 
