@@ -44,6 +44,7 @@ our $tmp_db;
 our $remote_perl_script;
 our $remote_sh_script;
 our $bl_path;
+our $bl_plus = 1;   #### use blast+ 
 
 sub parse_para_etc {
   my ($arg, $cmd);
@@ -63,7 +64,7 @@ sub parse_para_etc {
     ## program
     elsif ($arg eq "-prog")       { $blast_prog= shift; }
     elsif ($arg eq "-p")          { $prof_para = shift; }
-    elsif ($arg eq "-dprof")      { $prof_db   = shift; }
+    elsif ($arg eq "-dprof")      { $prof_db   = shift; die "option -dprof no longer supported!";}
     elsif ($arg eq "-s")          { $bl_para   = shift; }
     elsif ($arg eq "-k")          { $keep_bl   = shift; }
     elsif ($arg eq "-bs")         { $bl_STDIN  = shift; }
@@ -95,7 +96,29 @@ sub parse_para_etc {
     $blast_exe    = "megablast -H 100 -D 2 -m 8";
   }
   elsif ($blast_prog eq "blastpgp") {
-    $blast_exe  = ($prof_db) ? "blastpgp -m 8" : "blastpgp -m 8 -j 3";
+    $blast_exe  = "blastpgp -m 8 -j 3";
+  }
+
+  #### for blast+
+  if ($bl_plus) {
+    $formatdb = "makeblastdb -dbtype prot -max_file_sz 8GB";
+    $blast_exe = "blastp -outfmt 6";
+    $bl_para   = "-seg no -evalue 0.000001 -num_alignments 100000 -num_threads 4";  #  program
+
+    if ($blast_prog eq "blastn") {
+      $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
+      $blast_exe    = "blastp -task blastn -outfmt 6";
+      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads 4";  #  program
+    }
+    elsif ($blast_prog eq "megablast") {
+      $blast_prog = "blastn"; #### back to blastn for blast parser type
+      $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
+      $blast_exe    = "blastp -task megablast -outfmt 6";
+      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads 4";  #  program
+    }
+    elsif ($blast_prog eq "blastpgp") {
+      $blast_exe  = "psiblast -outfmt 6 -num_iterations 3";
+    }
   }
 
   if ($bl_path) {
@@ -813,7 +836,10 @@ sub blast_formatdb {
 
   return(0, 0) unless ($j > 0);
 
-  my $cmd = `$formatdb -i $tmp_db`;
+  my $cmd_line = "$formatdb -i $tmp_db";
+     $cmd_line = "$formatdb -in $tmp_db" if ($bl_plus);
+  my $cmd = `$cmd_line`;
+     
   ((-e "$tmp_db.phr") and (-e "$tmp_db.pin") and (-e "$tmp_db.psq")) ||
   ((-e "$tmp_db.nhr") and (-e "$tmp_db.nin") and (-e "$tmp_db.nsq")) ||
   ((-e "$tmp_db.00.phr") and (-e "$tmp_db.00.pin") and (-e "$tmp_db.00.psq")) ||
@@ -1027,11 +1053,8 @@ EOD
 
 sub write_remote_perl_script {
   my $dir1 = ".";
-  my $bl2  = ($prof_db) ?
-     "$blast_exe -d $dir1/$tmp_db $bl_para -R $bl_dir/\$id.prof":
-     "$blast_exe -d $dir1/$tmp_db $bl_para";
-  my $cc = ($prof_db) ? 1 : 0;
-  if ($prof_db) { my $cmd=`formatdb -i $prof_db`; }
+  my $bl2  = "$blast_exe -d $dir1/$tmp_db $bl_para";
+     $bl2  = "$blast_exe -db $dir1/$tmp_db $bl_para" if ($bl_plus);
 
   open(REPERL, "> $remote_perl_script") || die;
   print REPERL <<EOD;
@@ -1063,10 +1086,6 @@ foreach \$id (\@ids) {
   next if (-e "$seq_dir/\$id.lock");
   \$cmd = `touch $seq_dir/\$id.lock`;
 
-  if ($cc) {
-    \$cmd = `$prof_exe -d $prof_db $prof_para -i $seq_dir/\$id -C $bl_dir/\$id.prof`;
-  }
-
   if ($bl_STDIN) {
     \$cmd = `$bl2 -i $seq_dir/\$id | $script_name -J parse_blout $bl_dir/\$id -c $NR_clstr -ce $NR_clstre -aS $opt_aS -aL $opt_aL -G $g_iden -prog $blast_prog -bs 1`;
   }
@@ -1076,7 +1095,6 @@ foreach \$id (\@ids) {
   }
   \$cmd = `rm -f  $seq_dir/\$id`;
   \$cmd = `rm -f  $seq_dir/\$id.lock`;
-  if ($cc) { \$cmd = `rm -f  $bl_dir/\$id.prof`; }
 }
 
 (\$tu, \$ts, \$cu, \$cs) = times();
