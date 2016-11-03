@@ -41,6 +41,20 @@ our @NR90_seq = ();
 
 $i0 = 0;
 if ( -e $restart_in) { $i0 = read_restart(); } ##  restart after crash
+elsif ($skip_long > 0) { #### skip very long seqs
+  for (; $i0<$NR_no; $i0++) {
+    $i = $NR_idx[$i0];
+    last if ($lens[$i] < $skip_long);
+    
+    $NR_passed++;
+    $NR_clstr_nos[$i]   = $NR90_no;
+    $idens[$i]          = "*";
+    $passeds[$i]        = 1;
+    $NR90_seq[$NR90_no] = [$i];
+    $NR90_no++;
+    $DB_len_reduced += $lens[$i];
+  }
+}
 
 ($DB_no, $DB_len) = blast_formatdb();
 $DB_len0 = $DB_len;

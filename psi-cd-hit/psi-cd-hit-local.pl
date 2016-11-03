@@ -46,6 +46,7 @@ our $remote_sh_script;
 our $bl_path;
 our $bl_plus = 1;   #### use blast+ 
 our $bl_threads = 1;
+our $skip_long = 0;
 
 sub parse_para_etc {
   my ($arg, $cmd);
@@ -62,6 +63,7 @@ sub parse_para_etc {
     elsif ($arg eq "-aS")         { $opt_aS    = shift; }
     elsif ($arg eq "-g")          { $opt_g     = shift; }
     elsif ($arg eq "-circle")     { $circle    = shift; }
+    elsif ($arg eq "-sl")         { $skip_long = shift; }
     ## program
     elsif ($arg eq "-prog")       { $blast_prog= shift; }
     elsif ($arg eq "-p")          { $prof_para = shift; }
@@ -925,6 +927,10 @@ Options
         seq2           xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   genome / plasmid 2
                        |                             |
                        -----------circle--------------
+    -sl, length of very long sequences to be skipped, default 0, no skipping
+        e.g. -sl 5000 means sequences longer than 5000 aa will be treated as singleton clusters
+             without clustering, to save time, especially when there is -aL option in place, very
+             long sequences will not be clustered anyway.
    program:
      -prog (blastp, blastn, megablast, blastpgp), default blastp 
      -p  profile search para, default
@@ -978,7 +984,7 @@ e.g. template file for SGE or OGE
         if program clustered 200,000 seqs, it remove them from seq
         pool, and re format blast db to save time
     -J  job, job_file, exe specific jobs like parse blast outonly
-        DON'T use it, it is only used by this program itself
+        DO NOT use it, it is only used by this program itself
     -k (1/0) keep blast raw output file, default $keep_bl
 
     -P path to executables
