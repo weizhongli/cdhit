@@ -23,8 +23,8 @@ our $keep_bl   = 0;                                       #
 our $blast_prog= "blastp";                                #
 our $formatdb  = "formatdb";                              #########################
 our $exec_mode = "local";      #######################
-our $host_no   = 1;            #
-our $core_no   = 1;            # compute
+our $num_qsub   = 1;            #
+our $para_no   = 1;            # compute
 our $sh_file   = "";           #
 our $batch_no_per_node = 50;   #######################
 our $reformat_seg = 50000;
@@ -45,6 +45,7 @@ our $remote_perl_script;
 our $remote_sh_script;
 our $bl_path;
 our $bl_plus = 1;   #### use blast+ 
+our $bl_threads = 1;
 
 sub parse_para_etc {
   my ($arg, $cmd);
@@ -70,9 +71,10 @@ sub parse_para_etc {
     elsif ($arg eq "-bs")         { $bl_STDIN  = shift; }
     ## compute
     elsif ($arg eq "-exec")       { $exec_mode = shift; }
-    elsif ($arg eq "-host")       { $host_no   = shift; }
-    elsif ($arg eq "-core")       { $core_no   = shift; }
+    elsif ($arg eq "-host")       { $num_qsub   = shift; }
+    elsif ($arg eq "-para")       { $para_no   = shift; }
     elsif ($arg eq "-shf")        { $sh_file   = shift; }
+    elsif ($arg eq "-blp")        { $bl_threads   = shift; }
     ## job:
     elsif ($arg eq "-rs")         { $restart_seg = shift; }
     elsif ($arg eq "-rf")         { $reformat_seg= shift; }
@@ -103,21 +105,21 @@ sub parse_para_etc {
   if ($bl_plus) {
     $formatdb = "makeblastdb -dbtype prot -max_file_sz 8GB";
     $blast_exe = "blastp -outfmt 6";
-    $bl_para   = "-seg no -evalue 0.000001 -num_alignments 100000 -num_threads 4";  #  program
+    $bl_para   = "-seg no -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
 
     if ($blast_prog eq "blastn") {
       $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
       $blast_exe    = "blastp -task blastn -outfmt 6";
-      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads 4";  #  program
+      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "megablast") {
       $blast_prog = "blastn"; #### back to blastn for blast parser type
       $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
       $blast_exe    = "blastp -task megablast -outfmt 6";
-      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads 4";  #  program
+      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "blastpgp") {
-      $blast_exe  = "psiblast -outfmt 6 -num_iterations 3";
+      $blast_exe  = "psiblast -outfmt 6 -num_iterations 3 -num_threads $bl_threads";
     }
   }
 
@@ -161,6 +163,7 @@ sub read_db {
       $seq =~ s/\s//g;
       if (length($seq) > $len_t) { add_seq($des, $seq); }
       $des = $ll; $seq = "";
+
     }
     else { $seq .= $ll; }
   }
@@ -178,6 +181,7 @@ sub read_db {
 
 sub add_seq {
   my ($des, $seq) = @_;
+  $des =~ s/\s.+$//;
   push(@seqs,   $seq);
   push(@dess,   $des);
   push(@lens,   length($seq));
@@ -246,7 +250,7 @@ sub close_LOG {
 sub total_remote_cpu {
   my ($i, $j, $k, $ll);
   my $tt = 0;
-  for ($j=0; $j<$host_no; $j++) {
+  for ($j=0; $j<$num_qsub; $j++) {
     open(TCPU, "$seq_dir/host.$j.cpu") || next;
     while($ll = <TCPU>) {
       chop($ll);
@@ -937,15 +941,31 @@ Options
           this program writes a shell script to run blast, this script is
           either performed locally by sh or remotely by qsub
           with qsub, you can use PBS, SGE etc
-     -host number of hosts for qsub 
-     -core number of cpu cores per computer, default 1
+     -host number of hosts, ie number of qsub jobs 
+     -para number of parallel blast job per qsub job (each blast can use multi cores), default 1
+     -blp  number of threads per  blast job, default 1
+           number of threads per blast job X number of parallel blast job per qsub job
+           should <= the number of cores in your computer
+           if your computer grid has 32 cores / node, do either of the followings
+           -para 4  -blp 8
+           -para 8  -blp 4
+           -para 16 -blp 2
+           -para 32 -blp 1
      -shf a filename for add local settings into the job shell script
           for example, when you run PBS jobs, you can add quene name etc in this
           file and this script will add them into the job shell script
-e.g. your file may have followings 
+e.g. template file for PBS
+#!/bin/sh
 #PBS -v PATH
 #PBS -l walltime=8:00:00
-#PBS -q jobqueue
+#PBS -q job_queue.q
+
+e.g. template file for SGE or OGE
+#!/bin/sh
+#\$ -v PATH
+#\$ -q job_queue.q 
+#\$ -V
+#\$ -pe orte 8
 
   job:
     -rs steps of save restart file and clustering output, default 5000
@@ -990,7 +1010,7 @@ sub  run_batch_blast3 {
   my $i0 = shift;
   my ($id, $i, $j, $k);
  
-  my $total_jobs = $batch_no_per_node * $host_no * $core_no;
+  my $total_jobs = $batch_no_per_node * $num_qsub * $para_no;
 
   for ($k=0; $i0<$NR_no; $i0++) {
     $id = $NR_idx[$i0];
@@ -1008,7 +1028,7 @@ sub  run_batch_blast3 {
   }
 
   if ($exec_mode eq "qsub") {
-    for ($j=0; $j<$host_no; $j++) {
+    for ($j=0; $j<$num_qsub; $j++) {
       my $t = "psi-cd-hit-$j";
       print LOG "PBS querying $j\n";
       my $cmd = `qsub -N $t $remote_sh_script`;
@@ -1025,23 +1045,24 @@ sub  run_batch_blast3 {
 
 sub write_remote_sh_script {
   my ($i, $j, $k);
-  my $local_sh = "";
+  my $local_sh = <<EOD;
+#!/bin/sh
+#PBS -v PATH
+#\$ -v PATH
+EOD
+
   if ($sh_file) {
     $local_sh = `cat $sh_file`;
   }
 
   open(RESH, "> $remote_sh_script") || die;
   print RESH <<EOD;
-#!/bin/bash
-#\$ -S /bin/bash
-#\$ -v PATH
-#PBS -v PATH
 $local_sh
 
 cd $pwd
 EOD
 
-  for ($k=0; $k<$core_no; $k++){
+  for ($k=0; $k<$para_no; $k++){
     print RESH "./$remote_perl_script $k&\n"
   }
   print RESH "wait\n\n";
