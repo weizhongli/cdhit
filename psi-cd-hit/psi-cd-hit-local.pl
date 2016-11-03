@@ -1077,6 +1077,9 @@ sub write_remote_perl_script {
   my $bl2  = "$blast_exe -d $dir1/$tmp_db $bl_para";
      $bl2  = "$blast_exe -db $dir1/$tmp_db $bl_para" if ($bl_plus);
 
+  my $opti = "-i"; $opti = "-query" if ($bl_plus);
+  my $opto = "-o"; $opto = "-out"   if ($bl_plus);
+
   open(REPERL, "> $remote_perl_script") || die;
   print REPERL <<EOD;
 #!/usr/bin/perl
@@ -1108,10 +1111,10 @@ foreach \$id (\@ids) {
   \$cmd = `touch $seq_dir/\$id.lock`;
 
   if ($bl_STDIN) {
-    \$cmd = `$bl2 -i $seq_dir/\$id | $script_name -J parse_blout $bl_dir/\$id -c $NR_clstr -ce $NR_clstre -aS $opt_aS -aL $opt_aL -G $g_iden -prog $blast_prog -bs 1`;
+    \$cmd = `$bl2 $opti $seq_dir/\$id | $script_name -J parse_blout $bl_dir/\$id -c $NR_clstr -ce $NR_clstre -aS $opt_aS -aL $opt_aL -G $g_iden -prog $blast_prog -bs 1`;
   }
   else {
-    \$cmd = `$bl2 -i $seq_dir/\$id -o $bl_dir/\$id`;
+    \$cmd = `$bl2 $opti $seq_dir/\$id $opto $bl_dir/\$id`;
     \$cmd =                         `$script_name -J parse_blout $bl_dir/\$id -c $NR_clstr -ce $NR_clstre -aS $opt_aS -aL $opt_aL -G $g_iden -prog $blast_prog -bs 0`;
   }
   \$cmd = `rm -f  $seq_dir/\$id`;
