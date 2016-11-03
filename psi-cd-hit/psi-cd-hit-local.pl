@@ -15,9 +15,9 @@ our $circle    = 0;    #
 our $opt_g     = 1;    ####################
 our $blast_exe = "blastall -p blastp -m 8";               #########################
 our $prof_exe  = "blastpgp -m 8";                         #
-our $prof_para = "-j 3 -F F -e 0.001 -b 500 -v 500";      #
+our $prof_para = "-j 3 -F T -e 0.001 -b 500 -v 500";      #
 our $prof_db   = "";                                      #
-our $bl_para   = "-F F -e 0.000001 -b 100000 -v 100000";  #  program
+our $bl_para   = "-F T -e 0.000001 -b 100000 -v 100000";  #  program
 our $bl_STDIN  = 1;                                       #
 our $keep_bl   = 0;                                       #
 our $blast_prog= "blastp";                                #
@@ -105,18 +105,18 @@ sub parse_para_etc {
   if ($bl_plus) {
     $formatdb = "makeblastdb -dbtype prot -max_file_sz 8GB";
     $blast_exe = "blastp -outfmt 6";
-    $bl_para   = "-seg no -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
+    $bl_para   = "-seg yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
 
     if ($blast_prog eq "blastn") {
       $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
       $blast_exe    = "blastp -task blastn -outfmt 6";
-      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
+      $bl_para   = "-dust yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "megablast") {
       $blast_prog = "blastn"; #### back to blastn for blast parser type
       $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
       $blast_exe    = "blastp -task megablast -outfmt 6";
-      $bl_para   = "-dust no -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
+      $bl_para   = "-dust yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "blastpgp") {
       $blast_exe  = "psiblast -outfmt 6 -num_iterations 3 -num_threads $bl_threads";
