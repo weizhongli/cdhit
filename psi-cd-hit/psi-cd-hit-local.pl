@@ -47,6 +47,9 @@ our $bl_path;
 our $bl_plus = 1;   #### use blast+ 
 our $bl_threads = 1;
 our $skip_long = 0;
+our %qsub_ids = (); #### a list of qsub ids
+our %qstat_xml_data = ();
+
 
 sub parse_para_etc {
   my ($arg, $cmd);
@@ -77,6 +80,7 @@ sub parse_para_etc {
     elsif ($arg eq "-para")       { $para_no   = shift; }
     elsif ($arg eq "-shf")        { $sh_file   = shift; }
     elsif ($arg eq "-blp")        { $bl_threads   = shift; }
+    elsif ($arg eq "-bat")        { $batch_no_per_node = shift; }
     ## job:
     elsif ($arg eq "-rs")         { $restart_seg = shift; }
     elsif ($arg eq "-rf")         { $reformat_seg= shift; }
@@ -209,6 +213,10 @@ sub open_LOG {
 }
 ########## END open_LOG
 
+sub write_LOG {
+  my $txt=shift;
+  print LOG "$txt\n";
+}
 
 {## use static variables
 my $last_NR90_no=0;
@@ -820,6 +828,7 @@ sub blast_formatdb {
   for ($i0=$NR_no-1; $i0>=0; $i0--) { ### from shortest to longest
     $i = $NR_idx[$i0];
     last if ($idens[$i] eq "*"); ### last if reach rep
+    next if ($lens[$i] < $opt_aL_lower_band);
     next if ($passeds[$i] and ($opt_g==0));
     my $seq = $seqs[$i];
     $seq =~ s/(.{70})/$1\n/g;
@@ -957,6 +966,7 @@ Options
            -para 8  -blp 4
            -para 16 -blp 2
            -para 32 -blp 1
+     -bat number of sequences a blast job to process
      -shf a filename for add local settings into the job shell script
           for example, when you run PBS jobs, you can add quene name etc in this
           file and this script will add them into the job shell script
@@ -1014,14 +1024,46 @@ EOD
 ## while let nodes run them autoly
 sub  run_batch_blast3 {
   my $i0 = shift;
-  my ($id, $i, $j, $k);
+  my ($id, $i, $j, $k, $cmd);
  
+  #### wait before qsubs
+  if ($exec_mode eq "qsub") {
+    while(1) {
+      SGE_qstat_xml_query();
+      last unless (%qsub_ids);
+
+      my $wait_flag = 0;
+      foreach my $qsub_id (keys %qsub_ids) {
+        if (defined($qstat_xml_data{$qsub_id})) { #### still running
+          $wait_flag = 1;
+          $cmd = `qdel -f $qsub_id`; #### at this point, all running jobs are not necessary,
+          print LOG "force delete un necessary job $qsub_id\n";
+        } 
+        else {
+          delete $qsub_ids{$qsub_id};
+        }
+      }
+
+      if ($wait_flag) {print LOG "wait submitted jobs\n"; sleep(1); }
+    }
+
+    #### delete seq files from last batch
+    opendir(DIR1, $seq_dir);
+    my @files = grep { /^\d/ } readdir(DIR1);
+    closedir(DIR1);
+    foreach $i (@files) {
+      $cmd = `rm -f $seq_dir/$i`;
+      print LOG "remove un necessary seq file $i\n"
+    }
+  }
+
   my $total_jobs = $batch_no_per_node * $num_qsub * $para_no;
 
   for ($k=0; $i0<$NR_no; $i0++) {
     $id = $NR_idx[$i0];
     next if ($passeds[$id]);
     next if ($in_bg[$id]);
+    next if ($lens[$id] < $opt_aL_upper_band);
     $in_bg[$id] = 1;
 
     my $seq = $seqs[$id];
@@ -1036,12 +1078,16 @@ sub  run_batch_blast3 {
   if ($exec_mode eq "qsub") {
     for ($j=0; $j<$num_qsub; $j++) {
       my $t = "psi-cd-hit-$j";
-      print LOG "PBS querying $j\n";
       my $cmd = `qsub -N $t $remote_sh_script`;
+      my $qsub_id = 0;
+      if ($cmd =~ /(\d+)/) { $qsub_id = $1;} else {die "can not submit qsub job and return a id\n";}
+      print LOG "qsub querying $j, PID $qsub_id\n";
+      $qsub_ids{$qsub_id} = 1;
     }
   }
   elsif ($exec_mode eq "local") {
-    my $cmd = `sh $remote_sh_script >/dev/null 2>&1 &`;
+    #my $cmd = `sh $remote_sh_script >/dev/null 2>&1 &`;
+    my $cmd = `sh $remote_sh_script`;
   }
 
   return;
@@ -1158,6 +1204,77 @@ sub wait_blast_out {
 }
 ########## END wait_blast_out
 
+
+sub SGE_qstat_xml_query {
+  my ($i, $j, $k, $cmd, $ll);
+  %qstat_xml_data = (); #### global
+  $cmd = `qstat -f -xml`;
+  if ($cmd =~ /<queue_info/) { #### dummy 
+    $qstat_xml_data{"NULL"}= ["NULL","NULL"];
+  }
+  my $tmp = <<EOD;
+<?xml version='1.0'?>
+<job_info  xmlns:xsd="http://gridscheduler.svn.sourceforge.net/viewvc/gridscheduler/trunk/source/dist/util/resources/schemas/qstat/qstat.xsd?revision=11">
+  <queue_info>
+    <Queue-List>
+      <name>all.q\@master</name>
+      <qtype>BIP</qtype>
+      <slots_used>0</slots_used>
+      <slots_resv>0</slots_resv>
+      <slots_total>0</slots_total>
+      <load_avg>0.08000</load_avg>
+      <arch>linux-x64</arch>
+    </Queue-List>
+...
+    <Queue-List>
+      <name>all.q\@node016</name>
+      <qtype>BIP</qtype>
+      <slots_used>32</slots_used>
+      <slots_resv>0</slots_resv>
+      <slots_total>32</slots_total>
+      <load_avg>42.59000</load_avg>
+      <arch>linux-x64</arch>
+      <job_list state="running"> ####### running jobs in this section
+        <JB_job_number>3535</JB_job_number>
+        <JAT_prio>0.51468</JAT_prio>
+        <JB_name>cd-hit</JB_name>
+        <JB_owner>ubuntu</JB_owner>
+        <state>r</state>
+        <slots>4</slots>
+      </job_list>
+...
+  </queue_info>
+  <job_info>
+    <job_list state="pending">  ######## pending jobs in this section
+      <JB_job_number>3784</JB_job_number>
+      <JAT_prio>0.60500</JAT_prio>
+      <JB_name>cd-hit</JB_name>
+      <JB_owner>ubuntu</JB_owner>
+      <state>qw</state>
+      <slots>32</slots>
+    </job_list>
+...
+  </job_info>
+</job_info>
+
+EOD
+  my @lls = split(/\n/, $cmd);
+  $i = 2; #### skip first 2 lines
+  for (;     $i<$#lls+1; $i++) {
+    if ($lls[$i] =~ /<job_list/) {
+      my ($id, $name, $state);
+      for (; $i<$#lls+1; $i++) {
+        last if ($lls[$i] =~ /<\/job_list/);
+        if ($lls[$i] =~ /<JB_job_number>(\d+)/) {  $id = $1;}
+        if ($lls[$i] =~ /<JB_name>([^<]+)/) { $name = $1;}
+        if ($lls[$i] =~ /<state>([^<]+)/) {$state = $1;}
+      }
+      if (defined($id) and defined($name) and defined($state)) {
+        $qstat_xml_data{$id} = [$name, $state];
+      }
+    }
+  }
+}
 
 
 1;

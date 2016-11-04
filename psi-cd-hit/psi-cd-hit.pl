@@ -26,6 +26,10 @@ our $DB_len = 0;
 our $DB_len0 = 0;
 our $DB_len_reduced = 0;
 our $DB_len_reduced2 = 0;  #### for write_restart etc purpose
+
+our $opt_aL_upper_band = 0; #### sequences < this length will not be submitted unless reformatdb
+our $opt_al_upper_bandi= 0;
+our $opt_aL_lower_band = 0; #### sequences < this length don't need to be searched
 my ($i, $j, $k, $i0, $j0, $k0, $ll);
 
 read_db();
@@ -56,6 +60,40 @@ elsif ($skip_long > 0) { #### skip very long seqs
   }
 }
 
+#### set init opt_aL_uppper/lower_bands
+if ( ($opt_aL > 0.3) ) {
+  die ("option -aL > 1.0") if ($opt_aL > 1.0);
+
+####################
+###################
+##################
+#################
+################
+###############  <-upper band 
+##############  <- seq below not submit, unless band change
+#############
+############
+###########
+##########  <- lower band
+######### <- seq below not in format db
+########
+#######
+#####
+####
+###
+##
+#
+  my $total_jobs = $batch_no_per_node * $num_qsub * $para_no;
+  my $space = ($total_jobs > $restart_seg) ? $total_jobs : $restart_seg;
+  my $d1 = $i0+$space;
+     $d1 = ($NR_no-1) if ($d1 >= $NR_no-1); 
+  $opt_aL_upper_band = $lens[ $NR_idx[$d1] ];
+  $opt_aL_lower_band = int($opt_aL_upper_band * $opt_aL);
+  $opt_aL_upper_bandi= $d1;
+  write_LOG("set opt_aL_band $opt_aL_upper_band($opt_aL_upper_bandi) $opt_aL_lower_band");
+}
+
+
 ($DB_no, $DB_len) = blast_formatdb();
 $DB_len0 = $DB_len;
 $DB_len_reduced = 0;
@@ -82,7 +120,23 @@ for (; $i0<$NR_no; $i0++) {
     write_restart(); write_db_clstr(); remove_raw_blout_bg($i0);
     $DB_len_reduced2 = 0;
   }
-  if ((($i0+1) % (int($NR_no/10)) == 0) or ($DB_len_reduced > $DB_len/10)) {
+
+  my $opt_aL_format_flag = 0;
+  if ( ($opt_aL > 0.3) ) { #### formatdb maybe needed if current length of seq.i0 close to opt_aL_upper_band
+    my $total_jobs = $batch_no_per_node * $num_qsub * $para_no;
+    if ( ($opt_aL_upper_bandi - $i0) < $total_jobs ) { #### seqs left for possible submission < total_jobs
+
+      my $space = ($total_jobs > $restart_seg) ? $total_jobs : $restart_seg;
+      my $d1 = $i0+$space;
+         $d1 = ($NR_no-1) if ($d1 >= $NR_no-1); 
+      $opt_aL_upper_band = $lens[ $NR_idx[$d1] ];
+      $opt_aL_lower_band = int($opt_aL_upper_band * $opt_aL);
+      $opt_aL_upper_bandi= $d1;
+      $opt_aL_format_flag = 1;
+      write_LOG("set opt_aL_band $opt_aL_upper_band($opt_aL_upper_bandi) $opt_aL_lower_band");
+    }
+  }
+  if ((($i0+1) % (int($NR_no/10)) == 0) or ($DB_len_reduced > $DB_len/10) or $opt_aL_format_flag ) {
     ($DB_no, $DB_len) = blast_formatdb();
     $DB_len_reduced = 0;
   }
