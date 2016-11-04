@@ -27,18 +27,19 @@ my $ref           = $opts{d};
 my $output        = $opts{o};
 my $trim_R1       = $opts{p}; $trim_R1 = 100 unless ($trim_R1);
 my $trim_R2       = $opts{q}; $trim_R2 = 100 unless ($trim_R2);
-my $prime_len     = 30;
+my $prime_len     = 45;
 my $output_R1     = "$output-R1";
 my $output_R2     = "$output-R2";
-my $consensus_db  = "$$-consensus";
-my $cd_hit_2d     = "$script_dir/../../cd-hit-2d";
+my $session       = "OTU-session-$$";
+my $consensus_db  = "$session.db";
+my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d"; die "no $cd_hit_2d" unless (-e $cd_hit_2d);
 
 my %FHZ=();
 
-
-open(OUT, "> $consensus_db") || die "can not write to $consensus_db";
-
+my %ref_map = ();
 foreach my $f (($fastq, $fastq2)) {
+  my $R = ( $f eq $fastq ) ? "R1" : "R2";
+  open(OUT, "> $consensus_db.$R") || die "can not write to $consensus_db.$R";
 
   my %con = ();
   my $num_seq = 0;
@@ -63,22 +64,198 @@ foreach my $f (($fastq, $fastq2)) {
      push(@cons,   $k[0]);
      push(@cons_v, $t{ $k[0] } / $num_seq);
   }
-  ## set minimal consensus to be 15
-  for ($i=15; $i<$prime_len; $i++) {
-    last if ($cons_v[$i] <0.75);
+  ## set minimal consensus to be 30
+  for ($i=33; $i<$prime_len; $i++) {
+    if ( ($cons_v[$i  ] <0.75) and
+         ($cons_v[$i-1] <0.75) and 
+         ($cons_v[$i-2] <0.75) ) {
+      $i = $i-2; last;
+    } 
   }
   my $trim_len_new = $i;
 
-  my $name = ($f eq $fastq) ? "R1" : "R2";
-  print OUT ">$name\n";
+  print OUT ">$R\n";
   for ($i=0; $i<$trim_len_new; $i++) {
     print OUT $cons[$i];
   }
   print OUT "\n";
+  close(OUT);
+
+  my $cmd_line = "$cd_hit_2d -i $consensus_db.$R -i2 $ref -c 0.8 -n 5 -r 1 -p 1 -b 5 -o $session.$R-vs-ref -G 0 -A 30 -s2 0.01 > $session.$R-vs-ref.log";
+  print "running $cmd_line\n";
+  $cmd = `$cmd_line`;
+
+  my $parse_template=<<EOD;
+>Cluster 0
+0 45nt, >R1... *
+1 1479nt, >1111882... at 1:42:4:45/+/95.24%
+2 1500nt, >1111856... at 1:42:4:45/+/88.10%
+3 1426nt, >1111848... at 2:44:3:45/+/90.70%
+4 1530nt, >1111847... at 1:42:4:45/+/85.71%
+5 1497nt, >1111839... at 1:41:5:45/+/85.37%
+6 1492nt, >1111819... at 1:42:4:45/+/88.10%
+7 1482nt, >1111782... at 1:42:4:45/+/88.10%
+8 1496nt, >1111776... at 1:42:4:45/+/88.10%
+9 1500nt, >1111768... at 1:42:4:45/+/85.71%
+...
+>Cluster 0
+0 45nt, >R2... *
+1 1428nt, >1111883... at 483:440:2:45/-/84.09%
+2 1479nt, >1111882... at 511:468:2:45/-/88.64%
+3 1336nt, >1111879... at 435:399:2:38/-/86.49%
+4 1402nt, >1111874... at 469:426:2:45/-/84.09%
+5 1500nt, >1111856... at 513:470:2:45/-/84.09%
+6 1530nt, >1111847... at 532:489:2:45/-/86.36%
+7 1497nt, >1111839... at 509:473:2:38/-/86.49%
+8 1492nt, >1111819... at 514:471:2:45/-/88.64%
+9 1482nt, >1111782... at 502:464:2:40/-/84.62%
+10  1496nt, >1111776... at 516:473:2:45/-/84.09%
+EOD
+
+  open(TMP, "$session.$R-vs-ref.clstr") || die "can not open $session.$R-vs-ref.clstr";
+  while($ll=<TMP>){
+    next if ($ll =~ /^>/);
+    next if ($ll =~ /^0/);
+    chop($ll);
+    if ($ll =~ /^\d+\s+\d+(aa|nt), >(.+)\.\.\./) {
+      my $id = $2;
+      my @lls = split(/\s+/, $ll);
+      my @lls = split(/\//, $lls[-1]); ##516:473:2:45/-/84.09%
+      my ($query_start, $query_end, $rep_star, $rep_end) = split(/:/, $lls[0]);
+      $ref_map{$id}{$R}=[$query_start, $query_end, $rep_star, $rep_end, $lls[1]];
+    }
+  }
+  close(TMP); 
 }
 
-close(OUT);
+my %ref_cut;
+foreach $id (keys %ref_map) {
+  next unless (defined $ref_map{$id}{"R1"});
+  next unless (defined $ref_map{$id}{"R2"});
 
+  my @R1_info = @{$ref_map{$id}{"R1"}};
+  my @R2_info = @{$ref_map{$id}{"R2"}};
+
+  next unless ($R1_info[4] eq "+");
+  next unless ($R2_info[4] eq "-");
+
+  my $p1 = $R1_info[0] -  ($R1_info[2]-1);   #### 1-based, can be -1 value for V1
+  my $p2 = $R2_info[0] +  ($R2_info[2]-1);   #### 1-based, can be longer than len($seq)
+  $ref_cut{$id} = [$p1, $p2];
+}
+
+open(TMP, $ref) || die "can not open $ref";
+open(OUT1, "> $output_R1") || die "can not write to $output_R1";
+open(OUT2, "> $output_R2") || die "can not write to $output_R2";
+my $seq;
+my $des;
+$id = "";
+
+while($ll = <TMP>) {
+  if ($ll =~ /^>/) {
+    if ($seq) {
+      if ($ref_cut{$id}) {
+        $seq =~ s/\s//g;
+        my ($p1, $p2) = @{$ref_cut{$id}};
+        my $len = length($seq);
+        my $seq1 = "";
+        my $seq2 = "";
+        if ($p1>=1) {
+          $seq1 = substr($seq, $p1-1, $trim_R1);
+        }
+        else {
+          my $pad = 1 - $p1; #### add NNN at 5'
+          $seq1 = "N" x $pad;
+          $seq1 .= substr($seq, 0, $trim_R1-$pad);
+        }
+
+        if ($p2 <= $len) {
+          my $p2a = $p2 - $trim_R2;  #### 0 - based substr idx
+          if ($p2a < 0) { #### not long enough
+            $seq2 = substr($seq, 0, $p2);
+          }
+          else {
+            $seq2 = substr($seq, $p2a, $trim_R2);
+          }
+        }
+        else {  #### add NNN at 5'
+          my $pad = $p2 - $len;
+          my $trim_t2_t = $trim_R2 - $pad;
+          $seq2 = "N" x $pad;
+
+          my $p2a = $len - $trim_R2_t;  #### 0 - based substr idx
+          if ($p2a < 0) { #### not long enough
+            $seq2.= $seq;
+          }
+          else {
+            $seq2 .= substr($seq, $p2a, $trim_R2_t);
+          }
+        }
+        $seq2 = reverse_complement($seq2);
+        ### now have $seq1 $seq2
+        print OUT1 "$des\n$seq1\n";
+        print OUT2 "$des\n$seq2\n";
+      }
+    }
+    chop($ll);
+    $des = $ll;
+    $id = substr($ll,1);
+    $id =~ s/\s.+$//;
+    $seq = "";
+  }
+  else {
+    $seq .= $ll;
+  }
+}
+
+    if ($seq) {
+      if ($ref_cut{$id}) {
+        $seq =~ s/\s//g;
+        my ($p1, $p2) = @{$ref_cut{$id}};
+        my $len = length($seq);
+        my $seq1 = "";
+        my $seq2 = "";
+        if ($p1>=1) {
+          $seq1 = substr($seq, $p1-1, $trim_R1);
+        }
+        else {
+          my $pad = 1 - $p1; #### add NNN at 5'
+          $seq1 = "N" x $pad;
+          $seq1 .= substr($seq, 0, $trim_R1-$pad);
+        }
+
+        if ($p2 <= $len) {
+          my $p2a = $p2 - $trim_R2;  #### 0 - based substr idx
+          if ($p2a < 0) { #### not long enough
+            $seq2 = substr($seq, 0, $p2);
+          }
+          else {
+            $seq2 = substr($seq, $p2a, $trim_R2);
+          }
+        }
+        else {  #### add NNN at 5'
+          my $pad = $p2 - $len;
+          my $trim_t2_t = $trim_R2 - $pad;
+          $seq2 = "N" x $pad;
+
+          my $p2a = $len - $trim_R2_t;  #### 0 - based substr idx
+          if ($p2a < 0) { #### not long enough
+            $seq2.= $seq;
+          }
+          else {
+            $seq2 .= substr($seq, $p2a, $trim_R2_t);
+          }
+        }
+        $seq2 = reverse_complement($seq2);
+        ### now have $seq1 $seq2
+        print OUT1 "$des\n$seq1\n";
+        print OUT2 "$des\n$seq2\n";
+      }
+    }
+
+close(OUT1);
+close(OUT2);
+close(TMP);
 
 # need %FHZ
 # open one or more files including zipped files
@@ -148,4 +325,10 @@ sub read_next_fastq {
 ########## END read_next_fastq
 
 
+sub reverse_complement {
+    my ($in_seq) = @_;
+    my $opposite = reverse $in_seq;
+    $opposite =~ tr/ACGT/TGCA/;
+    return("$opposite");
+}
 
