@@ -194,7 +194,7 @@ while($ll = <TMP>) {
         $seq2 = reverse_complement($seq2);
         ### now have $seq1 $seq2
         print OUT1 "$des loc=$p1 len=", length($seq1), "\n$seq1\n";
-        print OUT2 "$des loc=$p1 len=", length($seq2), "\n$seq2\n";
+        print OUT2 "$des loc=$p2 len=", length($seq2), "\n$seq2\n";
       }
     }
     chop($ll);
@@ -249,7 +249,7 @@ while($ll = <TMP>) {
         $seq2 = reverse_complement($seq2);
         ### now have $seq1 $seq2
         print OUT1 "$des loc=$p1 len=", length($seq1), "\n$seq1\n";
-        print OUT2 "$des loc=$p1 len=", length($seq2), "\n$seq2\n";
+        print OUT2 "$des loc=$p2 len=", length($seq2), "\n$seq2\n";
       }
     }
 
