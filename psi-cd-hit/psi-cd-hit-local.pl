@@ -519,6 +519,7 @@ sub keep_top_hsp {
   for ($i=0; $i<$self->{no}; $i++) {
     my $p = $self->{sbj}->[$i];
     my ($id1, $len_sub) = split(/\./, $p->{id});
+    next unless ($len_sub >0) ;
     
     if (not defined($id_exist{$id1})) {
       $id_exist{$id1} = 1;
@@ -606,6 +607,7 @@ sub process_blout_blastp_blastn {
       my $frame = $p->{frame};
       if (not $len_rep) {$len_rep = (split(/\./,$p->{qid}))[1]; }
       my $iden       = $p->{iden};
+      next unless (($len_sub >0) and ($len_rep>0));
       my $cov_aS     = $p->{alnln} / $len_sub;
       my $cov_aL     = $p->{alnln} / $len_rep;
       my $exp1       = $p->{expect};
@@ -629,6 +631,7 @@ sub process_blout_blastp_blastn {
       my ($id1, $len_sub) = split(/\./, $p->{id});
       my $frame = $p->{frame};
       if (not $len_rep) {$len_rep = (split(/\./,$p->{qid}))[1]; }
+      next unless (($len_sub >0) and ($len_rep>0));
 
       if ($hsp_no) {
         if ($id1 ne $hsp[0]->[0]) {
@@ -784,6 +787,7 @@ sub readblast_m8 {
     my $frame = "";
        $frame .= ($lls[6] < $lls[7]) ? "+" : "-";
        $frame .= ($lls[8] < $lls[9]) ? "+" : "-";
+    next unless ($lls[0] and $lls[1]);
     $this_sbj[$no] = {
       'qid'     => $lls[0],
       'id'      => $lls[1],
