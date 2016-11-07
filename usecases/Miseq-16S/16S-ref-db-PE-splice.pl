@@ -193,8 +193,8 @@ while($ll = <TMP>) {
         }
         $seq2 = reverse_complement($seq2);
         ### now have $seq1 $seq2
-        print OUT1 "$des\n$seq1\n";
-        print OUT2 "$des\n$seq2\n";
+        print OUT1 "$des loc=$p1 len=", length($seq1), "\n$seq1\n";
+        print OUT2 "$des loc=$p2 len=", length($seq2), "\n$seq2\n";
       }
     }
     chop($ll);
@@ -248,8 +248,8 @@ while($ll = <TMP>) {
         }
         $seq2 = reverse_complement($seq2);
         ### now have $seq1 $seq2
-        print OUT1 "$des\n$seq1\n";
-        print OUT2 "$des\n$seq2\n";
+        print OUT1 "$des loc=$p1 len=", length($seq1), "\n$seq1\n";
+        print OUT2 "$des loc=$p2 len=", length($seq2), "\n$seq2\n";
       }
     }
 
@@ -332,3 +332,22 @@ sub reverse_complement {
     return("$opposite");
 }
 
+
+sub usage {
+<<EOD;
+This script takes a paired-end (PE) read files (Fastq or Fasta) for a 16S dataset, e.g. from V3-V4
+region, it also takes a Fasta file of full-length 16S reference database, e.g. Greengene.
+this script identifies the sequencing region on the reference sequencs and it cuts the forward
+and reverse segments and outputs them in two PE fasta files. 
+
+Options:
+======================
+        -i input fasta or fastq file for R1
+        -j input fasta or fastq file for R2
+        -d 16S reference sequence file in fasta format
+        -o output prefix
+        -p lenght of forward sequence in output file
+        -q length of reverse sequence in output file
+
+EOD
+}
