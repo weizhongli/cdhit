@@ -32,7 +32,7 @@ my $output_R1     = "$output-R1";
 my $output_R2     = "$output-R2";
 my $session       = "OTU-session-$$";
 my $consensus_db  = "$session.db";
-my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d"; die "no $cd_hit_2d" unless (-e $cd_hit_2d);
+my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d -M 16000 "; die "no $cd_hit_2d" unless (-e $cd_hit_2d);
 my $format        = input_test($fastq); #fasta or fastq
 
 
