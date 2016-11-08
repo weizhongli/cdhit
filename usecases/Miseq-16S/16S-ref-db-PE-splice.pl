@@ -33,6 +33,8 @@ my $output_R2     = "$output-R2";
 my $session       = "OTU-session-$$";
 my $consensus_db  = "$session.db";
 my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d"; die "no $cd_hit_2d" unless (-e $cd_hit_2d);
+my $format        = input_test($fastq); #fasta or fastq
+
 
 my %FHZ=();
 
@@ -44,15 +46,46 @@ foreach my $f (($fastq, $fastq2)) {
   my %con = ();
   my $num_seq = 0;
   open_files_z_safe("TTTa", $f);
-  while(1) {
-    ($lla, $ida, $seqa, $quaa, $lena) = read_next_fastq("TTTa");
-    last unless ($lla);
-    for ($i=0; $i<$prime_len; $i++) {
-      $c=uc(substr($seqa, $i, 1));
-      $con{$i}{$c}++;
+
+  if ($format eq "fastq") {
+    while(1) {
+      ($lla, $ida, $seqa, $quaa, $lena) = read_next_fastq("TTTa");
+      last unless ($lla);
+      for ($i=0; $i<$prime_len; $i++) {
+        $c=uc(substr($seqa, $i, 1));
+        $con{$i}{$c}++;
+      }
+      $num_seq++;
     }
-    $num_seq++;
   }
+  else { #### fasta
+    my $seqa = "";
+    while($ll = <TTTa>) {
+      if ($ll =~ /^>/) {
+        if ($seqa) {
+          for ($i=0; $i<$prime_len; $i++) {
+            $c=uc(substr($seqa, $i, 1));
+            $con{$i}{$c}++;
+          }
+          $num_seq++;
+        }
+        chop($ll);
+        $seqa = "";
+      }
+      else {
+        chop($ll);
+        $seqa .= $ll;
+      }
+    }
+        if ($seqa) {
+          for ($i=0; $i<$prime_len; $i++) {
+            $c=uc(substr($seqa, $i, 1));
+            $con{$i}{$c}++;
+          }
+          $num_seq++;
+        }
+  } #### END fasta
+
   close(TTTa);
 
   my @cons = ();   #which letter
@@ -331,6 +364,19 @@ sub reverse_complement {
     $opposite =~ tr/ACGT/TGCA/;
     return("$opposite");
 }
+
+
+sub input_test {
+  my $f = shift;
+  open(TTT, $f) || die "can not open $f\n";
+  my $ll = <TTT>;
+  close(TTT);
+
+  my $c = substr($ll,0,1);
+  if ($c eq ">") {return "fasta";}
+  else           {return "fastq";}
+}
+########## END input_test
 
 
 sub usage {
