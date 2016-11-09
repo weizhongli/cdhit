@@ -1893,7 +1893,7 @@ void SequenceDB::Read( const char *file, const char *file2, const Options & opti
 
             len = strlen( buffer2 );
             len2 = len;
-            while( len2 && buffer[len2-1] != '\n' ){
+            while( len2 && buffer2[len2-1] != '\n' ){
                 if ( (res=fgets( buffer2, MAX_LINE_SIZE, fin2 )) == NULL ) break;
                 len2 = strlen( buffer2 );
                 len += len2;
