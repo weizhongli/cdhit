@@ -114,7 +114,7 @@ foreach my $f (($fastq, $fastq2)) {
   print OUT "\n";
   close(OUT);
 
-  my $cmd_line = "$cd_hit_2d -i $consensus_db.$R -i2 $ref -c 0.8 -n 5 -r 1 -p 1 -b 5 -o $session.$R-vs-ref -G 0 -A 30 -s2 0.01 -M 16000 > $session.$R-vs-ref.log";
+  my $cmd_line = "$cd_hit_2d -i $consensus_db.$R -i2 $ref -d 0 -c 0.8 -n 5 -r 1 -p 1 -b 5 -o $session.$R-vs-ref -G 0 -A 30 -s2 0.01 -M 16000 > $session.$R-vs-ref.log";
   print "running $cmd_line\n";
   $cmd = `$cmd_line`;
 
