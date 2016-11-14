@@ -23,11 +23,10 @@ our $keep_bl   = 0;                                       #
 our $blast_prog= "blastp";                                #
 our $formatdb  = "formatdb";                              #########################
 our $exec_mode = "local";      #######################
-our $num_qsub   = 1;           #
+our $num_qsub   = 1;            #
 our $para_no   = 1;            # compute
 our $sh_file   = "";           #
-our $num_multi_seq = 50;       #
-our $batch_no_per_node = 100;  #######################
+our $batch_no_per_node = 50;   #######################
 our $reformat_seg = 50000;
 our $restart_seg  = 20000;
 our $job          = "";
@@ -40,7 +39,6 @@ our $db_log;
 our $db_out1;
 our $seq_dir;
 our $bl_dir;
-our $blm_dir;
 our $restart_file;
 our $tmp_db;
 our $remote_perl_script;
@@ -51,8 +49,6 @@ our $bl_threads = 1;
 our $skip_long = 0;
 our %qsub_ids = (); #### a list of qsub ids
 our %qstat_xml_data = ();
-our @blm8_buffer = ();
-our %blm8_data = ();
 
 
 sub parse_para_etc {
@@ -96,8 +92,7 @@ sub parse_para_etc {
   }
 
   # speical jobs
-  if    ($job eq "parse_blout")       { job_parse_blout();       exit();}
-  elsif ($job eq "parse_blout_multi") { job_parse_blout_multi(); exit();}
+  if ($job eq "parse_blout") { job_parse_blout(); exit();}
 
   if ($blast_prog eq "blastn") {
     $formatdb  = "formatdb -p F";
@@ -147,14 +142,13 @@ sub parse_para_etc {
   $db_out1   = "$db_out.out";
   $seq_dir   = "$db_in-seq";
   $bl_dir    = "$db_in-bl";
-  $blm_dir   = "$db_in-blm";
   $restart_file   =" $db_out.restart";
 
   $tmp_db    = "$db_in.$pid";
   $remote_perl_script = "$tmp_db-bl.pl";
   $remote_sh_script   = "$tmp_db-bl.sh";
 
-  $cmd = `mkdir $bl_dir $blm_dir $seq_dir`;
+  $cmd = `mkdir $bl_dir $seq_dir`;
 
   write_remote_perl_script();
   write_remote_sh_script();
@@ -277,52 +271,6 @@ sub total_remote_cpu {
   return $tt;
 }
 ########## END total_remote_cpu
-
-#### process m8 format output from multi-query search
-sub job_parse_blout_multi{
-  my ($i, $j, $k, $tfh, $ll, $t1, $t2);
-
-  $tfh="BLM8";
-  open($tfh, $job_file) || die "can not open $job_file";
-
-  @blm8_buffer = ();
-  my $last_id = "";
-  my $this_id = "";
-  my $tquery;
-  while($ll = <$tfh>) {
-    next if ($ll =~ /^#/);
-    ($this_id, $t1) = split(/\s+/, $ll, 2);
-    
-    if (@blm8_buffer and ($this_id ne $last_id)) { #### blast results of last query
-      my @hits = process_blout_blastp_blastn();
-      $tquery = (split(/\./, $last_id))[0];
-      my $no1 = $#hits+1;
-      print ">$tquery\t$no1\n";
-      foreach $i (@hits) {
-        print join("\t", @{$i}), "\n";
-      }
-      print "#\n";
-      @blm8_buffer = ();
-    }
-    push(@blm8_buffer, $ll);
-    $last_id = $this_id;
-  }
-
-    if (@blm8_buffer and ($this_id ne $last_id)) { #### blast results of last query
-      my @hits = process_blout_blastp_blastn();
-      $tquery = (split(/\./, $last_id))[0];
-      my $no1 = $#hits+1;
-      print ">$tquery\t$no1\n";
-      foreach $i (@hits) {
-        print join("\t", @{$i}), "\n";
-      }
-      print "#\n";
-      @blm8_buffer = ();
-    }
-  close($tfh);
-  return;
-}
-########## END job_parse_blout_multi
 
 
 sub job_parse_blout {
@@ -465,45 +413,6 @@ sub remove_raw_blout_bg {
   return;
 }
 ########## END remove_raw_blout_bg
-
-sub fish_other_homolog_multi {
-  my ($i, $j, $k, $i0, $j0, $k0);
-  $id = shift; # real idx, not sorted idx
-  my @hits = ();
-
-  if (defined($blm8_data{$id})) {
-    @hits = @{$blm8_data{$id}};
-  }
-
-  my $rep_len = $lens[$id];
-
-  foreach $i (@hits) {
-    my $id1 = $i->[0];
-    next unless ($id1 < $NR_no);
-    next if ($idens[$id1] eq "*"); #existing reps
-    next if ($lens[$id1] > $rep_len); # in opt_g=1 mode, preventing it from being clustered into short rep
-
-    if ( $passeds[$id1] ) { #### if this hit is better -g 1 mode
-      my $old_e = (split(/\//,$idens[$id1]))[0];
-      if ($i->[3] < $old_e) {
-        $idens[$id1]   = "$i->[3]/$i->[2]aa/$i->[1]%";
-        $passeds[$id1] = 1;
-        $NR_clstr_nos[$id1] = $NR90_no;
-      }
-      next;
-    }
-
-    $idens[$id1]   = "$i->[3]/$i->[2]aa/$i->[1]%";
-    $passeds[$id1] = 1;
-    $NR_clstr_nos[$id1] = $NR90_no;
-    $NR_passed++;
-  }
-  if (defined($blm8_data{$id})) {
-    delete $blm8_data{$id};
-  }
-  return;
-}
-########## END fish_other_homolog_multi
 
 
 sub fish_other_homolog {
@@ -685,7 +594,7 @@ sub process_blout_blastp_blastn {
 
   #### need $len_rep
   my $len_rep = 0;
-  my $bl = defined($blout) ? readblast_m8("", $blout) : readblast_m8_buffer();
+  my $bl = readblast_m8("", $blout);
   if ($blast_prog eq "blastn") { keep_strand_with_top_hsp($bl); }
   if (($blast_prog eq "blastpgp") and (not $prof_db)) {keep_hsp_of_last_round($bl); }
 
@@ -861,49 +770,6 @@ sub cross1_before_2013_0818 {
 }
 ########## END cross1
 
-sub readblast_m8_buffer {
-  my ($i, $j, $k, $ll, $no); 
-  my @this_sbj = ();
-  $no = 0;
-  while($ll = shift @blm8_buffer) {
-    chop($ll);
-    my @lls = split(/\t/,$ll);
-    my $frame = "";
-       $frame .= ($lls[6] < $lls[7]) ? "+" : "-";
-       $frame .= ($lls[8] < $lls[9]) ? "+" : "-";
-    next unless ($lls[0] and $lls[1]);
-    $this_sbj[$no] = {
-      'qid'     => $lls[0],
-      'id'      => $lls[1],
-      'iden'    => $lls[2],
-      'alnln'   => $lls[3],
-      'ms'      => $lls[4],
-      'gap'     => $lls[5],
-      'qfrom'   => $lls[6],
-      'qend'    => $lls[7],
-      'sfrom'   => $lls[8],
-      'send'    => $lls[9],
-      'expect'  => $lls[10],
-      'score'   => $lls[11],
-      'frame'   => $frame,
-    };
-
-    $no++;
-# BLASTP 2.2.24 [Aug-08-2010]
-# Query: gi|388328107|pdb|4DDG|A Chain A, Crystal Structure Of Human Otub1UBCH5B~UBUB
-# Database: pdbaa.fa
-# Fields: Query id, Subject id, % identity, alignment length, mismatches, gap openings, q. start, q. end, s. start, s. end, e-value, bit score
-#gi|388328107|pdb|4DDG|A gi|388328107|pdb|4DDG|A 91.81   171     9       3       6       171     1       171     6e-89    323
-#gi|388328107|pdb|4DDG|A gi|388328107|pdb|4DDG|A 96.51   86      3       0       235     320     155     240     2e-41    166
-  }
-  my $self = {
-    'no'  => $no,
-    'sbj' => [@this_sbj],
-  };
-  return $self;
-}
-########## END readblast_m8
-
 sub readblast_m8 {
   my ($i, $j, $k, $ll, $no); 
   my ($q_seq, $filename) = @_;
@@ -1021,15 +887,15 @@ Options
   input/output:
     -i  in_dbname, required
     -o  out_dbname, required
-    -l  length_of_throw_away_sequences, default $len_t 
+    -l  length_of_throw_away_sequences, default 10
 
   thresholds:
-    -c  clustering threshold (sequence identity), default $NR_clstr
-    -ce clustering threshold (blast expect), default $NR_clstre, 
+    -c  clustering threshold (sequence identity), default 0.3
+    -ce clustering threshold (blast expect), default -1, 
         it means by default it doesn't use expect threshold, 
         but with positive value, the program cluster seqs if similarities
         meet either identity threshold or expect threshold 
-    -G  (1/0) use global identity? default $g_iden
+    -G  (1/0) use global identity? default 1
         two sequences Long (i.e. representative) and Short (redunant) may have multiple
         alignment fragments (i.e. HSPs), see:
         seq1  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   Long sequence
@@ -1048,17 +914,17 @@ Options
         Local identity  = identity of the top high score HSP
         if you prefer to use -G 0, it is suggested that you also
         use -aS, -aL, such as -aS 0.8, to prevent very short matches.
-    -aL	alignment coverage for the longer sequence, default $opt_aL
+    -aL	alignment coverage for the longer sequence, default 0.0
  	if set to 0.9, the alignment must covers 90% of the sequence
-    -aS	alignment coverage for the shorter sequence, default $opt_aS
+    -aS	alignment coverage for the shorter sequence, default 0.0
  	if set to 0.9, the alignment must covers 90% of the sequence
-    -g  (1/0), default $opt_g
+    -g  (1/0), default 0
         by cd-hit's default algorithm, a sequence is clustered to the first 
         cluster that meet the threshold (fast cluster). If set to 1, the program
         will cluster it into the most similar cluster that meet the threshold
         (accurate but slow mode)
         but either 1 or 0 won't change the representatives of final clusters
-    -circle (1/0), default $circle
+    -circle (1/0), default 0
         when set to 1, treat sequences as circular sequence.
         bacterial genomes, plasmids are circular, but their genome coordinate maybe arbitary, 
         the 2 HSPs below will be treated as non co-linear with -circle 0
@@ -1074,39 +940,37 @@ Options
         seq2           xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   genome / plasmid 2
                        |                             |
                        -----------circle--------------
-    -sl, length of very long sequences to be skipped, default $skip_long, 
+    -sl, length of very long sequences to be skipped, default 0, no skipping
         e.g. -sl 5000 means sequences longer than 5000 aa will be treated as singleton clusters
              without clustering, to save time, especially when there is -aL option in place, very
              long sequences will not be clustered anyway.
-        -sl 0 means no skipping
    program:
-     -prog (blastp, blastn, megablast, blastpgp), default $blast_prog
-     -p  profile search para, default 
-         "$prof_para"
+     -prog (blastp, blastn, megablast, blastpgp), default blastp 
+     -p  profile search para, default
+           "-j 3 -F F -e 0.001 -b 500 -v 500"
      -dprof database for building PSSM, default using input
          you can also use another database that is more comprehensive like NR80
-     -s  blast search para, default 
-         "$bl_para"
-     -bs (1/0) default $bl_STDIN
+     -s  blast search para, default
+           "-F F -e 0.000001 -b 100000 -v 100000"
+     -bs (1/0) default 1
         pipe blast results from into parser instead of save in hard drive (save time)
 
    compute:
-     -exec (qsub, local) default $exec_mode
+     -exec (qsub, local) default local
           this program writes a shell script to run blast, this script is
           either performed locally by sh or remotely by qsub
           with qsub, you can use PBS, SGE etc
-     -host number of qsub jobs, default $num_qsub
-     -para number of parallel blast job per qsub job (each blast can use multi cores), default $para_no
-           one qsub script can run multiple blast jobs
-     -blp  number of threads per blast job, default $bl_threads
-           number of threads per blast job (option -blp) X number of parallel blast job per qsub job (option -para)
+     -host number of hosts, ie number of qsub jobs 
+     -para number of parallel blast job per qsub job (each blast can use multi cores), default 1
+     -blp  number of threads per  blast job, default 1
+           number of threads per blast job X number of parallel blast job per qsub job
            should <= the number of cores in your computer
            if your computer grid has 32 cores / node, do either of the followings
            -para 4  -blp 8
-           -para 8  -blp 4 preferred
+           -para 8  -blp 4
            -para 16 -blp 2
            -para 32 -blp 1
-     -bat number of sequences a blast job to process, $batch_no_per_node
+     -bat number of sequences a blast job to process
      -shf a filename for add local settings into the job shell script
           for example, when you run PBS jobs, you can add quene name etc in this
           file and this script will add them into the job shell script
@@ -1124,20 +988,20 @@ e.g. template file for SGE or OGE
 #\$ -pe orte 8
 
   job:
-    -rs steps of save restart file and clustering output, default $restart_seg
+    -rs steps of save restart file and clustering output, default 5000
         everytime after process 5000 sequences, program write a 
         restart file and current clustering information
     -restart restart file, readin a restart file
         if program crash, stoped, termitated, you can restart it by
         add a option "-restart sth.restart"
-    -rf steps of re format blast database, default $reformat_seg
+    -rf steps of re format blast database, default 200,000
         if program clustered 200,000 seqs, it remove them from seq
         pool, and re format blast db to save time
     -J  job, job_file, exe specific jobs like parse blast outonly
         DO NOT use it, it is only used by this program itself
     -k (1/0) keep blast raw output file, default $keep_bl
 
-    -P path to blast executables
+    -P path to executables
 EOD
 
 
@@ -1160,102 +1024,8 @@ EOD
 ########## END print_usage
 
 
-## copied from run_batch_blast3 
-## run multi seq per sample
-## wait for all jobs to finish
-sub run_batch_blast3_multi {
-  my $i0 = shift;
-  my ($id, $i, $j, $k, $cmd, $ll);
- 
-  my $total_jobs = $batch_no_per_node * $num_qsub * $para_no;
-
-  for ($k=0; $i0<$NR_no; $i0++) {
-    $id = $NR_idx[$i0];
-    next if ($passeds[$id]);
-    next if ($in_bg[$id]);
-    next if ($lens[$id] < $opt_aL_upper_band);
-    $in_bg[$id] = 1;
-
-    my $seq = $seqs[$id];
-    
-    if (($k % $num_multi_seq) ==0) { #### reopen
-      close(SEQ) if ($k > 0);
-      open(SEQ, "> $seq_dir/$id") || die "Can not write";
-    }
-    #print SEQ "$dess[$id]\n$seq\n";
-    print SEQ ">$id.$lens[$id]\n$seq\n";
-    $k++;
-    last if ($k >= $total_jobs);
-  }
-  close(SEQ);
-
-  if ($exec_mode eq "qsub") {
-    for ($j=0; $j<$num_qsub; $j++) {
-      my $t = "psi-cd-hit-$j";
-      my $cmd = `qsub -N $t $remote_sh_script $j`; #### pass $j to qsub command
-      my $qsub_id = 0;
-      if ($cmd =~ /(\d+)/) { $qsub_id = $1;} else {die "can not submit qsub job and return a id\n";}
-      print LOG "qsub querying $j, PID $qsub_id\n";
-      $qsub_ids{$qsub_id} = 1;
-    }
-  }
-  elsif ($exec_mode eq "local") {
-    #my $cmd = `sh $remote_sh_script >/dev/null 2>&1 &`;
-    my $cmd = `sh $remote_sh_script`;
-  }
-
-  #### wait finish all submitted 
-  if ($exec_mode eq "qsub") {
-    while(1) {
-      SGE_qstat_xml_query();
-      last unless (%qsub_ids);
-
-      my $wait_flag = 0;
-      foreach my $qsub_id (keys %qsub_ids) {
-        if (defined($qstat_xml_data{$qsub_id})) { #### still running
-          $wait_flag = 1;
-        } 
-        else {
-          delete $qsub_ids{$qsub_id};
-        }
-      }
-
-      if ($wait_flag) {print LOG "wait submitted jobs\n"; sleep(1); }
-    }
-  }
-
-  #### read in all parsed blast output
-  %blm8_data =();
-  opendir(BLMDIR, $blm_dir) || die "can not open $blm_dir";
-  my @bl_files = grep { /^\d/ } readdir(BLMDIR);
-  closedir(BLMDIR);
-
-  foreach my $blf (@bl_files) {
-    open(BLMTMP, "$blm_dir/$blf") || next;
-    while($ll = <BLMTMP>) {
-      next if ($ll =~ /^#/);
-      chop($ll);
-      if ($ll =~ /^>/) {
-
-        my ($id, $no1) = split(/\s+/, substr($ll,1));
-        my @hits = ();
-        for ($j=0; $j<$no1; $j++) {
-          $ll=<BLMTMP>; chop($ll);
-          push(@hits, [split(/\t/,$ll)]);
-        }
-        if ($no1>=1) {
-          $blm8_data{$id} = [@hits];
-        }
-      }
-    }
-    close(BLMTMP);
-
-    $cmd = `rm -f $blm_dir/$blf`;
-    print LOG "parse and then rm $blm_dir/$blf\n";
-  }
-  return;
-}
-
+## like above, but don't assign seqs to specific node
+## while let nodes run them autoly
 sub  run_batch_blast3 {
   my $i0 = shift;
   my ($id, $i, $j, $k, $cmd);
@@ -1345,12 +1115,11 @@ EOD
   print RESH <<EOD;
 $local_sh
 
-para=\$1
 cd $pwd
 EOD
 
   for ($k=0; $k<$para_no; $k++){
-    print RESH "./$remote_perl_script $k \$para &\n"
+    print RESH "./$remote_perl_script $k&\n"
   }
   print RESH "wait\n\n";
 
@@ -1371,7 +1140,6 @@ sub write_remote_perl_script {
   print REPERL <<EOD;
 #!/usr/bin/perl
 \$host = shift;
-\$instance = shift;
 \$arg = shift;
 
 #### random sleep, rand() can be a fraction of second
@@ -1398,11 +1166,7 @@ foreach \$id (\@ids) {
   next if (-e "$seq_dir/\$id.lock");
   \$cmd = `touch $seq_dir/\$id.lock`;
 
-  if ($num_multi_seq) {
-    \$cmd = `$bl2 $opti $seq_dir/\$id $opto $bl_dir/\$id`;
-    \$cmd =                         `$script_name -J parse_blout_multi $bl_dir/\$id -c $NR_clstr -ce $NR_clstre -aS $opt_aS -aL $opt_aL -G $g_iden -prog $blast_prog -bs 0 >> $blm_dir/\$host.\$instance`;
-  }
-  elsif ($bl_STDIN) {
+  if ($bl_STDIN) {
     \$cmd = `$bl2 $opti $seq_dir/\$id | $script_name -J parse_blout $bl_dir/\$id -c $NR_clstr -ce $NR_clstre -aS $opt_aS -aL $opt_aL -G $g_iden -prog $blast_prog -bs 1`;
   }
   else {
@@ -1415,7 +1179,7 @@ foreach \$id (\@ids) {
 
 (\$tu, \$ts, \$cu, \$cs) = times();
 \$tt = \$tu + \$ts + \$cu + \$cs;
-\$cmd = `echo \$tt >> $seq_dir/host.\$host.\$instance.cpu`;
+\$cmd = `echo \$tt >> $seq_dir/host.\$host.cpu`;
 
 EOD
   close(REPERL);

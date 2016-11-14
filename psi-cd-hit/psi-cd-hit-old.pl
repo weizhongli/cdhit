@@ -7,7 +7,7 @@ our $script_name = $0;
 our $script_dir = $0;
    $script_dir =~ s/[^\/]+$//;
    $script_dir = "./" unless ($script_dir);
-require "$script_dir/psi-cd-hit-local.pl";
+require "$script_dir/psi-cd-hit-local-old.pl";
 
 parse_para_etc(@ARGV);
 open_LOG();
@@ -100,7 +100,7 @@ $DB_len_reduced = 0;
 $DB_len_reduced2 = 0;
 for (; $i0<$NR_no; $i0++) {
   $i = $NR_idx[$i0];
-  run_batch_blast3_multi($i0) unless ($in_bg[$i] or (-e "$bl_dir/$i.out") or $passeds[$i]);
+  run_batch_blast3($i0) unless ($in_bg[$i] or (-e "$bl_dir/$i.out") or $passeds[$i]);
 
   if ( not $passeds[$i] ) { # this is a new representative
     $NR_passed++;
@@ -108,7 +108,7 @@ for (; $i0<$NR_no; $i0++) {
     $idens[$i]          = "*";
     $passeds[$i]        = 1;
     $NR90_seq[$NR90_no] = [$i];
-    fish_other_homolog_multi($i);
+    fish_other_homolog($i);
     $NR90_no++;
     $DB_len_reduced += $lens[$i];
     $DB_len_reduced2 += $lens[$i];
