@@ -310,6 +310,8 @@ if (defined($clstr_cutoff)) {
   $cmd = `mv $output_R1_tmp.clstr $output.clstr`;
 }
 
+$cmd = `rm -f $session*`;
+
 # need %FHZ
 # open one or more files including zipped files
 # above open_files_z may have broken pipe problem
