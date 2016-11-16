@@ -15,7 +15,7 @@ my $script_dir = $0;
    $script_dir = "./" unless ($script_dir);
 
 use Getopt::Std;
-getopts("i:j:o:r:e:p:q:c:d:N:t:u:d:",\%opts);
+getopts("i:j:o:r:e:p:q:c:d:N:t:u:d:M:T:",\%opts);
 die usage() unless ($opts{i} and $opts{j} and $opts{o} and $opts{d});
 my ($i, $j, $k, $cmd);
 my ($ll, $lla, $llb, $id, $ida, $idb, $seq, $seqa, $seqb, $qua, $quaa, $quab);
@@ -34,8 +34,9 @@ my $output_R2     = "$output-R2";
 my $session       = "OTU-session-$$";
 my $consensus_db  = "$session.db";
 my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d";  die "no $cd_hit_2d"  unless (-e $cd_hit_2d);
-my $cd_hit_est    = "$script_dir/../../cd-hit-est-est"; die "no $cd_hit_est" unless (-e $cd_hit_est);
+my $cd_hit_est    = "$script_dir/../../cd-hit-est";     die "no $cd_hit_est" unless (-e $cd_hit_est);
 my $format        = input_test($fastq); #fasta or fastq
+my $cdhit_opt_M   = $opts{M}; $cdhit_opt_M = 16000 unless defined($cdhit_opt_M);
 
 if (defined($clstr_cutoff)) {
   die "Clustering cutoff $clstr_cutoff is not reasonable, should be <=1.0 and >= 0.97" unless (($clstr_cutoff <=1.0) and ($clstr_cutoff>=0.97));
@@ -119,7 +120,7 @@ foreach my $f (($fastq, $fastq2)) {
   print OUT "\n";
   close(OUT);
 
-  my $cmd_line = "$cd_hit_2d -i $consensus_db.$R -i2 $ref -d 0 -c 0.8 -n 5 -r 1 -p 1 -b 5 -o $session.$R-vs-ref -G 0 -A 30 -s2 0.01 -M 16000 > $session.$R-vs-ref.log";
+  my $cmd_line = "$cd_hit_2d -i $consensus_db.$R -i2 $ref -d 0 -c 0.8 -n 5 -r 1 -p 1 -b 5 -o $session.$R-vs-ref -G 0 -A 30 -s2 0.01 -M $cdhit_opt_M > $session.$R-vs-ref.log";
   print "running $cmd_line\n";
   $cmd = `$cmd_line`;
 
@@ -300,7 +301,7 @@ if (defined($clstr_cutoff)) {
   my $output_R2_tmp = "$output_R2.$$";
 
   my $cmd_line = "$cd_hit_est -i $output_R1 -j $output_R2 -d 0 -c $clstr_cutoff -n 10 -p 1 -b 5" .
-                 " -o $output_R1_tmp -op $output_R2_tmp -G 1 -g 1 -M 16000 -P 1 -l 11 -sc 1 -sf 1 > $output_R1_tmp.log";
+                 " -o $output_R1_tmp -op $output_R2_tmp -G 1 -g 1 -M $cdhit_opt_M -P 1 -l 11 -sc 1 -sf 1 > $output_R1_tmp.log";
   print "running $cmd_line\n";
   $cmd = `$cmd_line`;
 
@@ -420,5 +421,6 @@ Options:
         -c cutoff for clustering the output PE files to remove redundant reference seqeunces. 
            Suggested cutoffs: 1.00, 0.99, 0.98 and 0.97
            The script will not cluster the output unless user specifies this cutoff.
+        -M available memory to use, default 16000, means 16000MB. This option will be passed to cd-hit.
 EOD
 }
