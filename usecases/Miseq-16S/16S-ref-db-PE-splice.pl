@@ -27,14 +27,19 @@ my $ref           = $opts{d};
 my $output        = $opts{o};
 my $trim_R1       = $opts{p}; $trim_R1 = 100 unless ($trim_R1);
 my $trim_R2       = $opts{q}; $trim_R2 = 100 unless ($trim_R2);
+my $clstr_cutoff  = $opts{c}; #### post clustering
 my $prime_len     = 45;
 my $output_R1     = "$output-R1";
 my $output_R2     = "$output-R2";
 my $session       = "OTU-session-$$";
 my $consensus_db  = "$session.db";
-my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d"; die "no $cd_hit_2d" unless (-e $cd_hit_2d);
+my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d";  die "no $cd_hit_2d"  unless (-e $cd_hit_2d);
+my $cd_hit_est    = "$script_dir/../../cd-hit-est-est"; die "no $cd_hit_est" unless (-e $cd_hit_est);
 my $format        = input_test($fastq); #fasta or fastq
 
+if (defined($clstr_cutoff)) {
+  die "Clustering cutoff $clstr_cutoff is not reasonable, should be <=1.0 and >= 0.97" unless (($clstr_cutoff <=1.0) and ($clstr_cutoff>=0.97));
+}
 
 my %FHZ=();
 
@@ -290,6 +295,21 @@ close(OUT1);
 close(OUT2);
 close(TMP);
 
+if (defined($clstr_cutoff)) {
+  my $output_R1_tmp = "$output_R1.$$";
+  my $output_R2_tmp = "$output_R2.$$";
+
+  my $cmd_line = "$cd_hit_est -i $output_R1 -j $output_R2 -d 0 -c $clstr_cutoff -n 10 -p 1 -b 5" .
+                 " -o $output_R1_tmp -op $output_R2_tmp -G 1 -g 1 -M 16000 -P 1 -l 11 -sc 1 -sf 1 > $output_R1_tmp.log";
+  print "running $cmd_line\n";
+  $cmd = `$cmd_line`;
+
+  die "Can not run $cd_hit_est" unless (-e "$output_R1_tmp.clstr");
+  $cmd = `mv $output_R1_tmp $output_R1`;
+  $cmd = `mv $output_R2_tmp $output_R2`;
+  $cmd = `mv $output_R1_tmp.clstr $output.clstr`;
+}
+
 # need %FHZ
 # open one or more files including zipped files
 # above open_files_z may have broken pipe problem
@@ -384,7 +404,8 @@ sub usage {
 This script takes a paired-end (PE) read files (Fastq or Fasta) for a 16S dataset, e.g. from V3-V4
 region, it also takes a Fasta file of full-length 16S reference database, e.g. Greengene.
 this script identifies the sequencing region on the reference sequencs and it cuts the forward
-and reverse segments and outputs them in two PE fasta files. 
+and reverse segments and outputs them in PE fasta files. The output PE reference database can be used
+to cluster together with 16S datasets
 
 Options:
 ======================
@@ -394,6 +415,8 @@ Options:
         -o output prefix
         -p lenght of forward sequence in output file
         -q length of reverse sequence in output file
-
+        -c cutoff for clustering the output PE files to remove redundant reference seqeunces. 
+           Suggested cutoffs: 1.00, 0.99, 0.98 and 0.97
+           The script will not cluster the output unless user specifies this cutoff.
 EOD
 }
