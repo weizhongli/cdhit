@@ -228,6 +228,7 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-P" ) == 0) PE_mode  = intval;
 	else if (strcmp(flag, "-cx") == 0) trim_len = intval;
 	else if (strcmp(flag, "-cy") == 0) trim_len_R2 = intval;
+	else if (strcmp(flag, "-ap") == 0) align_pos = intval;
 	else if (strcmp(flag, "-sc") == 0) sort_output = intval;
 	else if (strcmp(flag, "-sf") == 0) sort_outputf = intval;
 	else if (strcmp(flag, "-p" ) == 0) print  = intval;
@@ -364,6 +365,7 @@ void Options::Validate()
           if (input_pe.size()  == 0) bomb_error("no input file for R2 sequences in PE mode");
           if (output_pe.size() == 0) bomb_error("no output file for R2 sequences in PE mode");
         }
+        if (isEST && (align_pos==1)) option_r = 0; 
 
 	if (band_width < 1 ) bomb_error("invalid band width");
 	if (NAA < 2 || NAA > NAA_top_limit) bomb_error("invalid word length");

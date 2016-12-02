@@ -283,6 +283,7 @@ struct Options
 	int	PE_mode;     // -P
         int     trim_len;    // -cx
         int     trim_len_R2; // -cy
+        int     align_pos;   // -ap for alignment position
 
 	size_t  max_entries;
 	size_t  max_sequences;
@@ -343,6 +344,7 @@ struct Options
                 PE_mode = 0;
                 trim_len = 0;
                 trim_len_R2 = 0;
+                align_pos = 0;
                 sort_output = 0;
                 sort_outputf = 0;
 		max_entries = 0;
