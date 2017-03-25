@@ -32,7 +32,7 @@ my $prime_len     = 45;
 my $output_R1     = "$output-R1";
 my $output_R2     = "$output-R2";
 my $session       = "OTU-session-$$";
-my $consensus_db  = "$session.db";
+my $consensus_db  = "$output-consensus";
 my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d";  die "no $cd_hit_2d"  unless (-e $cd_hit_2d);
 my $cd_hit_est    = "$script_dir/../../cd-hit-est";     die "no $cd_hit_est" unless (-e $cd_hit_est);
 my $format        = input_test($fastq); #fasta or fastq
@@ -301,7 +301,7 @@ if (defined($clstr_cutoff)) {
   my $output_R2_tmp = "$output_R2.$$";
 
   my $cmd_line = "$cd_hit_est -i $output_R1 -j $output_R2 -d 0 -c $clstr_cutoff -n 10 -p 1 -b 5" .
-                 " -o $output_R1_tmp -op $output_R2_tmp -G 1 -g 1 -M $cdhit_opt_M -P 1 -l 11 -sc 1 -sf 1 > $output_R1_tmp.log";
+                 " -o $output_R1_tmp -op $output_R2_tmp -G 1 -g 1 -M $cdhit_opt_M -P 1 -l 11 -sc 1       > $output_R1_tmp.log";
   print "running $cmd_line\n";
   $cmd = `$cmd_line`;
 
