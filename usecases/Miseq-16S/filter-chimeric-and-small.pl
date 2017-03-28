@@ -83,7 +83,7 @@ foreach $i (keys %seq_R1_clstr) {
   my $rep1 = $seq_R1_clstr{$i};
   my $rep2 = $seq_R2_clstr{$i};
 
-  next if ($rep eq $rep2);
+  next if ($rep1 eq $rep2);
   next unless ($seq_nr_size{$rep1} >= $seq_nr_size{$i}*2);
   next unless ($seq_nr_size{$rep2} >= $seq_nr_size{$i}*2);
   $chimeric_ids{$i} = 1;
