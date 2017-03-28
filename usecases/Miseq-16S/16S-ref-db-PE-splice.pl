@@ -329,6 +329,17 @@ if (defined($clstr_cutoff)) {
   $cmd = `mv $output_R1_tmp $output_R1`;
   $cmd = `mv $output_R2_tmp $output_R2`;
   $cmd = `mv $output_R1_tmp.clstr $output.clstr`;
+
+  if ($full_frag) {
+    my $output_S_tmp = "$output_S.$$";
+    my $cmd_line = "$cd_hit_est -i $output_S -d 0 -c $clstr_cutoff -n 10 -p 1 -b 5" .
+                   " -o $output_S_tmp  -G 1 -g 1 -M $cdhit_opt_M -P 1 -l 11 -sc 1 > $output_S_tmp.log";
+    print "running $cmd_line\n";
+    $cmd = `$cmd_line`;
+    die "Can not run $cd_hit_est" unless (-e "$output_S_tmp.clstr");
+    $cmd = `mv $output_S_tmp $output_S`;
+    $cmd = `mv $output_S_tmp.clstr $output_S.clstr`;
+  }
 }
 
 $cmd = `rm -f $session*`;
