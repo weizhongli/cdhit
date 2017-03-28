@@ -46,7 +46,7 @@ $NGS_executions{"sh_1"} = {
 };
 
 $NGS_batch_jobs{"qc"} = {
-  "CMD_opts"            => ["100"],
+  "CMD_opts"          => ["100"],
   "execution"         => "sh_1",               # where to execute
   "cores_per_cmd"     => 4,                     # number of threads used by command below
   "no_parallel"       => 1,                     # number of total jobs to run using command below
@@ -65,40 +65,30 @@ EOD
 $NGS_batch_jobs{"otu"} = {
   "injobs"            => ["qc"],
   "CMD_opts"          => ["100","100", "0.97","0.0001","/home/oasis/data/projects/USDA/PE-test/plos-one-PRJEB4688/gg_13_5-PE99.100-R1",
-                                                       "/home/oasis/data/projects/USDA/PE-test/plos-one-PRJEB4688/gg_13_5-PE99.100-R2"],
+                                                       "/home/oasis/data/projects/USDA/PE-test/plos-one-PRJEB4688/gg_13_5-PE99.100-R2", "75"],
   "execution"         => "sh_1",               # where to execute
-  "cores_per_cmd"     => 4,                     # number of threads used by command below
-  "no_parallel"       => 1,                     # number of total jobs to run using command below
+  "cores_per_cmd"     => 2,                    # number of threads used by command below
+  "no_parallel"       => 1,                    # number of total jobs to run using command below
   "command"           => <<EOD,
 $CD_HIT_dir/cd-hit-est -i \\INJOBS.0/R1.fa -j \\INJOBS.0/R2.fa -o \\SELF/seq.nr -op \\SELF/seq.nr.2 -sf 1 -sc 1 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 1.0  -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.nr.log
-
-#$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr   -o \\SELF/seq.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.0 -c 1.0  -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R1.log
-#$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr.2 -o \\SELF/seq.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.1 -c 1.0  -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R2.log
-$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr   -o \\SELF/seq.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.0 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R1.log
-$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr.2 -o \\SELF/seq.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.1 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R2.log
-
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr   -o \\SELF/seq.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R1.log
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr.2 -o \\SELF/seq.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R2.log
 $CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr -j \\SELF/seq.nr.2 -o \\SELF/seq.99 -op \\SELF/seq.99.2 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.99.log
-
 $CD_HIT_dir/usecases/Miseq-16S/filter-chimeric-and-small.pl -c \\CMDOPTS.3 -k \\SELF/seq.nr.clstr \\
     -i \\SELF/seq.chimeric-clstr.R1.clstr -j \\SELF/seq.chimeric-clstr.R2.clstr \\
     -a \\SELF/seq.99.clstr -f \\SELF/seq.99 -g \\SELF/seq.99.2 -o \\SELF/seq.99f
-
 cat \\CMDOPTS.4 \\SELF/seq.99f   > \\SELF/seq.99fwref
 cat \\CMDOPTS.5 \\SELF/seq.99f.2 > \\SELF/seq.99fwref.2
-
 $CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref -j \\SELF/seq.99fwref.2 -o \\SELF/seq.97fwref -op \\SELF/seq.97fwref.2 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.97 -n 10 -G 1 -b 10  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97fwref.log
-
 $CD_HIT_dir/usecases/Miseq-16S/filter-refonly-cluster.pl < \\SELF/seq.97fwref.clstr > \\SELF/seq.97fwref.clstr.2
 mv \\SELF/seq.97fwref.clstr.2 \\SELF/seq.97fwref.clstr
-
 $CD_HIT_dir/clstr_rev.pl \\SELF/seq.nr.clstr       \\SELF/seq.99f.clstr     > \\SELF/seq.99f-full.clstr
 $CD_HIT_dir/clstr_rev.pl \\SELF/seq.99f-full.clstr \\SELF/seq.97fwref.clstr > \\SELF/seq.97f-full.clstr
 $CD_HIT_dir/clstr_sort_by.pl < \\SELF/seq.97f-full.clstr > \\SELF/seq.97f-full.clstr.s
 mv \\SELF/seq.97f-full.clstr.s \\SELF/seq.97f-full.clstr
-
 EOD
 };
 
