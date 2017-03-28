@@ -15,7 +15,7 @@ my $script_dir = $0;
    $script_dir = "./" unless ($script_dir);
 
 use Getopt::Std;
-getopts("i:j:o:r:e:p:q:c:d:N:t:u:d:M:T:",\%opts);
+getopts("i:j:o:r:e:p:q:c:d:N:t:u:d:M:T:S:",\%opts);
 die usage() unless ($opts{i} and $opts{j} and $opts{o} and $opts{d});
 my ($i, $j, $k, $cmd);
 my ($ll, $lla, $llb, $id, $ida, $idb, $seq, $seqa, $seqb, $qua, $quaa, $quab);
@@ -28,10 +28,12 @@ my $output        = $opts{o};
 my $trim_R1       = $opts{p}; $trim_R1 = 100 unless ($trim_R1);
 my $trim_R2       = $opts{q}; $trim_R2 = 100 unless ($trim_R2);
 my $clstr_cutoff  = $opts{c}; #### post clustering
+my $full_frag     = $opts{S};
 my $prime_len     = 45;
 my $output_R1     = "$output-R1";
 my $output_R2     = "$output-R2";
 my $session       = "OTU-session-$$";
+my $output_S      = "$output-single";
 my $consensus_db  = "$output-consensus";
 my $cd_hit_2d     = "$script_dir/../../cd-hit-est-2d";  die "no $cd_hit_2d"  unless (-e $cd_hit_2d);
 my $cd_hit_est    = "$script_dir/../../cd-hit-est";     die "no $cd_hit_est" unless (-e $cd_hit_est);
@@ -186,6 +188,9 @@ foreach $id (keys %ref_map) {
 open(TMP, $ref) || die "can not open $ref";
 open(OUT1, "> $output_R1") || die "can not write to $output_R1";
 open(OUT2, "> $output_R2") || die "can not write to $output_R2";
+if ($full_frag) {
+  open(OUT3, "> $output_S") || die "can not write to $output_S";
+}
 my $seq;
 my $des;
 $id = "";
@@ -234,6 +239,13 @@ while($ll = <TMP>) {
         ### now have $seq1 $seq2
         print OUT1 "$des loc=$p1 len=", length($seq1), "\n$seq1\n";
         print OUT2 "$des loc=$p2 len=", length($seq2), "\n$seq2\n";
+        if ($full_frag) {
+          if ($p1 < 1   ) {$p1 = 1;   }
+          if ($p2 > $len) {$p2 = $len;}
+          my $eff_len = $p2-$p1+1;
+          my $seq1 = substr($seq, $p1-1, $eff_len);
+          print OUT3 "$des loc=$p1:$p2 len=$eff_len\n$seq1\n";
+        }
       }
     }
     chop($ll);
@@ -289,11 +301,19 @@ while($ll = <TMP>) {
         ### now have $seq1 $seq2
         print OUT1 "$des loc=$p1 len=", length($seq1), "\n$seq1\n";
         print OUT2 "$des loc=$p2 len=", length($seq2), "\n$seq2\n";
+        if ($full_frag) {
+          if ($p1 < 1   ) {$p1 = 1;   }
+          if ($p2 > $len) {$p2 = $len;}
+          my $eff_len = $p2-$p1+1;
+          my $seq1 = substr($seq, $p1-1, $eff_len);
+          print OUT3 "$des loc=$p1:$p2 len=$eff_len\n$seq1\n";
+        }
       }
     }
 
 close(OUT1);
 close(OUT2);
+if ($full_frag) { close(OUT3); }
 close(TMP);
 
 if (defined($clstr_cutoff)) {
@@ -418,6 +438,7 @@ Options:
         -o output prefix
         -p lenght of forward sequence in output file
         -q length of reverse sequence in output file
+        -S also output full fragment
         -c cutoff for clustering the output PE files to remove redundant reference seqeunces. 
            Suggested cutoffs: 1.00, 0.99, 0.98 and 0.97
            The script will not cluster the output unless user specifies this cutoff.
