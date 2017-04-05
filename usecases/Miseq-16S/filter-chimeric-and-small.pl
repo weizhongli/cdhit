@@ -110,7 +110,7 @@ if (1) {
           $good_ids{$rep} = 1;
         }
         elsif ( $chimeric_ids{$rep} ) {
-          print LOG "Chiemric_cluster\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+          print LOG "Chimeric_cluster\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
         }
         else {
           print LOG "Small_cluster\t$rep\t$clstr_size\n";
@@ -137,7 +137,7 @@ if (1) {
           $good_ids{$rep} = 1;
         }
         elsif ( $chimeric_ids{$rep} ) {
-          print LOG "Chiemric_cluster\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+          print LOG "Chimeric_cluster\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
         }
         else {
           print LOG "Small_cluster\t$rep\t$clstr_size\n";
