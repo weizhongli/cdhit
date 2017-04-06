@@ -72,8 +72,8 @@ $NGS_batch_jobs{"otu"} = {
   "command"           => <<EOD,
 $CD_HIT_dir/cd-hit-est -i \\INJOBS.0/R1.fa -j \\INJOBS.0/R2.fa -o \\SELF/seq.nr -op \\SELF/seq.nr.2 -sf 1 -sc 1 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 1.0  -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.nr.log
-$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr   -o \\SELF/seq.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R1.log
-$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr.2 -o \\SELF/seq.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R2.log
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr   -o \\SELF/seq.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R1.log
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr.2 -o \\SELF/seq.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R2.log
 $CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr -j \\SELF/seq.nr.2 -o \\SELF/seq.99 -op \\SELF/seq.99.2 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.99.log
 $CD_HIT_dir/usecases/Miseq-16S/filter-chimeric-and-small.pl -c \\CMDOPTS.3 -k \\SELF/seq.nr.clstr \\
@@ -93,8 +93,8 @@ $CD_HIT_dir/clstr_rev.pl \\SELF/seq.nr.clstr       \\SELF/seq.99f.clstr     > \\
 $CD_HIT_dir/clstr_rev.pl \\SELF/seq.99f-full.clstr \\SELF/seq.97fwref.clstr > \\SELF/seq.97f-full.clstr
 
 #### 2nd round of chimeric checking
-$CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref   -o \\SELF/seq.97.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.chimeric-clstr.R1.log
-$CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref.2 -o \\SELF/seq.97.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.chimeric-clstr.R2.log
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref   -o \\SELF/seq.97.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.chimeric-clstr.R1.log
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref.2 -o \\SELF/seq.97.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.chimeric-clstr.R2.log
 $CD_HIT_dir/usecases/Miseq-16S/filter-chimeric-by-ref.pl -i \\SELF/seq.97.chimeric-clstr.R1.clstr -j \\SELF/seq.97.chimeric-clstr.R2.clstr \\
     -a \\SELF/seq.97f-full.clstr -o \\SELF/seq.97f-full.clstr.f -p \\SELF/removed_chimeric_cluster_ref-based.list
 
