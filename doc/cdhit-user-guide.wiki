@@ -4,7 +4,7 @@ Last updated: ~~LASTMOD~~
 
 [[http://cd-hit.org]]
 
-Program developed by Weizhong Li's lab at UCSD [[http://weizhong-lab.ucsd.edu]] and JCVI [[http://jcvi.org]] [[liwz@sdsc.edu]]
+Program developed by Weizhong Li's lab at UCSD [[http://weizhongli-lab.org]] and JCVI [[http://jcvi.org]] [[liwz@sdsc.edu]]
 
 ===== Introduction =====
 
@@ -200,7 +200,8 @@ Alignment coverage control:
 
 See the figure below, the -aL, -AL, -aS and -AS options can be used to specify the alignment coverage on both the representative sequence and other sequences. -s and -S can control the length difference between the representative sequence and other sequences.
 
-{{ :Figure2.png }}
+{{ :cd-hit-figure2.png }}
+
 
 ''
 aL = R<sub>a</sub> / R\\
@@ -423,7 +424,7 @@ Implementation (see figure below)
   - repeat cd-hit and cd-hit-2d runs till done
   - Combine the results
 
-{{ :Figure3.png }}
+{{ :cd-hit-figure3.png }}
 
 Basic command:
   cd-hit-para.pl -i nr90 -o nr60 -c 0.6 -n 4 --B hosts --S 64
@@ -506,8 +507,12 @@ stable cluster structure.
 
 With multiple-step, iterated runs of CD-HIT, you perform a clustering in a
 neighbor-joining method, which generates a hierarchical structure. The third step use psi-cd-hit, please see psi-cd-hit section for details. 
+
+This way is faster than one-step clustering. It can also be more accurate. 
+
+There is a problem with one-step clustering. Two very similar sequences A and B may be clustered into different clusters. For example, let the clustering threshold to be 60%, IAB (identity of AB) = 95%, IAC ≥ 60%, but IBC < 60%. If C was first selected a cluster representative, then A will be in cluster “C”, but “B” will not, resulting near identical AB to be in different clusters. Hierarchically clustering will reduce this problem.
     
-{{ :Figure4.png }}
+{{ :cd-hit-figure4.png }}
 
 Commands:
   cd-hit -i nr -o nr80 -c 0.8 -n 5 -d 0 -M 16000 -T 16
@@ -525,8 +530,7 @@ nr60.clstr only lists sequences from nr80, script clstr_rev.pl add the original 
   clstr_rev.pl nr80-60.clstr nr30.clstr > nr80-60-30.clstr
 nr30.clstr only lists sequences from nr60, script clstr_rev.pl add the original sequences into file nr80-60-30.clstr
 
-This way is faster than one-step run from nr directly to nr30. It can also
-more accurate.
+
   
 
 
@@ -1164,7 +1168,80 @@ server performs hierarchical clustering up to 3 steps.
 
 The CD-HIT-454 web server is also available from [[http://cd-hit.org]]. 
 
-﻿
+===== Use cases =====
+Here, a use case is defined as a sequence clustering related problem or application that cannot be easily solved with existing clustering approaches, such as CD-HIT. However, it is feasible to solve such a use case by customizing current clustering algorithms or utilizing current approach in a very intelligent way or non-standard manner. In the last years, we have developed many use cases in addressing various problems. We will release these use cases after additional testing. These use cases will be described in the following chapters.
+
+===== CD-HIT-OTU-MiSeq =====
+﻿This use case is developed for clustering 16S rRNA genes into OTUs for microbiome studies. In recent years, Illumina MiSeq sequencers became dominant in 16S rRNA sequencing. The Paired End (PE) reads need to be assembled first. However many reads can not be accurately assembled because the poor quality at the 3’ ends of both PE reads in the overlapping region. This causes that many sequences are discarded in the analysis. CD-HIT-OTU-MiSeq has unique features to cluster MiSeq 16S sequences. 
+  - The package can clustering PE reads without joining them into contigs. 
+  - Users can choose a high quality portion of the PE reads for analysis (e.g. first 200 / 150 bases from forward / reverse reads), according to base quality profile. 
+  - We implemented a tool that can splice out the target region (e.g. V3-V4) from a full-length 16S reference database into the PE sequences. CD-HIT-OTU-MiSeq can cluster the spliced PE reference database together with samples, so we can derive Operational Tax-onomic Units (OTUs) and annotate these OTUs concurrently. 
+  - Chimeric sequences are effectively identified through both de novo and reference-based approaches. 
+
+The most important unique feature of CD-HIT-OTU-MiSeq is to only use high quality region at the 5’ ends of R1 and R2 reads. For example, the effective read length can be 200 bases for R1 and 150 bases for R2. The effective portions of PE reads are clustered together with spliced PE sequences from the reference database to derive OTUs (Figure).
+
+{{:cd-hit-otu-miseq-figure-1.png?300|}}
+
+==== Installation ====
+First download and install full cd-hit package
+  * download current CD-HIT at [[https://github.com/weizhongli/cdhit/releases]], for example cd-hit-v4.6.2-2015-0511.tar.gz
+  * unpack the file with " tar xvf cd-hit-v4.6.2-2015-0511.tar.gz --gunzip"
+  * change dir by "cd cd-hit-v4.6.2-2015-0511"
+  * compile the programs by "make" with multi-threading (default), or by "make openmp=no" without multi-threading (on old systems without OpenMP)
+  * cd cd-hit-auxtools
+  * compile cd-hit-auxtools by "make"
+  * CD-HIT-OTU-MiSeq scripts are inside a folder like cd-hit-v4.6.2-2015-0511/usecases/Miseq-16S
+
+CD-HIT-OTU-MiSeq uses Trimmomatic for sequence quality control. It can be downloaded from [[http://www.usadellab.org/cms/?page=trimmomatic]] or [[https://github.com/timflutre/trimmomatic]]. We also have a copy at [[http://weizhongli-lab.org/download-data/cd-hit-otu-miseq/]].
+
+  * modify NG-Omics-Miseq-16S.pl
+Please edit usecases/Miseq-16S/NG-Omics-Miseq-16S.pl, in the top few lines:
+  $CD_HIT_dir   = "PATH_to_cd-hit";
+  $NGS_prog_trimmomatic = "PATH/trimmomatic-0.32.jar";  #### where you have installed Trimmomatic
+
+==== Download reference and sample datasets ====
+Reference database and sample datasets can be downloaded from [[http://weizhongli-lab.org/download-data/cd-hit-otu-miseq/]].
+
+The reference database Greengene-13-5-99.fasta.gz was processed from original Greengene database, so that sequences with more specific annotations are at the beginning of the file. You need to download and gunzip it.
+
+You can also download Greengene and generate it. You should download Greengene from [[http://greengenes.secondgenome.com/downloads]], or [[ftp://greengenes.microbio.me/]]. Please download file like greengenes_release/gg_13_5/gg_13_5_otus.tar.gz, unpack the tar file. You may find gg_13_5_otus/taxonomy/99_otu_taxonomy.txt and gg_13_5_otus/rep_set/99_otus.fasta. There is a script: usecases/Miseq-16S/greengene-ann1.pl.  
+
+Commands:
+  /greengene-ann1.pl -i gg_13_5_otus/taxonomy/99_otu_taxonomy.txt -j gg_13_5_otus/rep_set/99_otus.fasta -o Greengene-13-5-99.fasta
+
+The Miseq-otu-example.tar.gz contains two Miseq 16S samples. You can download and unpack to test.
+
+==== Usage ====
+
+**Step 1. prepare fastq files and sample file:** Most projects have multiple samples sequenced at the same region. You should already have paired ended fastq files for these samples, put them in a working directory in similar way as the testing datasets, where the R1.fq and R2.fq are placed in separate folder for each sample. So in the working directory, you should have files:
+  sample_name_1/R1.fq
+  sample_name_1/R2.fq
+  sample_name_2/R1.fq
+  sample_name_2/R2.fq
+  ...
+  sample_name_N/R1.fq
+  sample_name_N/R2.fq
+  
+Then, please prepare a sample file in the working directory. The file should look like:
+  sample_name_1 R1.fq R2.fq
+  sample_name_2 R1.fq R2.fq
+  sample_name_N R1.fq R2.fq
+
+**Step 2. Reference database preparation:** We implemented a tool that can splice out the target amplicon region (e.g. V3-V4) from a full-length 16S rRNA reference sequence database, such as Greengene, RDP and Silva, into PE sequences. If there are multiple samples in a project sequenced with the same amplicon of same variable region, only one spliced reference database is needed. To run:
+
+  path_to_cd-hit_dir/usecases/Miseq-16S/16S-ref-db-PE-splice.pl -i sample_name_1/R1.fq -j sample_name_2/R2.fq  -d Greengene-13-5-99.fasta -o gg_13_5-PE99.150-100 -p 150 -q 100 -c 0.99
+Where Greengene-13-5-99.fasta is our re-formatted Greengene sequence file. This program will output spliced PE files gg_13_5-PE99.150-100-R1 and gg_13_5-PE99.150-100-R2.
+
+**Step 3. Run sequence QC and OTU clustering for each sample:**. In the working directory, run
+  PATH_to_cd-hit-dir/usecases/NG-Omics-WF.pl -i PATH_to_cd-hit-dir/usecases/NG-Omics-Miseq-16S.pl -s sample_file -T otu:150:100:0.97:0.0001:PATH_to-gg_13_5-PE99.150-100-R1:PATH_to-gg_13_5-PE99.150-100-R2:75 -J write-sh
+where: 150 and 100 are the effective length, 0.97 is the OTU clustering cutoff, 0.00001 is the abundance cutoff, 75 is the length for chimeric checking at each R1 and R2 read
+
+This command will generate shell scripts for QC and for OTU for each sample. The scripts will be in WF-sh folder. You can first run the qc.sample_name.sh and then run otu.sample_name.sh 
+  
+
+
+
+
 ===== References =====
 
 If you find cd-hit helpful to your research and study, please kindly cite the

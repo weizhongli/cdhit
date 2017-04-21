@@ -4,14 +4,9 @@
 ################################################################################
 
 ########## local variables etc. Please edit
-$NGS_root     = "/home/oasis/data/NGS-ann-project";
-$CD_HIT_dir   = "/home/oasis/data/etc/git/cdhit";
+$CD_HIT_dir           = "/home/oasis/data/etc/git/cdhit";
+$NGS_prog_trimmomatic = "/home/oasis/data/NGS-ann-project/apps/Trimmomatic/trimmomatic-0.32.jar";
 
-########## more local variables, do not edit next three lines
-$NGS_tool_dir = "$NGS_root/NGS-tools";
-$NGS_prog_dir = "$NGS_root/apps";
-$NGS_bin_dir  = "$NGS_root/apps/bin";
-$NGS_ref_dir  = "$NGS_root/refs";
 
 ########## computation resources for execution of jobs
 %NGS_executions = ();
@@ -27,10 +22,7 @@ $NGS_executions{"qsub_1"} = {
   "template"            => <<EOD,
 #!/bin/sh
 #PBS -v PATH
-#PBS -M liwz\@sdsc.edu
-#PBS -q normal
 #PBS -V
-#PBS -l nodes=1:ppn=16,walltime=48:00:00,mem=60000mb
 
 #\$ -v PATH
 #\$ -V
@@ -41,7 +33,7 @@ EOD
 
 $NGS_executions{"sh_1"} = {
   "type"                => "sh",
-  "cores_per_node"      => 32,
+  "cores_per_node"      => 8,
   "number_nodes"        => 1,
 };
 
@@ -51,7 +43,7 @@ $NGS_batch_jobs{"qc"} = {
   "cores_per_cmd"     => 4,                     # number of threads used by command below
   "no_parallel"       => 1,                     # number of total jobs to run using command below
   "command"           => <<EOD,
-java -jar $NGS_prog_dir/Trimmomatic/trimmomatic-0.32.jar PE -threads 4 -phred33 \\DATA.0 \\DATA.1 \\SELF/R1.fq \\SELF/R1-s.fq \\SELF/R2.fq \\SELF/R2-s.fq \\
+java -jar NGS_prog_trimmomatic PE -threads 4 -phred33 \\DATA.0 \\DATA.1 \\SELF/R1.fq \\SELF/R1-s.fq \\SELF/R2.fq \\SELF/R2-s.fq \\
     SLIDINGWINDOW:4:20 LEADING:3 TRAILING:3 MINLEN:\\CMDOPTS.0 MAXINFO:80:0.5 1>\\SELF/qc.stdout 2>\\SELF/qc.stderr
 
 perl -e '\$i=0; while(<>){ if (/^\@/) {\$i++;  print ">Sample|\\SAMPLE|\$i ", substr(\$_,1); \$a=<>; print \$a; \$a=<>; \$a=<>;}}' < \\SELF/R1.fq > \\SELF/R1.fa &
@@ -101,8 +93,6 @@ $CD_HIT_dir/usecases/Miseq-16S/filter-chimeric-by-ref.pl -i \\SELF/seq.97.chimer
 $CD_HIT_dir/clstr_sort_by.pl < \\SELF/seq.97f-full.clstr.f > \\SELF/OTU.clstr
 EOD
 };
-
-
 
 ##############################################################################################
 ########## END
