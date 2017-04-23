@@ -94,7 +94,7 @@ foreach $i (keys %seq_R1_clstr) {
 #### parse seq.99.clstr
 my $cutoff_clstr_size = int($num_total_seq * $abs_cutoff);
    $cutoff_clstr_size = 1 unless ($cutoff_clstr_size >= 1); #### singleton will be removed
-print LOG "cutoff_clstr_size\t$cutoff_clstr_size\n";
+#print LOG "cutoff_clstr_size\t$cutoff_clstr_size\n";
 
 open(TMP, $clstr_99) || die "can not open $clstr_99";
 open(OUT, "> $output_cls") || die "can not write to $output_cls";
