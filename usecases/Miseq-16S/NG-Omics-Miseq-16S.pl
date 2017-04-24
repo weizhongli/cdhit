@@ -56,8 +56,7 @@ EOD
 
 $NGS_batch_jobs{"otu"} = {
   "injobs"            => ["qc"],
-  "CMD_opts"          => ["150","100", "0.97","0.0001","/home/oasis/data/projects/USDA/PE-test/plos-one-PRJEB4688/gg_13_5-PE99.100-R1",
-                                                       "/home/oasis/data/projects/USDA/PE-test/plos-one-PRJEB4688/gg_13_5-PE99.100-R2", "75"],
+  "CMD_opts"          => ["150", "100", "0.97", "0.0001", "path_to_spliced_ref_db-R1", "path_to_spliced_ref_db-R1", "75"],
   "execution"         => "sh_1",               # where to execute
   "cores_per_cmd"     => 2,                    # number of threads used by command below
   "no_parallel"       => 1,                    # number of total jobs to run using command below
@@ -71,14 +70,13 @@ $CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr -j \\SELF/seq.nr.2 -o \\SELF/seq.99 -op 
 $CD_HIT_dir/usecases/Miseq-16S/filter-chimeric-and-small.pl -c \\CMDOPTS.3 -k \\SELF/seq.nr.clstr \\
     -i \\SELF/seq.chimeric-clstr.R1.clstr -j \\SELF/seq.chimeric-clstr.R2.clstr \\
     -a \\SELF/seq.99.clstr -f \\SELF/seq.99 -g \\SELF/seq.99.2 -o \\SELF/seq.99f
-grep Chimeric_cluster \\SELF/seq.99f.log > \\SELF/removed_chimeric_clusters.list
-grep Small_cluster    \\SELF/seq.99f.log > \\SELF/small_clusters.list
+mv \\SELF/seq.99f.log \\SELF/removed-chimeric-or-low-abundant-reads.list
+#### Now seq.99f and seq99f.2 are good seqs
 
 cat \\CMDOPTS.4 \\SELF/seq.99f   > \\SELF/seq.99fwref
 cat \\CMDOPTS.5 \\SELF/seq.99f.2 > \\SELF/seq.99fwref.2
 $CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref -j \\SELF/seq.99fwref.2 -o \\SELF/seq.97fwref -op \\SELF/seq.97fwref.2 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.97 -n 10 -G 1 -b 10  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97fwref.log
-
 $CD_HIT_dir/usecases/Miseq-16S/filter-refonly-cluster.pl < \\SELF/seq.97fwref.clstr > \\SELF/seq.97fwref.clstr.2
 mv \\SELF/seq.97fwref.clstr.2 \\SELF/seq.97fwref.clstr
 $CD_HIT_dir/clstr_rev.pl \\SELF/seq.nr.clstr       \\SELF/seq.99f.clstr     > \\SELF/seq.99f-full.clstr
@@ -88,9 +86,18 @@ $CD_HIT_dir/clstr_rev.pl \\SELF/seq.99f-full.clstr \\SELF/seq.97fwref.clstr > \\
 $CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref   -o \\SELF/seq.97.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.chimeric-clstr.R1.log
 $CD_HIT_dir/cd-hit-est -i \\SELF/seq.99fwref.2 -o \\SELF/seq.97.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.chimeric-clstr.R2.log
 $CD_HIT_dir/usecases/Miseq-16S/filter-chimeric-by-ref.pl -i \\SELF/seq.97.chimeric-clstr.R1.clstr -j \\SELF/seq.97.chimeric-clstr.R2.clstr \\
-    -a \\SELF/seq.97f-full.clstr -o \\SELF/seq.97f-full.clstr.f -p \\SELF/removed_chimeric_cluster_ref-based.list
+    -a \\SELF/seq.97f-full.clstr -f \\SELF/seq.99f -g \\SELF/seq.99f.2 -o \\SELF/seq.97f-fullf 
+cat \\SELF/seq.97f-fullf.log >> \\SELF/removed-chimeric-or-low-abundant-reads.list
+$CD_HIT_dir/clstr_sort_by.pl < \\SELF/seq.97f-fullf.clstr > \\SELF/OTU.clstr
+#### Now seq.97f-fullf seq.97f-fullf.2 are good seqs
 
-$CD_HIT_dir/clstr_sort_by.pl < \\SELF/seq.97f-full.clstr.f > \\SELF/OTU.clstr
+rm -f \\SELF/seq.chimeric-clstr.R1    \\SELF/seq.chimeric-clstr.R1.log    \\SELF/seq.chimeric-clstr.R2    \\SELF/seq.chimeric-clstr.R2.log 
+rm -f \\SELF/seq.97.chimeric-clstr.R1 \\SELF/seq.97.chimeric-clstr.R1.log \\SELF/seq.97.chimeric-clstr.R2 \\SELF/seq.97.chimeric-clstr.R2.log
+rm -f \\SELF/seq.99 \\SELF/seq.99.2
+rm -f \\SELF/seq.97fwref \\SELF/seq.97fwref.2 
+rm -f \\SELF/seq.97f-fullf.log
+# rm -f \\SELF/seq.99f \\SELF/seq.99f.2
+
 EOD
 };
 
