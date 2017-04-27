@@ -299,6 +299,7 @@ struct Options
 	string  input;
 	string  input_pe;
 	string  input2;
+	string  input2_pe;
 	string  output;
 	string  output_pe;
         

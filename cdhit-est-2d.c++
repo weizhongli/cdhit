@@ -49,6 +49,10 @@ int main(int argc, char **argv)
 	string db_in;
 	string db_in2;
 	string db_out;
+        string db_in_pe;
+        string db_in2_pe;
+        string db_out_pe;
+
 
 	options.cluster_thd = 0.95;
 	options.NAA = 10;
@@ -67,8 +71,12 @@ int main(int argc, char **argv)
 	options.Validate();
 
 	db_in = options.input;
+        db_in_pe  = options.input_pe;
 	db_in2 = options.input2;
+        db_in2_pe = options.input2_pe;
 	db_out = options.output;
+        db_out_pe = options.output_pe;
+
 
 	InitNAA( MAX_UAA );
 	options.NAAN = NAAN_array[options.NAA];
@@ -80,10 +88,12 @@ int main(int argc, char **argv)
 		make_comp_short_word_index(options.NAA, NAAN_array, Comp_AAN_idx);
 	}
 
-	seq_db.Read( db_in.c_str(), options );
+        if ( options.PE_mode ) {seq_db.Read( db_in.c_str(), db_in_pe.c_str(), options );}
+        else                   {seq_db.Read( db_in.c_str(),                   options );}
 	cout << "total seq in db1: " << seq_db.sequences.size() << endl;
 
-	seq_db2.Read( db_in2.c_str(), options );
+        if ( options.PE_mode ) { seq_db2.Read( db_in2.c_str(), db_in2_pe.c_str(), options );}
+        else                   { seq_db2.Read( db_in2.c_str(),                    options );}
 	cout << "total seq in db2: " << seq_db2.sequences.size() << endl;
 
 	seq_db.SortDivide( options );
@@ -92,6 +102,9 @@ int main(int argc, char **argv)
 
 	cout << "writing non-redundant sequences from db2" << endl;
 	seq_db2.WriteClusters( db_in2.c_str(), db_out.c_str(), options );
+
+        if ( options.PE_mode ) { seq_db2.WriteClusters( db_in2.c_str(), db_in2_pe.c_str(), db_out.c_str(), db_out_pe.c_str(), options ); }
+        else                   { seq_db2.WriteClusters( db_in2.c_str(),                    db_out.c_str(),                    options ); }
 
 	seq_db2.WriteExtra2D( seq_db, options );
 	cout << "program completed !" << endl << endl;

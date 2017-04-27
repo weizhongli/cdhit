@@ -288,6 +288,7 @@ bool Options::SetOption2D( const char *flag, const char *value )
 {
 	if( SetOptionCommon( flag, value ) ) return true;
 	if (strcmp(flag, "-i2" ) == 0) input2 = value;
+        else if (strcmp(flag, "-j2" ) == 0) input2_pe = value;
 	else if (strcmp(flag, "-s2") == 0) diff_cutoff2 = atof(value);
 	else if (strcmp(flag, "-S2") == 0) diff_cutoff_aa2 = atoi(value);
 	else return false;
@@ -376,6 +377,9 @@ void Options::Validate()
 	if( has2D ){
 		if ((diff_cutoff2<0) || (diff_cutoff2>1)) bomb_error("invalid value for -s2");
 		if (diff_cutoff_aa2<0) bomb_error("invalid value for -S2");
+          if (PE_mode) {
+            if (input2_pe.size()  == 0) bomb_error("no input file for R2 sequences for 2nd db in PE mode");
+          }
 	}
 	if (global_identity == 0) print = 1;
 	if (short_coverage < long_coverage) short_coverage = long_coverage;
