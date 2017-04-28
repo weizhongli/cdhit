@@ -26,6 +26,10 @@ char txt_option_j[] =
 \t -i R1.fa -j R2.fa -o output_R1 -op output_R2 \n";
 char txt_option_i_2d[] = "\tinput filename for db1 in fasta format, required\n";
 char txt_option_i2[] = "\tinput filename for db2 in fasta format, required\n";
+char txt_option_j2[] = 
+"\tinput filename in fasta/fastq format for R2 reads if input are paired end (PE) files\n \
+\t -i db1-R1.fq -j db1-R2.fq -i2 db2-R1.fq -j2 db2-R2.fq -o output_R1 -op output_R2 or\n \
+\t -i db1-R1.fa -j db1-R2.fa -i2 db2-R1.fq -j2 db2-R2.fq -o output_R1 -op output_R2 \n";
 char txt_option_o[] = "\toutput filename, required\n";
 char txt_option_op[] = "\toutput filename for R2 reads if input are paired end (PE) files\n";
 char txt_option_c[] = 
@@ -276,7 +280,9 @@ int print_usage_est_2d (char *arg) {
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
   cout << "   -i" << txt_option_i_2d;
   cout << "   -i2"<< txt_option_i2;
+  cout << "   -j, -j2"<< txt_option_j2;
   cout << "   -o" << txt_option_o;
+  cout << "   -op" << txt_option_op;
   cout << "   -c" << txt_option_c;
   cout << "   -G" << txt_option_G;
   cout << "   -b" << txt_option_b;
@@ -298,6 +304,9 @@ int print_usage_est_2d (char *arg) {
   cout << "   -uS" << txt_option_uS;
   cout << "   -U" << txt_option_U;
   cout << "   -B" << txt_option_B;
+  cout << "   -P" << txt_option_P;
+  cout << "   -cx"<< txt_option_cx;
+  cout << "   -cy"<< txt_option_cy;
   cout << "   -p" << txt_option_p;
   cout << "   -g" << txt_option_g;
   cout << "   -r" << txt_option_r;

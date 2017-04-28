@@ -39,7 +39,7 @@
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.6"
+#define CDHIT_VERSION  "4.7"
 
 #ifndef MAX_SEQ
 #define MAX_SEQ 655360
