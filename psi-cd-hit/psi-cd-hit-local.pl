@@ -3,8 +3,8 @@
 ######### PSI-cd-hit written by Weizhong Li at http://cd-hit.org
 ################################################################################
 our $pid       = $$;
-our $db_in     = "";   ###################
-our $db_out    = "";   # input / output
+our $db_in;            ###################
+our $db_out;           # input / output
 our $len_t     = 10;   ###################
 our $NR_clstr  = 0.3;  #
 our $NR_clstre = -1;   #thresholds
@@ -94,6 +94,9 @@ sub parse_para_etc {
     elsif ($arg eq "-P")          { $bl_path   = shift;   }
     else                          { print_usage(); exit(); }
   }
+  if (not (defined($db_in) and defined($db_out))) {
+    print_usage(); exit();
+  }
 
   # speical jobs
   if    ($job eq "parse_blout")       { job_parse_blout();       exit();}
@@ -120,13 +123,13 @@ sub parse_para_etc {
 
     if ($blast_prog eq "blastn") {
       $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
-      $blast_exe    = "blastp -task blastn -outfmt 6";
+      $blast_exe    = "blastn -task blastn -outfmt 6";
       $bl_para   = "-dust yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "megablast") {
       $blast_prog = "blastn"; #### back to blastn for blast parser type
       $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
-      $blast_exe    = "blastp -task megablast -outfmt 6";
+      $blast_exe    = "blastn -task megablast -outfmt 6";
       $bl_para   = "-dust yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "blastpgp") {
@@ -1066,11 +1069,11 @@ Options
               -------------circle-----------    
               |                            |   
         seq1  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx      genome / plasmid 1 
-               \\\\\\\\      /////////////         
-                \\\\\\\\    /////////////                
+               \\\\\\\\\\\\\\\\      /////////////         
+                \\\\\\\\\\\\\\\\    /////////////                
                   HSP 2 -> ////HSP 1 ///   <-HSP 2
-                          /////////////     \\\\\\\\
-                         /////////////       \\\\\\\\
+                          /////////////     \\\\\\\\\\\\\\\\ 
+                         /////////////       \\\\\\\\\\\\\\\\ 
         seq2           xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   genome / plasmid 2
                        |                             |
                        -----------circle--------------
