@@ -62,7 +62,7 @@ Based on this greedy method, we established several integrated heuristics that m
 
 **Reduced alphabet (to be implemented)**: This is for protein clustering. In reduced alphabet, a group of exchangeable residues are reduced to a single residue (I/V/L==>I, S/T==>S, D/E==>D, K/R==>K, F/Y==>F), and then conservative mutations would appear as identities in sequence alignments. It improves the short word filter for clustering at low sequence identity below 50%.
 
-**Gapped word (to be implemented)**: Short word filter using gapped word allows mismatch within a word such as “ACE” vs “AME”, “ACFE” vs “AMYE”, and “AACTT” vs “AAGTT”, which can be written as “101”, “1001” and “11011”. At low identity cutoff, a gapped word is more efficient than an ungapped word for filtering.
+**Gapped word (to be implemented)**: Short word filter using gapped word allows mismatch within a word such as âACEâ vs âAMEâ, âACFEâ vs âAMYEâ, and âAACTTâ vs âAAGTTâ, which can be written as â101â, â1001â and â11011â. At low identity cutoff, a gapped word is more efficient than an ungapped word for filtering.
 
 
 
@@ -95,9 +95,9 @@ Because of the algorithm, cd-hit may not be used for clustering proteins at <40%
 It can be copied under the GNU General Public License version 2 (GPLv2).
 
 Most CD-HIT programs were written in C++. Installing CD-HIT package is very simple:
-  * download current CD-HIT at [[https://github.com/weizhongli/cdhit/releases]], for example cd-hit-v4.6.2-2015-0511.tar.gz
-  * unpack the file with " tar xvf cd-hit-v4.6.2-2015-0511.tar.gz --gunzip"
-  * change dir by "cd cd-hit-v4.6.2-2015-0511"
+  * download current CD-HIT at [[https://github.com/weizhongli/cdhit/releases]], for example cd-hit-v4.6.6-2016-0711.tar.gz
+  * unpack the file with " tar xvf cd-hit-v4.6.6-2016-0711.tar.gz --gunzip"
+  * change dir by "cd cd-hit-v4.6.6-2016-0711"
   * compile the programs by "make" with multi-threading (default), or by "make openmp=no" without multi-threading (on old systems without OpenMP)
   * cd cd-hit-auxtools
   * compile cd-hit-auxtools by "make"
@@ -107,8 +107,8 @@ Most CD-HIT programs were written in C++. Installing CD-HIT package is very simp
 CD-HIT clusters proteins into clusters that meet a user-defined similarity threshold, usually a sequence identity. Each cluster has one representative sequence. The input is a protein dataset in fasta format and the output are two files: a fasta file of representative sequences and a text file of list of clusters.
 
 Basic command:
-  cd-hit -i nr -o nr100 -c 1.00 -n 5 -M 16000 –d 0 -T 8
-  cd-hit -i db -o db90 -c 0.9 -n 5 -M 16000 –d 0 -T 8, 
+  cd-hit -i nr -o nr100 -c 1.00 -n 5 -M 16000 âd 0 -T 8
+  cd-hit -i db -o db90 -c 0.9 -n 5 -M 16000 âd 0 -T 8, 
 
 where\\ 
 ''db'' is the filename of input, \\
@@ -182,7 +182,7 @@ __**The most updated options are available from the command line version of the 
  	must not be more than 10 bases
    -B	1 or 0, default 0, by default, sequences are stored in RAM
  	if set to 1, sequence are stored on hard drive
- 	it is recommended to use -B 1 for huge databases
+ 	!! No longer supported !!
    -p	1 or 0, default 0
  	if set to 1, print alignment overlap in .clstr file
    -g	1 or 0, default 0
@@ -191,6 +191,10 @@ __**The most updated options are available from the command line version of the 
  	will cluster it into the most similar cluster that meet the threshold
  	(accurate but slow mode)
  	but either 1 or 0 won't change the representatives of final clusters
+   -sc	sort clusters by size (number of sequences), default 0, output clusters by decreasing length
+ 	if set to 1, output clusters by decreasing size
+   -sf	sort fasta/fastq by cluster size (number of sequences), default 0, no sorting
+ 	if set to 1, output sequences by decreasing cluster size
    -bak	write backup cluster file (1 or 0, default 0)
    -h	print this help
 
@@ -265,18 +269,76 @@ Choose of word size (same as cd-hit):
 -n 2 for thresholds 0.4 ~ 0.5 
 </code>
 
-More options:
-
-Options, -b, -M, -l, -d, -t, -s, -S, -B, -p, -aL, -AL, -aS, -AS, -g, -G, -T
-are same to CD-HIT, here are few more cd-hit-2d specific options:
+Options:
 <code>
--i2 input filename for db2 in fasta format, required
--s2 length difference cutoff for db1, default 1.0
-    by default, seqs in db1 >= seqs in db2 in a same cluster
-    if set to 0.9, seqs in db1 may just >= 90% seqs in db2
--S2 length difference cutoff, default 0
-    by default, seqs in db1 >= seqs in db2 in a same cluster
-    if set to 60, seqs in db2 may 60aa longer than seqs in db1
+   -i	input filename for db1 in fasta format, required
+   -i2	input filename for db2 in fasta format, required
+   -o	output filename, required
+   -c	sequence identity threshold, default 0.9
+ 	this is the default cd-hit's "global sequence identity" calculated as:
+ 	number of identical amino acids in alignment
+ 	divided by the full length of the shorter sequence
+   -G	use global sequence identity, default 1
+ 	if set to 0, then use local sequence identity, calculated as :
+ 	number of identical amino acids in alignment
+ 	divided by the length of the alignment
+ 	NOTE!!! don't use -G 0 unless you use alignment coverage controls
+ 	see options -aL, -AL, -aS, -AS
+   -b	band_width of alignment, default 20
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -T	number of threads, default 1; with 0, all CPUs will be used
+   -n	word_length, default 5, see user's guide for choosing it
+   -l	length of throw_away_sequences, default 10
+   -t	tolerance for redundance, default 2
+   -d	length of description in .clstr file, default 20
+ 	if set to 0, it takes the fasta defline and stops at first space
+   -s	length difference cutoff, default 0.0
+ 	if set to 0.9, the shorter sequences need to be
+ 	at least 90% length of the representative of the cluster
+   -S	length difference cutoff in amino acid, default 999999
+ 	if set to 60, the length difference between the shorter sequences
+ 	and the representative of the cluster can not be bigger than 60
+   -s2	length difference cutoff for db1, default 1.0
+ 	by default, seqs in db1 >= seqs in db2 in a same cluster
+ 	if set to 0.9, seqs in db1 may just >= 90% seqs in db2
+   -S2	length difference cutoff, default 0
+ 	by default, seqs in db1 >= seqs in db2 in a same cluster
+ 	if set to 60, seqs in db2 may 60aa longer than seqs in db1
+   -aL	alignment coverage for the longer sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AL	alignment coverage control for the longer sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -aS	alignment coverage for the shorter sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AS	alignment coverage control for the shorter sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -A	minimal alignment coverage control for the both sequences, default 0
+ 	alignment must cover >= this value for both sequences 
+   -uL	maximum unmatched percentage for the longer sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -uS	maximum unmatched percentage for the shorter sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -U	maximum unmatched length, default 99999999
+ 	if set to 10, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10 bases
+   -B	1 or 0, default 0, by default, sequences are stored in RAM
+ 	if set to 1, sequence are stored on hard drive
+ 	!! No longer supported !!
+   -p	1 or 0, default 0
+ 	if set to 1, print alignment overlap in .clstr file
+   -g	1 or 0, default 0
+ 	by cd-hit's default algorithm, a sequence is clustered to the first 
+ 	cluster that meet the threshold (fast cluster). If set to 1, the program
+ 	will cluster it into the most similar cluster that meet the threshold
+ 	(accurate but slow mode)
+ 	but either 1 or 0 won't change the representatives of final clusters
+   -bak	write backup cluster file (1 or 0, default 0)
+   -h	print this help
+
 </code>
 
 ==== CD-HIT-EST ====
@@ -290,7 +352,8 @@ difficult to make full-length alignments for these genes. So, CD-HIT-EST is
 good for non-intron containing sequences like EST.  
 
 Basic command:
-  cd-hit-est -i est_human -o est_human95 -c 0.95 -n 10 -d 0 -M 16000 - T 8  
+  cd-hit-est -i est_human -o est_human95 -c 0.95 -n 10 -d 0 -M 16000 - T 8
+  cd-hit-est -i R1.fa -j R2.fa -o R1.95.fa -op R2.95.fa -P 1 -c 0.95 -n 10 -d 0 -M 16000 - T 8   
 
 Choose of word size:
 <code>
@@ -302,11 +365,79 @@ Choose of word size:
 -n 4      for thresholds 0.75 ~ 0.8 
 </code>
 
-More options:
-
-Options, -b, -M, -l, -d, -t, -s, -S, -B, -p, -aL, -AL, -aS, -AS, -g, -G, -T
-are same to CD-HIT, here are few more cd-hit-est specific options:
+Options:
 <code>
+   -i	input filename in fasta format, required
+   -j	input filename in fasta/fastq format for R2 reads if input are paired end (PE) files
+ 	 -i R1.fq -j R2.fq -o output_R1 -op output_R2 or
+ 	 -i R1.fa -j R2.fa -o output_R1 -op output_R2 
+   -o	output filename, required
+   -op	output filename for R2 reads if input are paired end (PE) files
+   -c	sequence identity threshold, default 0.9
+ 	this is the default cd-hit's "global sequence identity" calculated as:
+ 	number of identical amino acids in alignment
+ 	divided by the full length of the shorter sequence
+   -G	use global sequence identity, default 1
+ 	if set to 0, then use local sequence identity, calculated as :
+ 	number of identical amino acids in alignment
+ 	divided by the length of the alignment
+ 	NOTE!!! don't use -G 0 unless you use alignment coverage controls
+ 	see options -aL, -AL, -aS, -AS
+   -b	band_width of alignment, default 20
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -T	number of threads, default 1; with 0, all CPUs will be used
+   -n	word_length, default 10, see user's guide for choosing it
+   -l	length of throw_away_sequences, default 10
+   -d	length of description in .clstr file, default 20
+ 	if set to 0, it takes the fasta defline and stops at first space
+   -s	length difference cutoff, default 0.0
+ 	if set to 0.9, the shorter sequences need to be
+ 	at least 90% length of the representative of the cluster
+   -S	length difference cutoff in amino acid, default 999999
+ 	if set to 60, the length difference between the shorter sequences
+ 	and the representative of the cluster can not be bigger than 60
+   -aL	alignment coverage for the longer sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AL	alignment coverage control for the longer sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -aS	alignment coverage for the shorter sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AS	alignment coverage control for the shorter sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -A	minimal alignment coverage control for the both sequences, default 0
+ 	alignment must cover >= this value for both sequences 
+   -uL	maximum unmatched percentage for the longer sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -uS	maximum unmatched percentage for the shorter sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -U	maximum unmatched length, default 99999999
+ 	if set to 10, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10 bases
+   -B	1 or 0, default 0, by default, sequences are stored in RAM
+ 	if set to 1, sequence are stored on hard drive
+ 	!! No longer supported !!
+   -P	input paired end (PE) reads, default 0, single file
+ 	if set to 1, please use -i R1 -j R2 to input both PE files
+   -cx	length to keep after trimming the tail of sequence, default 0, not trimming
+ 	if set to 50, the program only uses the first 50 letters of input sequence
+   -cy	length to keep after trimming the tail of R2 sequence, default 0, not trimming
+ 	if set to 50, the program only uses the first 50 letters of input R2 sequence
+ 	e.g. -cx 100 -cy 80 for paired end reads
+   -ap	alignment position constrains,  default 0, no constrain
+ 	if set to 1, the program will force sequences to align at beginings
+ 	when set to 1, the program only does +/+ alignment
+   -p	1 or 0, default 0
+ 	if set to 1, print alignment overlap in .clstr file
+   -g	1 or 0, default 0
+ 	by cd-hit's default algorithm, a sequence is clustered to the first 
+ 	cluster that meet the threshold (fast cluster). If set to 1, the program
+ 	will cluster it into the most similar cluster that meet the threshold
+ 	(accurate but slow mode)
+ 	but either 1 or 0 won't change the representatives of final clusters
    -r	1 or 0, default 1, by default do both +/+ & +/- alignments
  	if set to 0, only +/+ strand alignment
    -mask	masking letters (e.g. -mask NX, to mask out both 'N' and 'X')
@@ -314,6 +445,14 @@ are same to CD-HIT, here are few more cd-hit-est specific options:
    -mismatch	mismatching score, default -2
    -gap	gap opening score, default -6
    -gap-ext	gap extension score, default -1
+   -bak	write backup cluster file (1 or 0, default 0)
+   -sc	sort clusters by size (number of sequences), default 0, output clusters by decreasing length
+ 	if set to 1, output clusters by decreasing size
+   -sf	sort fasta/fastq by cluster size (number of sequences), default 0, no sorting
+ 	if set to 1, output sequences by decreasing cluster size
+   -h	print this help
+
+
 </code>
 
 ==== CD-HIT-EST-2D ====
@@ -327,18 +466,98 @@ For same reason as CD-HIT-EST, CD-HIT-EST-2D is good for non-intron containing
 sequences like EST.  
 
 Basic command:
-  cd-hit-est-2d -i mrna_human -i2 est_human -o est_human_novel -c 0.95 -n 10 -d 0 -M 16000 - T 8  
-
+  cd-hit-est-2d -i mrna_human -i2 est_human -o est_human_novel -c 0.95 -n 10 -d 0 -M 16000 - T 8
+  cd-hit-est-2d -i db1.R1.fa -j db1.R2.fa -i2 db2.R1.fa -j2 db2.R2.fa -o db2_novel.R1.fa -op db2_novel.R2.fa -P 1 -c 0.95 -n 10 -d 0 -M 16000 - T 8
+    
 Choose of word size and options are the same as CD-HIT-EST:
 
-cd-hit-est-2d specificnoptions:
+Options:
 <code>
+   -i	input filename for db1 in fasta format, required
+   -i2	input filename for db2 in fasta format, required
+   -j, -j2	input filename in fasta/fastq format for R2 reads if input are paired end (PE) files
+ 	 -i db1-R1.fq -j db1-R2.fq -i2 db2-R1.fq -j2 db2-R2.fq -o output_R1 -op output_R2 or
+ 	 -i db1-R1.fa -j db1-R2.fa -i2 db2-R1.fq -j2 db2-R2.fq -o output_R1 -op output_R2 
+   -o	output filename, required
+   -op	output filename for R2 reads if input are paired end (PE) files
+   -c	sequence identity threshold, default 0.9
+ 	this is the default cd-hit's "global sequence identity" calculated as:
+ 	number of identical amino acids in alignment
+ 	divided by the full length of the shorter sequence
+   -G	use global sequence identity, default 1
+ 	if set to 0, then use local sequence identity, calculated as :
+ 	number of identical amino acids in alignment
+ 	divided by the length of the alignment
+ 	NOTE!!! don't use -G 0 unless you use alignment coverage controls
+ 	see options -aL, -AL, -aS, -AS
+   -b	band_width of alignment, default 20
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -T	number of threads, default 1; with 0, all CPUs will be used
+   -n	word_length, default 10, see user's guide for choosing it
+   -l	length of throw_away_sequences, default 10
+   -d	length of description in .clstr file, default 20
+ 	if set to 0, it takes the fasta defline and stops at first space
+   -s	length difference cutoff, default 0.0
+ 	if set to 0.9, the shorter sequences need to be
+ 	at least 90% length of the representative of the cluster
+   -S	length difference cutoff in amino acid, default 999999
+ 	if set to 60, the length difference between the shorter sequences
+ 	and the representative of the cluster can not be bigger than 60
    -s2	length difference cutoff for db1, default 1.0
  	by default, seqs in db1 >= seqs in db2 in a same cluster
  	if set to 0.9, seqs in db1 may just >= 90% seqs in db2
    -S2	length difference cutoff, default 0
  	by default, seqs in db1 >= seqs in db2 in a same cluster
  	if set to 60, seqs in db2 may 60aa longer than seqs in db1
+   -aL	alignment coverage for the longer sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AL	alignment coverage control for the longer sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -aS	alignment coverage for the shorter sequence, default 0.0
+ 	if set to 0.9, the alignment must covers 90% of the sequence
+   -AS	alignment coverage control for the shorter sequence, default 99999999
+ 	if set to 60, and the length of the sequence is 400,
+ 	then the alignment must be >= 340 (400-60) residues
+   -A	minimal alignment coverage control for the both sequences, default 0
+ 	alignment must cover >= this value for both sequences 
+   -uL	maximum unmatched percentage for the longer sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -uS	maximum unmatched percentage for the shorter sequence, default 1.0
+ 	if set to 0.1, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10% of the sequence
+   -U	maximum unmatched length, default 99999999
+ 	if set to 10, the unmatched region (excluding leading and tailing gaps)
+ 	must not be more than 10 bases
+   -B	1 or 0, default 0, by default, sequences are stored in RAM
+ 	if set to 1, sequence are stored on hard drive
+ 	!! No longer supported !!
+   -P	input paired end (PE) reads, default 0, single file
+ 	if set to 1, please use -i R1 -j R2 to input both PE files
+   -cx	length to keep after trimming the tail of sequence, default 0, not trimming
+ 	if set to 50, the program only uses the first 50 letters of input sequence
+   -cy	length to keep after trimming the tail of R2 sequence, default 0, not trimming
+ 	if set to 50, the program only uses the first 50 letters of input R2 sequence
+ 	e.g. -cx 100 -cy 80 for paired end reads
+   -p	1 or 0, default 0
+ 	if set to 1, print alignment overlap in .clstr file
+   -g	1 or 0, default 0
+ 	by cd-hit's default algorithm, a sequence is clustered to the first 
+ 	cluster that meet the threshold (fast cluster). If set to 1, the program
+ 	will cluster it into the most similar cluster that meet the threshold
+ 	(accurate but slow mode)
+ 	but either 1 or 0 won't change the representatives of final clusters
+   -r	1 or 0, default 1, by default do both +/+ & +/- alignments
+ 	if set to 0, only +/+ strand alignment
+   -mask	masking letters (e.g. -mask NX, to mask out both 'N' and 'X')
+   -match	matching score, default 2 (1 for T-U and N-N)
+   -mismatch	mismatching score, default -2
+   -gap	gap opening score, default -6
+   -gap-ext	gap extension score, default -1
+   -bak	write backup cluster file (1 or 0, default 0)
+   -h	print this help
+
 </code>
 
 
@@ -349,7 +568,7 @@ We implemented a program called cd-hit-454 to identify duplicated 454 reads by r
 Basic command:
   cd-hit-454 -i 454_reads -o 454_reads_95 -c 0.95 -n 10 -d 0 -M 16000 - T 8  
 
-Full list of options:
+Options:
 <code>
    -i	input filename in fasta format, required
    -o	output filename, required
@@ -510,7 +729,7 @@ neighbor-joining method, which generates a hierarchical structure. The third ste
 
 This way is faster than one-step clustering. It can also be more accurate. 
 
-There is a problem with one-step clustering. Two very similar sequences A and B may be clustered into different clusters. For example, let the clustering threshold to be 60%, IAB (identity of AB) = 95%, IAC ≥ 60%, but IBC < 60%. If C was first selected a cluster representative, then A will be in cluster “C”, but “B” will not, resulting near identical AB to be in different clusters. Hierarchically clustering will reduce this problem.
+There is a problem with one-step clustering. Two very similar sequences A and B may be clustered into different clusters. For example, let the clustering threshold to be 60%, IAB (identity of AB) = 95%, IAC â¥ 60%, but IBC < 60%. If C was first selected a cluster representative, then A will be in cluster âCâ, but âBâ will not, resulting near identical AB to be in different clusters. Hierarchically clustering will reduce this problem.
     
 {{ :cd-hit-figure4.png }}
 
@@ -531,9 +750,6 @@ nr60.clstr only lists sequences from nr80, script clstr_rev.pl add the original 
 nr30.clstr only lists sequences from nr60, script clstr_rev.pl add the original sequences into file nr80-60-30.clstr
 
 
-  
-
-
 
 ===== CD-HIT AuxTools =====
 
@@ -545,7 +761,7 @@ read duplicates, finding pairs of overlapping reads or joining pair-end reads et
 
 
 cd-hit-dup is a simple tool for removing duplicates from sequencing reads,
-with optional step to detect and remove chimeric reads.
+with optional step to detect and remove chimeric reads. When two files of paired end reads are used as inputs, each pair of reads will be concatenated into a single one. 
 A number of options are provided to tune how the duplicates are removed.
 Running the program without arguments should print out the list of available options,
 as the following:
@@ -575,42 +791,10 @@ Options:
 </code>
 
 === Option details ===
-
-== Common options ==
-Here are the more detailed description of the options.
-<code>
-    -i        Input file;
-</code>
-Input file that must be in fasta or fastq format.
-
-<code>
-    -i2       Second input file;
-</code>
-cd-hit-dup can take 2 files of paired end reads.
-"-i" can be used to specify the file for the R1;
-and "-i2" can be used to specify the file for R2.
-
-When two files of paired end reads are used as inputs, each pair of reads will
-be concatenated into a single one. And the following steps of duplicate and chimeric
-detection and removing.
-
-<code>
-    -o        Output file;
-</code>
-Output file which contains a list of reads without duplicates.
-
-<code>
-    -o2        Output file for R2, with paired end reads;
-</code>
-
-<code>
-    -d        Description length (default 0, truncate at the first whitespace character)
-</code>
-The length of description line that should be written to the output.
-
 <code>
     -u        Length of prefix to be used in the analysis (default 0, for full/maximum length);
 </code>
+
 For pair-end inputs, the program will take part (whole or prefix) of the first end 
 and part (whole or prefix) of the second read,
 and join them together to form a single read to do the analysis.
@@ -625,8 +809,6 @@ It also allows the program to use only the prefix up to the specified length of 
 to do the analysis. In case that a read is shorter than this length, no 'N' is appended to
 the read since it is not necessary.
 
-
-== Options for duplicate detection ==
 <code>
     -m        Match length (true/false, default true);
 </code>
@@ -641,8 +823,6 @@ for duplicate and chimeric detection. For duplicate detection, any two reads wit
 no greater than the specified value are considered to be duplicates. For chimeric detection,
 this option control how similar a read should be to either of its parents.
 
-
-== Options for chimeric filtering ==
 <code>
     -f        Filter out chimeric clusters (true/false, default false);
 </code>
@@ -887,8 +1067,8 @@ but using BLAST to calculate similarities. Below are the procedures of PSI-CD-HI
   - Repeat until done
 
 ==== Installation ====
-please download legacy BLAST (not BLAST+) and install the executables in your $PATH. The programs 
-required by psi-cd-hit.pl are blastall, megablast, blastpgp and formatdb. 
+please download either legacy BLAST or BLAST+ and install the executables in your $PATH. The programs 
+required by psi-cd-hit.pl are blastall, megablast, blastpgp and formatdb for legacy blast, and blastp, blastn, psiblast and makeblastdb for blast+.
 
 ==== Usage ====
 
@@ -945,11 +1125,11 @@ More options:
               -------------circle-----------    
               |                            |   
         seq1  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx      genome / plasmid 1 
-               \\\\      /////////////         
-                \\\\    /////////////                
+               \\\\\\\\      /////////////         
+                \\\\\\\\    /////////////                
                   HSP 2 -> ////HSP 1 ///   <-HSP 2
-                          /////////////     \\\\
-                         /////////////       \\\\
+                          /////////////     \\\\\\\\
+                         /////////////       \\\\\\\\
         seq2           xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   genome / plasmid 2
                        |                             |
                        -----------circle--------------
@@ -1172,15 +1352,15 @@ The CD-HIT-454 web server is also available from [[http://cd-hit.org]].
 Here, a use case is defined as a sequence clustering related problem or application that cannot be easily solved with existing clustering approaches, such as CD-HIT. However, it is feasible to solve such a use case by customizing current clustering algorithms or utilizing current approach in a very intelligent way or non-standard manner. In the last years, we have developed many use cases in addressing various problems. We will release these use cases after additional testing. These use cases will be described in the following chapters.
 
 ===== CD-HIT-OTU-MiSeq =====
-﻿This use case is developed for clustering 16S rRNA genes into OTUs for microbiome studies. In recent years, Illumina MiSeq sequencers became dominant in 16S rRNA sequencing. The Paired End (PE) reads need to be assembled first. However many reads can not be accurately assembled because the poor quality at the 3’ ends of both PE reads in the overlapping region. This causes that many sequences are discarded in the analysis. CD-HIT-OTU-MiSeq has unique features to cluster MiSeq 16S sequences. 
+ï»¿This use case is developed for clustering 16S rRNA genes into OTUs for microbiome studies. In recent years, Illumina MiSeq sequencers became dominant in 16S rRNA sequencing. The Paired End (PE) reads need to be assembled first. However many reads can not be accurately assembled because the poor quality at the 3â ends of both PE reads in the overlapping region. This causes that many sequences are discarded in the analysis. CD-HIT-OTU-MiSeq has unique features to cluster MiSeq 16S sequences. 
   - The package can clustering PE reads without joining them into contigs. 
   - Users can choose a high quality portion of the PE reads for analysis (e.g. first 200 / 150 bases from forward / reverse reads), according to base quality profile. 
   - We implemented a tool that can splice out the target region (e.g. V3-V4) from a full-length 16S reference database into the PE sequences. CD-HIT-OTU-MiSeq can cluster the spliced PE reference database together with samples, so we can derive Operational Tax-onomic Units (OTUs) and annotate these OTUs concurrently. 
   - Chimeric sequences are effectively identified through both de novo and reference-based approaches. 
 
-The most important unique feature of CD-HIT-OTU-MiSeq is to only use high quality region at the 5’ ends of R1 and R2 reads. For example, the effective read length can be 200 bases for R1 and 150 bases for R2. The effective portions of PE reads are clustered together with spliced PE sequences from the reference database to derive OTUs (Figure).
+The most important unique feature of CD-HIT-OTU-MiSeq is to only use high quality region at the 5â ends of R1 and R2 reads. For example, the effective read length can be 200 bases for R1 and 150 bases for R2. The effective portions of PE reads are clustered together with spliced PE sequences from the reference database to derive OTUs (Figure).
 
-{{:cd-hit-otu-miseq-figure-1.png?300|}}
+{{:cd-hit-otu-miseq-figure-1.png|}}
 
 ==== Installation ====
 First download and install full cd-hit package
@@ -1238,9 +1418,24 @@ where: 150 and 100 are the effective length, 0.97 is the OTU clustering cutoff, 
 
 This command will generate shell scripts for QC and for OTU for each sample. The scripts will be in WF-sh folder. You can first run the qc.sample_name.sh and then run otu.sample_name.sh 
   
+NG-Omics-WF.pl [[https://github.com/weizhongli/ngomicswf]] is a very powerful workflow and pipeline tool developed in our group. It is not fully released yet, since we need more time to document this tool. However, you can try to use NG-Omics-WF.pl to automatically run all your samples. First edit NG-Omics-Miseq-16S.pl and modify cores_per_node around line #36, then
+  nohup PATH_to_cd-hit-dir/usecases/NG-Omics-WF.pl -i PATH_to_cd-hit-dir/usecases/NG-Omics-Miseq-16S.pl -s sample_file -T otu:150:100:0.97:0.0001:PATH_to-gg_13_5-PE99.150-100-R1:PATH_to-gg_13_5-PE99.150-100-R2:75 &
+  
+After the job finished, the OTU results will be in sample_name/otu folder, important files include
+  * OTU.clstr: file lists all clusters and sequences 
+  * removed_chimeric*: chimeric sequenced removed 
+  * small_clusters.list: low abundance small clusters removed
 
-
-
+**Step 4. pool all the samples together:** Please run
+  PATH_to_cd-hit-dir/usecases/pool_samples.pl -s sample_file -o pooled_sample. 
+This will pool sequences from all sample and re-run OTU clustering. We can pool hundred of samples without problem. After job finished, additional files will be available from pooled_sample directory
+  * OTU.clstr: file list all clusters and sequences from all samples
+  * removed_chimeric*: chimeric sequenced removed 
+  * small_clusters.list: low abundance small clusters removed
+  * OTU.txt: spread sheet list number of sequences in each OTU for each sample, it also show annotation for each OTU.
+  * OTU.biome: OTU.txt in biome format
+  
+  
 
 ===== References =====
 
