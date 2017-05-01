@@ -7,10 +7,9 @@ using namespace std;
 
 // information
 char cd_hit_ver[]  = "\t\t====== CD-HIT version " CDHIT_VERSION " (built on " __DATE__ ") ======";
-char cd_hit_ref1[] = "\"Clustering of highly homologous sequences to reduce thesize of large protein database\", Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics, (2001) 17:282-283";
-char cd_hit_ref2[] = "\"Tolerating some redundancy significantly speeds up clustering of large protein databases\", Weizhong Li, Lukasz Jaroszewski & Adam Godzik. Bioinformatics, (2002) 18:77-82";
-char cd_hit_ref3[] = "\"Cd-hit: a fast program for clustering and comparing large sets of protein or nucleotide sequences\", Weizhong Li & Adam Godzik. Bioinformatics, (2006) 22:1658-1659";
-char cd_hit_ref4[] = "\"Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li. Artificial and natural duplicates in pyrosequencing reads of metagenomic data. BMC Bioinformatics (2010) 11:187";
+char cd_hit_ref1[] = "\"CD-HIT: a fast program for clustering and comparing large sets of protein or nucleotide sequences\", Weizhong Li & Adam Godzik. Bioinformatics, (2006) 22:1658-1659";
+char cd_hit_ref2[] = "\"CD-HIT: accelerated for clustering the next generation sequencing data\", Limin Fu, Beifang Niu, Zhengwei Zhu, Sitao Wu & Weizhong Li. Bioinformatics, (2012) 28:3150-3152";
+char cd_hit_ref3[] = "\"Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li. Artificial and natural duplicates in pyrosequencing reads of metagenomic data. BMC Bioinformatics (2010) 11:187";
 //
 
 char contacts[] =
@@ -221,7 +220,7 @@ int print_usage_2d (char *arg) {
   cout << "   Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
   cout << "   If you find cd-hit useful, please kindly cite:\n\n";
   cout << "   " << cd_hit_ref1 << "\n";
-  cout << "   " << cd_hit_ref3 << "\n\n\n";
+  cout << "   " << cd_hit_ref2 << "\n\n\n";
   exit(1);
 } // END print_usage_2d
 
@@ -270,7 +269,7 @@ int print_usage_est (char *arg) {
   cout << "   -h\tprint this help\n\n";
   cout << contacts;
   cout << "   " << cd_hit_ref1 << "\n";
-  cout << "   " << cd_hit_ref3 << "\n\n\n";
+  cout << "   " << cd_hit_ref2 << "\n\n\n";
   exit(1);
 } // END print_usage_est
 
@@ -319,7 +318,7 @@ int print_usage_est_2d (char *arg) {
   cout << "   -h\tprint this help\n\n";
   cout << contacts;
   cout << "   " << cd_hit_ref1 << "\n";
-  cout << "   " << cd_hit_ref3 << "\n\n\n";
+  cout << "   " << cd_hit_ref2 << "\n\n\n";
   exit(1);
 } // END print_usage_est_2d
 
@@ -370,8 +369,8 @@ int print_usage_454 (char *arg)
   cout << "   Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n\n";
   cout << "   If you find cd-hit useful, please kindly cite:\n\n";
   cout << "   " << cd_hit_ref1 << "\n";
-  cout << "   " << cd_hit_ref3 << "\n";
-  cout << "   " << cd_hit_ref4 << "\n\n\n";
+  cout << "   " << cd_hit_ref2 << "\n";
+  cout << "   " << cd_hit_ref3 << "\n\n\n";
   exit(1);
 }
 
