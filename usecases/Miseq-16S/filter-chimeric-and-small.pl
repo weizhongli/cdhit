@@ -26,7 +26,7 @@ my ($i, $j, $k, $str, $cmd, $ll);
 
 my $num_total_seq;
 my %seq_nr_size; 
-my %seqs_of_rep;
+my %seqs_of_nr;
 open(LOG, "> $output_log") || die "can not open $output_log";
 open(TMP, $input0) || die "can not open $input0";
 if (1) {
@@ -41,9 +41,9 @@ if (1) {
       if ($ll =~ /\d+(aa|nt), >(.+)\.\.\./) {
         $id = $2;
         $num_total_seq++;
-        if ($ll =~ /\*$/) { $rep=$id; $seq_nr_size{$rep}=0; $seqs_of_rep{$rep} = [];}
+        if ($ll =~ /\*$/) { $rep=$id; $seq_nr_size{$rep}=0; $seqs_of_nr{$rep} = [];}
         $seq_nr_size{$rep}++ if ($rep);
-        push(@{$seqs_of_rep{$rep}}, $id) if ($rep);
+        push(@{$seqs_of_nr{$rep}}, $id) if ($rep);
       }
     }
   }
@@ -99,6 +99,7 @@ my $cutoff_clstr_size = int($num_total_seq * $abs_cutoff);
 open(TMP, $clstr_99) || die "can not open $clstr_99";
 open(OUT, "> $output_cls") || die "can not write to $output_cls";
 my %good_ids = ();
+my @seqs_this_cls = ();
 if (1) {
   my $clstr_txt = "";
   my $clstr_size = 0;
@@ -112,19 +113,24 @@ if (1) {
           $good_ids{$rep} = 1;
         }
         elsif ( $chimeric_ids{$rep} ) {
-          foreach $i ( @{ $seqs_of_rep{$rep} }) {
-            print LOG "Chimeric_cluster\t$i\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+          foreach $j (@seqs_this_cls) {
+            foreach $i ( @{ $seqs_of_nr{$j} } ) {
+              print LOG "Chimeric_cluster\t$i\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+            }
           }
         }
         else {
-          foreach $i ( @{ $seqs_of_rep{$rep} }) {
-            print LOG "Small_cluster\t$i\t$rep\t$clstr_size\n";
+          foreach $j (@seqs_this_cls) {
+            foreach $i ( @{ $seqs_of_nr{$j} } ) {
+              print LOG "Small_cluster\t$i\t$rep\t$clstr_size\n";
+            }
           }
         }
       }
       $clstr_size = 0;
       $clstr_txt = $ll;
       $rep = "";
+      @seqs_this_cls=();
     }
     else {
       $clstr_txt .= $ll;
@@ -134,6 +140,7 @@ if (1) {
         $id = $2;
         $clstr_size += $seq_nr_size{$id};
         $rep=$id if ($ll =~ /\*$/);
+        push(@seqs_this_cls, $id);
       }
     }
   }
@@ -143,13 +150,17 @@ if (1) {
           $good_ids{$rep} = 1;
         }
         elsif ( $chimeric_ids{$rep} ) {
-          foreach $i ( @{ $seqs_of_rep{$rep} }) {
-            print LOG "Chimeric_cluster\t$i\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+          foreach $j (@seqs_this_cls) {
+            foreach $i ( @{ $seqs_of_nr{$j} } ) {
+              print LOG "Chimeric_cluster\t$i\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+            }
           }
         }
         else {
-          foreach $i ( @{ $seqs_of_rep{$rep} }) {
-            print LOG "Small_cluster\t$i\t$rep\t$clstr_size\n";
+          foreach $j (@seqs_this_cls) {
+            foreach $i ( @{ $seqs_of_nr{$j} } ) {
+              print LOG "Small_cluster\t$i\t$rep\t$clstr_size\n";
+            }
           }
         }
       }
