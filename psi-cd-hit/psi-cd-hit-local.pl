@@ -94,13 +94,14 @@ sub parse_para_etc {
     elsif ($arg eq "-P")          { $bl_path   = shift;   }
     else                          { print_usage(); exit(); }
   }
-  if (not (defined($db_in) and defined($db_out))) {
-    print_usage(); exit();
-  }
 
   # speical jobs
   if    ($job eq "parse_blout")       { job_parse_blout();       exit();}
   elsif ($job eq "parse_blout_multi") { job_parse_blout_multi(); exit();}
+
+  if (not (defined($db_in) and defined($db_out))) {
+    print_usage(); exit();
+  }
 
   if ($blast_prog eq "blastn") {
     $formatdb  = "formatdb -p F";
