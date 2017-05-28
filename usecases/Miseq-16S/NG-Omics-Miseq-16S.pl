@@ -101,6 +101,37 @@ rm -f \\SELF/seq.97f-fullf.log
 EOD
 };
 
+
+
+$NGS_batch_jobs{"otuv2"} = {
+  "injobs"            => ["qc"],
+  "CMD_opts"          => ["150", "100", "0.97", "0.0001", "path_to_spliced_ref_db-R1", "path_to_spliced_ref_db-R1", "75"],
+  "execution"         => "sh_1",               # where to execute
+  "cores_per_cmd"     => 2,                    # number of threads used by command below
+  "no_parallel"       => 1,                    # number of total jobs to run using command below
+  "command"           => <<EOD,
+#### cluster at 100% PE
+$CD_HIT_dir/cd-hit-est -i \\INJOBS.0/R1.fa -j \\INJOBS.0/R2.fa -o \\SELF/seq.nr -op \\SELF/seq.nr.2 -sf 1 -sc 1 -P 1 -r 0 \\
+    -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 1.0  -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.nr.log
+#### cluster at 99% PE and SE for R1,R2 
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr   -o \\SELF/seq.chimeric-clstr.R1 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R1.log
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr.2 -o \\SELF/seq.chimeric-clstr.R2 -r 0 -cx \\CMDOPTS.6 -c 0.99 -n 10 -G 0 -b 1 -A 50 -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.chimeric-clstr.R2.log
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr -j \\SELF/seq.nr.2 -o \\SELF/seq.99 -op \\SELF/seq.99.2 -P 1 -r 0 \\
+    -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.99 -n 10 -G 1 -b 1  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.99.log
+$CD_HIT_dir/usecases/Miseq-16S/filter-chimeric-and-small.pl -c \\CMDOPTS.3 -k \\SELF/seq.nr.clstr \\
+    -i \\SELF/seq.chimeric-clstr.R1.clstr -j \\SELF/seq.chimeric-clstr.R2.clstr \\
+    -a \\SELF/seq.99.clstr -f \\SELF/seq.99 -g \\SELF/seq.99.2 -o \\SELF/seq.99f
+$CD_HIT_dir/clstr_rev.pl \\SELF/seq.nr.clstr       \\SELF/seq.99f.clstr     > \\SELF/seq.99f-all.clstr
+$CD_HIT_dir/cd-hit-est -i \\SELF/seq.99 -j \\SELF/seq.99.2 -o \\SELF/seq.97 -op \\SELF/seq.97.2 -P 1 -r 0 \\
+    -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.97 -n 10 -G 1 -b 10  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.log
+$CD_HIT_dir/cd-hit-est-2d -i \\SELF/seq.97 -j \\SELF/seq.97.2 -i2 \\CMDOPTS.4 -j2 \\CMDOPTS.5 -o \\SELF/seq.97.ref -op \\SELF/seq.97.ref.2 -P 1 -r 0 \\
+    -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.97 -n 10 -G 1 -b 10  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.ref.log
+$CD_HIT_dir/clstr_rev.pl \\SELF/seq.99f-all.clstr \\SELF/seq.97.clstr >> \\SELF/seq.97-all.clstr
+$CD_HIT_dir/clstr_merge.pl \\SELF/seq.97-all.clstr \\SELF/seq.97.ref.clstr > \\SELF/OTU.clstr
+EOD
+};
+
+
 ##############################################################################################
 ########## END
 1;
