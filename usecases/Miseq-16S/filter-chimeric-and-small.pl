@@ -78,6 +78,24 @@ foreach my $f (($input, $input2)) {
   close(TMP);
 }
 
+#### open $clstr_99 first time
+open(TMP, $clstr_99) || die "can not open $clstr_99";
+%rep_2_otu = ();
+$OTU = -1;
+while($ll=<TMP>){
+  if ($ll =~ /^>/) {
+    $OTU++;
+  }
+  else {
+    my $id;
+    if ($ll =~ /\d+(aa|nt), >(.+)\.\.\./) {
+      $id = $2;
+      $rep_2_otu{$id} = $OTU;
+    }
+  }
+}
+close(TMP);
+
 my %chimeric_ids = (); 
 #### those ids are candidates, if they are recurited by other non-chimeric clusters, 
 #### then they are not chimeric anymore
@@ -88,6 +106,10 @@ foreach $i (keys %seq_R1_clstr) {
   next if ($rep1 eq $rep2);
   next unless ($seq_nr_size{$rep1} >= $seq_nr_size{$i}*2);
   next unless ($seq_nr_size{$rep2} >= $seq_nr_size{$i}*2);
+
+  my $OTU1 = $rep_2_otu{$rep1};
+  my $OTU2 = $rep_2_otu{$rep2};
+  next if ($OTU1 eq $OTU2);
   $chimeric_ids{$i} = 1;
 }
 
@@ -115,14 +137,14 @@ if (1) {
         elsif ( $chimeric_ids{$rep} ) {
           foreach $j (@seqs_this_cls) {
             foreach $i ( @{ $seqs_of_nr{$j} } ) {
-              print LOG "Chimeric_cluster\t$i\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+              print LOG "$i\tChimeric_cluster\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\tOTU1:$rep_2_otu{$seq_R1_clstr{$rep}}\tOTU2:$rep_2_otu{$seq_R2_clstr{$rep}}\n";
             }
           }
         }
         else {
           foreach $j (@seqs_this_cls) {
             foreach $i ( @{ $seqs_of_nr{$j} } ) {
-              print LOG "Small_cluster\t$i\t$rep\t$clstr_size\n";
+              print LOG "$i\tSmall_cluster\t$rep\t$clstr_size\n";
             }
           }
         }
@@ -152,14 +174,14 @@ if (1) {
         elsif ( $chimeric_ids{$rep} ) {
           foreach $j (@seqs_this_cls) {
             foreach $i ( @{ $seqs_of_nr{$j} } ) {
-              print LOG "Chimeric_cluster\t$i\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\n";
+              print LOG "$i\tChimeric_cluster\t$rep\t$clstr_size\tP1:$seq_R1_clstr{$rep}\tP2:$seq_R2_clstr{$rep}\tOTU1:$rep_2_otu{$seq_R1_clstr{$rep}}\tOTU2:$rep_2_otu{$seq_R2_clstr{$rep}}\n";
             }
           }
         }
         else {
           foreach $j (@seqs_this_cls) {
             foreach $i ( @{ $seqs_of_nr{$j} } ) {
-              print LOG "Small_cluster\t$i\t$rep\t$clstr_size\n";
+              print LOG "$i\tSmall_cluster\t$rep\t$clstr_size\n";
             }
           }
         }
