@@ -79,7 +79,8 @@ $CD_HIT_dir/cd-hit-est -i \\SELF/seq.99f -j \\SELF/seq.99f.2 -o \\SELF/seq.97 -o
 $CD_HIT_dir/cd-hit-est-2d -i \\SELF/seq.97 -j \\SELF/seq.97.2 -i2 \\CMDOPTS.4 -j2 \\CMDOPTS.5 -o \\SELF/seq.97.ref -op \\SELF/seq.97.ref.2 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.97 -n 10 -G 1 -b 10  -T 1 -M 8000  -d 0 -p 1 > \\SELF/seq.97.ref.log
 $CD_HIT_dir/clstr_rev.pl \\SELF/seq.99f-all.clstr \\SELF/seq.97.clstr > \\SELF/seq.97-all.clstr
-$CD_HIT_dir/clstr_merge.pl \\SELF/seq.97-all.clstr \\SELF/seq.97.ref.clstr > \\SELF/OTU.clstr
+$CD_HIT_dir/usecases/Miseq-16S/filter-nontop-ref.pl < \\SELF/seq.97.ref.clstr > \\SELF/seq.97.reftop.clstr
+$CD_HIT_dir/clstr_merge.pl \\SELF/seq.97-all.clstr \\SELF/seq.97.reftop.clstr > \\SELF/OTU.clstr
 
 rm -f \\SELF/seq.chimeric-clstr.R1    \\SELF/seq.chimeric-clstr.R1.log    \\SELF/seq.chimeric-clstr.R2    \\SELF/seq.chimeric-clstr.R2.log 
 rm -f \\SELF/seq.97.ref \\SELF/seq.97.ref.2 \\SELF/seq.97.ref.log
@@ -102,7 +103,8 @@ $CD_HIT_dir/cd-hit-est -i seq.99f -j seq.99f.2 -o seq.97 -op seq.97.2 -P 1 -r 0 
 $CD_HIT_dir/cd-hit-est-2d -i seq.97 -j seq.97.2 -i2 \\CMDOPTS.4 -j2 \\CMDOPTS.5 -o seq.97.ref -op seq.97.ref.2 -P 1 -r 0 \\
     -cx \\CMDOPTS.0 -cy \\CMDOPTS.1 -c 0.97 -n 10 -G 1 -b 10  -T 1 -M 8000  -d 0 -p 1 > seq.97.ref.log
 $CD_HIT_dir/clstr_rev.pl seq.99f-all.clstr seq.97.clstr > seq.97-all.clstr
-$CD_HIT_dir/clstr_merge.pl seq.97-all.clstr seq.97.ref.clstr > OTU.clstr
+$CD_HIT_dir/usecases/Miseq-16S/filter-nontop-ref.pl < seq.97.ref.clstr > seq.97.reftop.clstr
+$CD_HIT_dir/clstr_merge.pl seq.97-all.clstr seq.97.reftop.clstr > OTU.clstr
 rm -f seq.97.ref seq.97.ref.2 seq.97.ref.log
 
 EOD
