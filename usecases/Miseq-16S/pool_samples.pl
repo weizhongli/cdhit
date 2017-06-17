@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 use Getopt::Std;
-getopts("s:S:o:f:",\%opts);
+getopts("s:S:o:f:j:",\%opts);
 
 die usage() unless ($opts{s} or $opts{S});
 
@@ -9,6 +9,8 @@ my $output            = $opts{o};
    $output            = "pooled" unless ($output);
 my $sample_in         = $opts{s};
 my $sample_command_in = $opts{S}; #### ',' delimited samples, ':' delimited entries, e.g. sample1:R1.fq:R2.fq;sample2:R1.fq:R2.fq   or sample1;sample2;sample3
+my $job               = $opts{j};
+   $job = "otu" unless ($job);
 
 my @file_list = qw/seq.99f seq.99f.2 seq.99f-all.clstr chimeric-small-clusters-list.txt/;
 
@@ -47,7 +49,7 @@ else {
 foreach $i (@file_list) {
   my $target = "$output/$i";
   foreach $j (@NGS_samples) {
-    my $source = "$j/$i";
+    my $source = "$j/$job/$i";
     if (-e $source) {
       print STDERR "cat $source >> $target\n";
       $cmd = `cat $source >> $target`;
