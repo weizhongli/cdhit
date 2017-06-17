@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 use Getopt::Std;
-getopts("s:S:o:f:j:",\%opts);
+getopts("i:s:S:o:f:j:",\%opts);
 
 my $input             = $opts{i}; $input   = "OTU.clstr" unless $input;
 my $output            = $opts{o}; $output  = "OTU.txt" unless ($output);
