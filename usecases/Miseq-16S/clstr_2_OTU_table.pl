@@ -43,24 +43,23 @@ close(TMP);
 my @sample_ids = sort keys %sample_id;
 
 open(OUT1, "> $output") || die "can not write $output";
-print OUT1 "OTU\tAnnotation";
+print OUT1 "OTU";
 foreach $sample_id (@sample_ids){
   print OUT1 "\t$sample_id";
 }
-print OUT1 "\tTotal\n";
+#print OUT1 "\tTotal\n";
+print OUT1 "\tAnnotation\n";
 
 for ($i=1; $i<=$OTU; $i++){
   $ann = "None";
-  if ($OTU_2_ann{$i}) {
-    $ann = $OTU_2_ann{$i};
-  }
-  print OUT1 "OTU",$i, "\t$ann";
+  if ($OTU_2_ann{$i}) { $ann = $OTU_2_ann{$i}; }
+  print OUT1 "OTU$i";
   foreach $sample_id (@sample_ids){
     $k = $count{$i}{$sample_id}? $count{$i}{$sample_id} : 0;
     print OUT1 "\t$k";
   }
-  print OUT1 "\t$count_t{$i}";
-  print OUT1 "\n";
+  #print OUT1 "\t$count_t{$i}";
+  print OUT1 "\t$ann\n";
 }
 close(OUT1);
 
