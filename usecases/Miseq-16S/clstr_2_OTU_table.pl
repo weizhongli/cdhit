@@ -50,7 +50,7 @@ foreach $sample_id (@sample_ids){
   print OUT1 "\t$sample_id";
 }
 if ($tree_flag) {
-  print join("\t", qw/Kingdom Phylum Class Order Family Genus Species/);
+  print OUT1 join("\t", qw/Kingdom Phylum Class Order Family Genus Species/);
 }
 #print OUT1 "\tTotal\n";
 print OUT1 "\tAnnotation\n";
