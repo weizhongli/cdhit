@@ -50,7 +50,7 @@ foreach $sample_id (@sample_ids){
   print OUT1 "\t$sample_id";
 }
 if ($tree_flag) {
-  print OUT1 join("\t", qw/Kingdom Phylum Class Order Family Genus Species/);
+  print OUT1 "\t", join("\t", qw/Kingdom Phylum Class Order Family Genus Species/);
 }
 #print OUT1 "\tTotal\n";
 print OUT1 "\tAnnotation\n";
@@ -72,7 +72,7 @@ for ($i=1; $i<=$OTU; $i++){
     if ($ann =~ /f__(\w+)/) {$tax_f = $1} else {$tax_f = "";}
     if ($ann =~ /g__(\w+)/) {$tax_g = $1} else {$tax_g = "";}
     if ($ann =~ /s__(\w+)/) {$tax_s = $1} else {$tax_s = "";}
-    print OUT1 join("\t", ($tax_k, $tax_p, $tax_c, $tax_o, $tax_f, $tax_g, $tax_s));
+    print OUT1 "\t", join("\t", ($tax_k, $tax_p, $tax_c, $tax_o, $tax_f, $tax_g, $tax_s));
   }
   #print OUT1 "\t$count_t{$i}";
   print OUT1 "\t$ann\n";
