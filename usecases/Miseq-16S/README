@@ -1,5 +1,171 @@
-CD-HIT usecases: Miseq-16S
+CD-HIT usecases: Miseq-16S (http://cd-hit.org)
 
-Up-to-date document at http://weizhongli-lab.org/lab-wiki/doku.php?id=cd-hit-user-guide#cd-hit-otu-miseq
+Please also check http://weizhongli-lab.org/lab-wiki/doku.php?id=cd-hit-user-guide#cd-hit-otu-miseq,
+which offer most up-to-date documents.
+
+
+================================================================================================
+                                  Introduction of CD-HIT-OTU-MiSeq
+================================================================================================
+This use case is developed for clustering 16S rRNA genes into OTUs for microbiome studies. 
+In recent years, Illumina MiSeq sequencers became dominant in 16S rRNA sequencing. The 
+Paired End (PE) reads need to be assembled first. However many reads can not be accurately 
+assembled because the poor quality at the 3’ ends of both PE reads in the overlapping region. 
+This causes that many sequences are discarded in the analysis. CD-HIT-OTU-MiSeq has unique 
+features to cluster MiSeq 16S sequences.
+
+  *  The package can clustering PE reads without joining them into contigs.
+  *  Users can choose a high quality portion of the PE reads for analysis 
+     (e.g. first 200 / 150 bases from forward / reverse reads), according to base quality profile.
+  *  We implemented a tool that can splice out the target region (e.g. V3-V4) from a full-length
+     16S reference database into the PE sequences. CD-HIT-OTU-MiSeq can cluster the spliced PE 
+     reference database together with samples, so we can derive Operational Tax-onomic Units (OTUs) 
+     and annotate these OTUs concurrently.
+  *  Chimeric sequences are effectively identified through de novo approache.
+
+The most important unique feature of CD-HIT-OTU-MiSeq is to only use high quality region at 
+the 5’ ends of R1 and R2 reads. For example, the effective clustering read length can be 200 bases 
+for R1 and 150 bases for R2. The effective portions of PE reads are clustered together with 
+spliced PE sequences from the reference database to derive OTUs (Figure).
+
+
+================================================================================================
+                                          Installation
+================================================================================================
+1. Install full cd-hit package
+  *  download current CD-HIT at https://github.com/weizhongli/cdhit/releases, 
+     for example cd-hit-v4.6.2-2015-0511.tar.gz
+  *  unpack the file with “tar xvf cd-hit-v4.6.2-2015-0511.tar.gz –gunzip”
+  *  change dir by “cd cd-hit-v4.6.2-2015-0511”
+  *  compile the programs by “make” with multi-threading (default), 
+     or by “make openmp=no” without multi-threading (on old systems without OpenMP)
+  *  cd cd-hit-auxtools
+  *  compile cd-hit-auxtools by “make”
+  *  CD-HIT-OTU-MiSeq scripts are inside a folder like cd-hit-v4.6.2-2015-0511/usecases/Miseq-16S
+
+
+2. Install Trimmomatic
+CD-HIT-OTU-MiSeq uses Trimmomatic for sequence quality control. It can be downloaded from 
+http://www.usadellab.org/cms/?page=trimmomatic or https://github.com/timflutre/trimmomatic. 
+We also have a copy at http://weizhongli-lab.org/download-data/cd-hit-otu-miseq/.
+
+
+3. Modify NG-Omics-Miseq-16S.pl
+Please edit usecases/Miseq-16S/NG-Omics-Miseq-16S.pl, in the top few lines:
+    $CD_HIT_dir   = "PATH_to_cd-hit";
+    $NGS_prog_trimmomatic = "PATH_to_trimmomatic/trimmomatic-0.32.jar";  #### where you have installed Trimmomatic
+
+4. Download reference dataset
+Reference database can be downloaded from http://weizhongli-lab.org/download-data/cd-hit-otu-miseq/.
+The reference database Greengene-13-5-99.fasta.gz was re-formatted from original Greengene database, 
+so that sequences with more specific annotations are at the beginning of the file. Please gunzip after
+download.  
+
+You can also download Greengene directly. You should download Greengene from 
+http://greengenes.secondgenome.com/downloads, or ftp://greengenes.microbio.me/. 
+Please download file like greengenes_release/gg_13_5/gg_13_5_otus.tar.gz, unpack the tar file. 
+You may find gg_13_5_otus/taxonomy/99_otu_taxonomy.txt and gg_13_5_otus/rep_set/99_otus.fasta. 
+
+There is a script: usecases/Miseq-16S/greengene-ann1.pl, please run this script to re-format greengene:
+    PATH_to_cd-hit/usecases/Miseq-16S/greengene-ann1.pl -i gg_13_5_otus/taxonomy/99_otu_taxonomy.txt -j gg_13_5_otus/rep_set/99_otus.fasta -o Greengene-13-5-99.fasta
+
+5. Download sample datasets
+Sample datasets can be downloaded from http://weizhongli-lab.org/download-data/cd-hit-otu-miseq/.
+The Miseq-otu-example.tar.gz contains two Miseq 16S samples. You can download and unpack to test.
+
+================================================================================================
+                                  Usage of CD-HIT-OTU-MiSeq
+================================================================================================
+1. Prepare fastq files and sample file
+Most projects have multiple samples sequenced at the same region. 
+After your samples are sequenced, your sequencing center should give you two paired ended fastq files 
+for each samples. Put them in a working directory in similar way as the testing datasets, 
+where the R1.fq and R2.fq are placed in a folder for each sample. the folder name is the sample name.
+So in the working directory, you should have files:
+
+sample_name_1/R1.fq
+sample_name_1/R2.fq
+sample_name_2/R1.fq
+sample_name_2/R2.fq
+...
+sample_name_N/R1.fq
+sample_name_N/R2.fq
+
+2. Prepare sample file
+Next is to prepare a SAMPLE_file in the working directory. The file should look like:
+
+sample_name_1 R1.fq R2.fq
+sample_name_2 R1.fq R2.fq
+...
+sample_name_N R1.fq R2.fq
+
+3. Prepare reference database
+We implemented a tool that can splice out the target amplicon region (e.g. V3-V4) from a 
+full-length 16S rRNA reference sequence database, such as Greengene, RDP and Silva, 
+into PE sequences. If there are multiple samples in a project sequenced with the same 
+amplicon of same variable region, only one spliced reference database is needed. 
+Please run:
+
+    Path_to_cd-hit_dir/usecases/Miseq-16S/16S-ref-db-PE-splice.pl -i sample_name_1/R1.fq -j sample_name_2/R2.fq  -d Greengene-13-5-99.fasta -o gg_13_5-PE99.150-100 -p 150 -q 100 -c 0.99
+
+Where Greengene-13-5-99.fasta is our re-formatted Greengene sequence file. 
+This program will output spliced PE files gg_13_5-PE99.150-100-R1 and gg_13_5-PE99.150-100-R2.
+
+4. Run sequence QC and OTU clustering for each sample
+In the working directory, run
+
+    PATH_to_cd-hit-dir/usecases/NG-Omics-WF.pl -i PATH_to_cd-hit-dir/usecases/NG-Omics-Miseq-16S.pl -s SAMPLE_file -j otu -T otu:150:100:0.97:0.0001:PATH_to-gg_13_5-PE99.150-100-R1:PATH_to-gg_13_5-PE99.150-100-R2:75 -J write-sh
+
+    where: 150 and 100 are the effective length, 
+           0.97 is the OTU clustering cutoff, 
+           0.00001 is the abundance cutoff, 7
+           75 is the length for chimeric checking at each R1 and R2 read
+           PATH_to-gg_13_5-PE99.150-100-R1 and PATH_to-gg_13_5-PE99.150-100-R2 need to be full path 
+             e.g. /home/user/myproj/PATH_to-gg_13_5-PE99.150-100-R1
+
+This command will generate shell scripts for QC and for OTU for each sample. 
+The scripts will be in WF-sh folder. You can first run all the qc.sample_name.sh and all these jobs
+finished you then run all otu.sample_name.sh
+
+NG-Omics-WF.pl https://github.com/weizhongli/ngomicswf is a very powerful workflow and pipeline 
+tool developed in our group. It is not fully released yet, since we need more time to document 
+this tool. However, you can try to use NG-Omics-WF.pl to automatically run all your samples. 
+First edit NG-Omics-Miseq-16S.pl and modify cores_per_node around line #36, then run
+
+    nohup PATH_to_cd-hit-dir/usecases/NG-Omics-WF.pl -i PATH_to_cd-hit-dir/usecases/NG-Omics-Miseq-16S.pl -s SAMPLE_file -j otu -T otu:150:100:0.97:0.0001:PATH_to-gg_13_5-PE99.150-100-R1:PATH_to-gg_13_5-PE99.150-100-R2:75 &
+
+After the job finished, the OTU results will be in sample_name/otu folder, important files include
+    OTU.clstr: file lists all clusters and sequences
+    removed_chimeric*: chimeric sequenced removed
+    small_clusters.list: low abundance small clusters removed
+
+5. Pool all samples together
+If you have multiple samples, you don't just want to stop here. It is important
+to pool all sample together and re-run OTU clustering so that all samples can be
+compared, run
+
+    PATH_to_cd-hit-dir/usecases/pool_samples.pl -s SAMPLE_file -o pooled 
+
+This will pool sequences from all sample and re-run OTU clustering. We can handle hundred or thausand 
+of sample without problem. 
+
+6. Cluster pooled samples
+run 
+    PATH_to_cd-hit-dir/usecases/NG-Omics-WF.pl -i PATH_to_cd-hit-dir/usecases/NG-Omics-Miseq-16S.pl -S pooled -j otu-pooled -T otu:150:100:0.97:0.0001:PATH_to-gg_13_5-PE99.150-100-R1:PATH_to-gg_13_5-PE99.150-100-R2:75 -J write-sh
+
+This command will generate a script WF-sh/otu-pooled.pooled.sh, you can
+run this sh script. When it is finished, OTUs will be in the pooled directory:
+    OTU.clstr: file list all clusters and sequences from all samples in CD-HIT format
+    OTU.txt: spread sheet list number of sequences in each OTU for each sample, it also show annotation for each OTU.
+    OTU.biome: OTU.txt in biome format
+
+
+================================================================================================
+                                  Other topics
+================================================================================================
+
+Questions, comments to the Author Weizhong Li, liwz@sdsc.edu
+
+
 
 
