@@ -14,9 +14,8 @@ For psi-cd-hit
   please download legacy BLAST (not BLAST+) and install the executables in your $PATH
 
 
-For more information, please visit http://cd-hit.org or please read the cdhit-users-guide.pdf. 
-Most up-to-date documents are available at http://weizhongli-lab.org/cd-hit/wiki/doku.php?id=cd-hit_user_guide.
+For more information, please visit http://cd-hit.org
 
-cd-hit was originally hosted at Google Code, some of the old releases are still available from https://code.google.com/p/cdhit/.
+Most up-to-date documents are available at https://github.com/weizhongli/cdhit/wiki
 
 cd-hit is also available as web server, visit http://cd-hit.org for web server address.
