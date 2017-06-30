@@ -105,7 +105,7 @@ $CD_HIT_dir/cd-hit-est-2d -i seq.97 -j seq.97.2 -i2 \\CMDOPTS.4 -j2 \\CMDOPTS.5 
 $CD_HIT_dir/clstr_rev.pl seq.99f-all.clstr seq.97.clstr > seq.97-all.clstr
 $CD_HIT_dir/usecases/Miseq-16S/filter-nontop-ref.pl < seq.97.ref.clstr > seq.97.reftop.clstr
 $CD_HIT_dir/clstr_merge.pl seq.97-all.clstr seq.97.reftop.clstr > OTU.clstr
-$CD_HIT_dir/usecases/clstr_2_OTU_table.pl -i OTU.clstr -o OTU.txt
+$CD_HIT_dir/usecases/Miseq-16S/clstr_2_OTU_table.pl -i OTU.clstr -o OTU.txt
 rm -f seq.97.ref seq.97.ref.2 seq.97.ref.log
 
 EOD
