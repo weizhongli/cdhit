@@ -9,10 +9,13 @@ my $output            = $opts{o};
    $output            = "pooled" unless ($output);
 my $sample_in         = $opts{s};
 my $sample_command_in = $opts{S}; #### ',' delimited samples, ':' delimited entries, e.g. sample1:R1.fq:R2.fq;sample2:R1.fq:R2.fq   or sample1;sample2;sample3
+my $file_list         = $opts{f};
+my @file_list = qw/seq.99f seq.99f.2 seq.99f-all.clstr chimeric-small-clusters-list.txt/;
+   @file_list = split(/,/, $file_list) if ($file_list); 
+
 my $job               = $opts{j};
    $job = "otu" unless ($job);
 
-my @file_list = qw/seq.99f seq.99f.2 seq.99f-all.clstr chimeric-small-clusters-list.txt/;
 
 my ($i, $j, $k, $cmd);
 $cmd = `mkdir $output` unless (-e $output);
