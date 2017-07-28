@@ -79,7 +79,7 @@ $NGS_batch_jobs{"clstr"} = {
   "command"           => <<EOD,
 #### cluster at 100%
 $CD_HIT_dir/cd-hit-est -i \\INJOBS.0/R1.fa -o \\SELF/seq.nr -sf 1 -sc 1 -r 0 -c 1.00        -n 10 -p 1 -d 0 -G 1 -b 1 -T 4 -M 8000 > \\SELF/seq.nr.log
-$CD_HIT_dir/usecases/miRNA-seq/filter-small-cluster.pl -i \\SELF/nr.clstr -s \\SELF/seq.nr -o \\SELF/seq.nr-filtered.clstr -f \\SELF/seq.nr-filtered -c 1
+$CD_HIT_dir/usecases/miRNA-seq/filter-small-cluster.pl -i \\SELF/seq.nr.clstr -s \\SELF/seq.nr -o \\SELF/seq.nr-filtered.clstr -f \\SELF/seq.nr-filtered -c 1
 
 $CD_HIT_dir/cd-hit-est -i \\SELF/seq.nr-filtered  -o \\SELF/seq.95  -r 0 -c \\CMDOPTS.0 -n 10 -p 1 -d 0 -G 1 -b 1 -T 4 -M 8000 > \\SELF/seq.95.log
 $CD_HIT_dir/clstr_rev.pl \\SELF/seq.nr-filtered.clstr \\SELF/seq.95.clstr     > \\SELF/seq.95-full.clstr
