@@ -121,7 +121,7 @@ $CD_HIT_dir/clstr_merge.pl tmp.clstr         seq.95.spktop.clstr > miRNA.clstr
 $CD_HIT_dir/clstr_sort_by.pl < miRNA.clstr > miRNA.clstr.s
 mv miRNA.clstr.s miRNA.clstr
 
-$CD_HIT_dir/usecases/miRNA-seq/clstr_2_miRNA-table.pl miRNA.clstr -o miRNA.txt
+$CD_HIT_dir/usecases/miRNA-seq/clstr_2_miRNA-table.pl -i miRNA.clstr -o miRNA.txt
 
 EOD
 };
