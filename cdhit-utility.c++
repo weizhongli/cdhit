@@ -31,15 +31,27 @@ char txt_option_j2[] =
 \t -i db1-R1.fa -j db1-R2.fa -i2 db2-R1.fq -j2 db2-R2.fq -o output_R1 -op output_R2 \n";
 char txt_option_o[] = "\toutput filename, required\n";
 char txt_option_op[] = "\toutput filename for R2 reads if input are paired end (PE) files\n";
-char txt_option_c[] = 
+char txt_option_c_aa[] = 
 "\tsequence identity threshold, default 0.9\n \
 \tthis is the default cd-hit's \"global sequence identity\" calculated as:\n \
 \tnumber of identical amino acids in alignment\n \
 \tdivided by the full length of the shorter sequence\n";
-char txt_option_G[] = 
+char txt_option_c_nt[] = 
+"\tsequence identity threshold, default 0.9\n \
+\tthis is the default cd-hit's \"global sequence identity\" calculated as:\n \
+\tnumber of identical nucleotides in alignment\n \
+\tdivided by the full length of the shorter sequence\n";
+char txt_option_G_aa[] = 
 "\tuse global sequence identity, default 1\n \
 \tif set to 0, then use local sequence identity, calculated as :\n \
 \tnumber of identical amino acids in alignment\n \
+\tdivided by the length of the alignment\n \
+\tNOTE!!! don't use -G 0 unless you use alignment coverage controls\n \
+\tsee options -aL, -AL, -aS, -AS\n";
+char txt_option_G_nt[] = 
+"\tuse global sequence identity, default 1\n \
+\tif set to 0, then use local sequence identity, calculated as :\n \
+\tnumber of identical nucleotides in alignment\n \
 \tdivided by the length of the alignment\n \
 \tNOTE!!! don't use -G 0 unless you use alignment coverage controls\n \
 \tsee options -aL, -AL, -aS, -AS\n";
@@ -64,18 +76,26 @@ char txt_option_s[] =
 "\tlength difference cutoff, default 0.0\n \
 \tif set to 0.9, the shorter sequences need to be\n \
 \tat least 90% length of the representative of the cluster\n";
-char txt_option_S[] =
-"\tlength difference cutoff in amino acid, default 999999\n \
+char txt_option_S_aa[] =
+"\tlength difference cutoff in amino acids, default 999999\n \
+\tif set to 60, the length difference between the shorter sequences\n \
+\tand the representative of the cluster can not be bigger than 60\n";
+char txt_option_S_nt[] =
+"\tlength difference cutoff in nucleotides, default 999999\n \
 \tif set to 60, the length difference between the shorter sequences\n \
 \tand the representative of the cluster can not be bigger than 60\n";
 char txt_option_s2[] =
 "\tlength difference cutoff for db1, default 1.0\n \
 \tby default, seqs in db1 >= seqs in db2 in a same cluster\n \
 \tif set to 0.9, seqs in db1 may just >= 90% seqs in db2\n";
-char txt_option_S2[] =
+char txt_option_S2_aa[] =
 "\tlength difference cutoff, default 0\n \
 \tby default, seqs in db1 >= seqs in db2 in a same cluster\n \
-\tif set to 60, seqs in db2 may 60aa longer than seqs in db1\n";
+\tif set to 60, seqs in db2 may be 60 aa longer than seqs in db1\n";
+char txt_option_S2_nt[] =
+"\tlength difference cutoff, default 0\n \
+\tby default, seqs in db1 >= seqs in db2 in a same cluster\n \
+\tif set to 60, seqs in db2 may be 60 nt longer than seqs in db1\n";
 char txt_option_aL[] = 
 "\talignment coverage for the longer sequence, default 0.0\n \
 \tif set to 0.9, the alignment must covers 90% of the sequence\n";
@@ -151,8 +171,8 @@ int print_usage (char *arg) {
   cout << "Usage: "<< arg << " [Options] \n\nOptions\n\n";
   cout << "   -i" << txt_option_i;
   cout << "   -o" << txt_option_o;
-  cout << "   -c" << txt_option_c;
-  cout << "   -G" << txt_option_G;
+  cout << "   -c" << txt_option_c_aa;
+  cout << "   -G" << txt_option_G_aa;
   cout << "   -b" << txt_option_b;
   cout << "   -M" << txt_option_M;
   cout << "   -T" << txt_option_T;
@@ -161,7 +181,7 @@ int print_usage (char *arg) {
   cout << "   -t" << txt_option_t;
   cout << "   -d" << txt_option_d;
   cout << "   -s" << txt_option_s;
-  cout << "   -S" << txt_option_S;
+  cout << "   -S" << txt_option_S_aa;
   cout << "   -aL" << txt_option_aL;
   cout << "   -AL" << txt_option_AL;
   cout << "   -aS" << txt_option_aS;
@@ -191,8 +211,8 @@ int print_usage_2d (char *arg) {
   cout << "   -i" << txt_option_i_2d;
   cout << "   -i2"<< txt_option_i2;
   cout << "   -o" << txt_option_o;
-  cout << "   -c" << txt_option_c;
-  cout << "   -G" << txt_option_G;
+  cout << "   -c" << txt_option_c_aa;
+  cout << "   -G" << txt_option_G_aa;
   cout << "   -b" << txt_option_b;
   cout << "   -M" << txt_option_M;
   cout << "   -T" << txt_option_T;
@@ -201,9 +221,9 @@ int print_usage_2d (char *arg) {
   cout << "   -t" << txt_option_t;
   cout << "   -d" << txt_option_d;
   cout << "   -s" << txt_option_s;
-  cout << "   -S" << txt_option_S;
+  cout << "   -S" << txt_option_S_aa;
   cout << "   -s2" << txt_option_s2;
-  cout << "   -S2" << txt_option_S2;
+  cout << "   -S2" << txt_option_S2_aa;
   cout << "   -aL" << txt_option_aL;
   cout << "   -AL" << txt_option_AL;
   cout << "   -aS" << txt_option_aS;
@@ -232,8 +252,8 @@ int print_usage_est (char *arg) {
   cout << "   -j" << txt_option_j;
   cout << "   -o" << txt_option_o;
   cout << "   -op" << txt_option_op;
-  cout << "   -c" << txt_option_c;
-  cout << "   -G" << txt_option_G;
+  cout << "   -c" << txt_option_c_nt;
+  cout << "   -G" << txt_option_G_nt;
   cout << "   -b" << txt_option_b;
   cout << "   -M" << txt_option_M;
   cout << "   -T" << txt_option_T;
@@ -241,7 +261,7 @@ int print_usage_est (char *arg) {
   cout << "   -l" << txt_option_l;
   cout << "   -d" << txt_option_d;
   cout << "   -s" << txt_option_s;
-  cout << "   -S" << txt_option_S;
+  cout << "   -S" << txt_option_S_nt;
   cout << "   -aL" << txt_option_aL;
   cout << "   -AL" << txt_option_AL;
   cout << "   -aS" << txt_option_aS;
@@ -282,8 +302,8 @@ int print_usage_est_2d (char *arg) {
   cout << "   -j, -j2"<< txt_option_j2;
   cout << "   -o" << txt_option_o;
   cout << "   -op" << txt_option_op;
-  cout << "   -c" << txt_option_c;
-  cout << "   -G" << txt_option_G;
+  cout << "   -c" << txt_option_c_nt;
+  cout << "   -G" << txt_option_G_nt;
   cout << "   -b" << txt_option_b;
   cout << "   -M" << txt_option_M;
   cout << "   -T" << txt_option_T;
@@ -291,9 +311,9 @@ int print_usage_est_2d (char *arg) {
   cout << "   -l" << txt_option_l;
   cout << "   -d" << txt_option_d;
   cout << "   -s" << txt_option_s;
-  cout << "   -S" << txt_option_S;
+  cout << "   -S" << txt_option_S_nt;
   cout << "   -s2" << txt_option_s2;
-  cout << "   -S2" << txt_option_S2;
+  cout << "   -S2" << txt_option_S2_nt;
   cout << "   -aL" << txt_option_aL;
   cout << "   -AL" << txt_option_AL;
   cout << "   -aS" << txt_option_aS;
@@ -337,7 +357,7 @@ int print_usage_div (char *arg) {
 char mytxt_option_c[] =
 "\tsequence identity threshold, default 0.98\n \
 \tthis is a \"global sequence identity\" calculated as :\n \
-\tnumber of identical amino acids in alignment\n \
+\tnumber of identical nucleotides in alignment\n \
 \tdivided by the full length of the shorter sequence + gaps\n";
 char mytxt_option_b[] = "\tband_width of alignment, default 10\n";
 char mytxt_option_n_est[] = "\tword_length, default 10, see user's guide for choosing it\n";
