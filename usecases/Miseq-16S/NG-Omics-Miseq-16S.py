@@ -7,8 +7,8 @@ queue_system = 'SGE'
 
 ########## local variables etc. Please edit
 ENV={
-  'CD_HIT_dir'           : '/home/oasis/gordon-data/NGS-ann-project-new/apps/cd-hit-v4.6.8-2017-0621',
-  'NGS_prog_trimmomatic' : '/home/oasis/gordon-data/NGS-ann-project-new/apps/Trimmomatic/trimmomatic-0.32.jar',
+  'CD_HIT_dir'           : '/home/oasis/data/NGS-ann-project/apps/cdhit.git',
+  'NGS_prog_trimmomatic' : '/home/oasis/data/NGS-ann-project/apps/Trimmomatic/trimmomatic-0.32.jar',
 }
 
 ########## computation resources for execution of jobs
@@ -23,7 +23,7 @@ NGS_executions['qsub_1'] = {
   'command_err_opt'     : '-e',
   'command_out_opt'     : '-o',
   'template'            : '''#!/bin/bash
-#$ -q RNA.q
+##$ -q RNA.q
 #$ -v PATH
 #$ -V
 
