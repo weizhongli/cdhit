@@ -96,7 +96,7 @@ mv $SELF/seq.99f.log $SELF/chimeric-small-clusters-list.txt
 
 NGS_batch_jobs['otu-pooled'] = {
   'CMD_opts'          : ['150', '100', '0.97', '0.0001', 'path_to_spliced_ref_db-R1', 'path_to_spliced_ref_db-R1', '75'],
-  'execution'         : 'sh_1',               # where to execute
+  'execution'         : 'qsub_1',               # where to execute
   'cores_per_cmd'     : 2,                    # number of threads used by command below
   'no_parallel'       : 1,                    # number of total jobs to run using command below
   'command'           : '''

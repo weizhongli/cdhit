@@ -698,10 +698,7 @@ def run_workflow(NGS_config):
 def check_pid(pid):        
   '''Check For the existence of a unix pid. '''
 # opt 1, this doesn't print OSError to stderr
-  if os.path.exists('/proc/' + str(pid)):
-    return True
-  else:
-    return False
+  return os.path.exists('/proc/' + str(pid))
 
 # opt 2,  
 #  try:
