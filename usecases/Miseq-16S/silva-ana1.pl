@@ -20,11 +20,12 @@ my $output  = $opts{o};
 
 my %id_2_seq = ();
 my $id = "";
+my $ann;
 open(TMP, $fasta) || die "can not open $fasta";
 while($ll=<TMP>){
   if ($ll =~ /^>/) {
     chop($ll);
-    my ($id, $ann) = split(/\s+/, $ll, 2);
+    ($id, $ann) = split(/\s+/, substr($ll,1), 2);
     $ann =~ s/\s/_/g;
     $id = "$id|$ann";
   }
