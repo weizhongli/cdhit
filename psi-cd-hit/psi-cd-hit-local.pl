@@ -13,21 +13,21 @@ our $opt_aS    = 0.0;  #
 our $opt_aL    = 0.0;  #
 our $circle    = 0;    #
 our $opt_g     = 1;    ####################
-our $blast_exe = "blastall -p blastp -m 8";               #########################
-our $prof_exe  = "blastpgp -m 8";                         #
-our $prof_para = "-j 3 -F T -e 0.001 -b 500 -v 500";      #
-our $prof_db   = "";                                      #
-our $bl_para   = "-F T -e 0.000001 -b 100000 -v 100000";  #  program
-our $bl_STDIN  = 1;                                       #
-our $keep_bl   = 0;                                       #
-our $blast_prog= "blastp";                                #
-our $formatdb  = "formatdb";                              #########################
+
+our $blast_exe = "blastp";                                             #########################
+our $bl_para   = "-seg yes -evalue 0.000001 -max_target_seqs 100000";  #  program
+our $bl_STDIN  = 1;                                                    #
+our $keep_bl   = 0;                                                    #
+our $blast_prog= "blastp";                                             #
+our $formatdb  = "makeblastdb";                                        #########################
+
 our $exec_mode = "local";      #######################
-our $num_qsub   = 1;           #
+our $num_qsub  = 1;            #
 our $para_no   = 1;            # compute
 our $sh_file   = "";           #
 our $num_multi_seq = 50;       #
 our $batch_no_per_node = 100;  #######################
+
 our $reformat_seg = 50000;
 our $restart_seg  = 20000;
 our $job          = "";
@@ -73,8 +73,6 @@ sub parse_para_etc {
     elsif ($arg eq "-sl")         { $skip_long = shift; }
     ## program
     elsif ($arg eq "-prog")       { $blast_prog= shift; }
-    elsif ($arg eq "-p")          { $prof_para = shift; }
-    elsif ($arg eq "-dprof")      { $prof_db   = shift; die "option -dprof no longer supported!";}
     elsif ($arg eq "-s")          { $bl_para   = shift; }
     elsif ($arg eq "-k")          { $keep_bl   = shift; }
     elsif ($arg eq "-bs")         { $bl_STDIN  = shift; }
@@ -103,44 +101,45 @@ sub parse_para_etc {
     print_usage(); exit();
   }
 
-  if ($blast_prog eq "blastn") {
-    $formatdb  = "formatdb -p F";
-    $blast_exe    = "blastall -p blastn -m 8";
-  }
-  elsif ($blast_prog eq "megablast") {
-    $blast_prog = "blastn"; #### back to blastn for blast parser type
-    $formatdb  = "formatdb -p F";
-    $blast_exe    = "megablast -H 100 -D 2 -m 8";
-  }
-  elsif ($blast_prog eq "blastpgp") {
-    $blast_exe  = "blastpgp -m 8 -j 3";
-  }
-
   #### for blast+
   if ($bl_plus) {
-    $formatdb = "makeblastdb -dbtype prot -max_file_sz 8GB";
-    $blast_exe = "blastp -outfmt 6";
-    $bl_para   = "-seg yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
-
-    if ($blast_prog eq "blastn") {
-      $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
-      $blast_exe    = "blastn -task blastn -outfmt 6";
-      $bl_para   = "-dust yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
+    if ($blast_prog eq "blastp") {
+      $formatdb  = "makeblastdb -dbtype prot -max_file_sz 8GB";
+      $blast_exe = "blastp -outfmt 6";
+      $bl_para   = "-seg yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
+    }
+    elsif ($blast_prog eq "psiblast") {
+      $formatdb  = "makeblastdb -dbtype prot -max_file_sz 8GB";
+      $blast_exe = "psiblast -outfmt 6 -num_iterations 3";
+      $bl_para   = "-seg yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
+    }
+    elsif ($blast_prog eq "blastn") {
+      $formatdb  = "makeblastdb -dbtype nucl -max_file_sz 8GB";
+      $blast_exe = "blastn -task blastn -outfmt 6";
+      $bl_para   = "-dust yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "megablast") {
-      $blast_prog = "blastn"; #### back to blastn for blast parser type
-      $formatdb = "makeblastdb -dbtype nucl -max_file_sz 8GB";
-      $blast_exe    = "blastn -task megablast -outfmt 6";
-      $bl_para   = "-dust yes -evalue 0.000001 -num_alignments 100000 -num_threads $bl_threads";  #  program
+      $formatdb  = "makeblastdb -dbtype nucl -max_file_sz 8GB";
+      $blast_exe = "blastn -task megablast -outfmt 6";
+      $bl_para   = "-dust yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
+      $blast_prog= "blastn"; #### back to blastn for blast parser type
     }
-    elsif ($blast_prog eq "blastpgp") {
-      $blast_exe  = "psiblast -outfmt 6 -num_iterations 3 -num_threads $bl_threads";
+    else {
+      print "Unknown blast program: $blast_prog\n";
+      print_usage(); exit();
     }
   }
 
   if ($bl_path) {
     $blast_exe = "$bl_path/$blast_exe";
     $formatdb  = "$bl_path/$formatdb";
+  }
+  my $bl_ver = `$blast_exe -version`;
+  if ($bl_ver =~ /blast/) {
+    print "BLAST version:\n$bl_ver\n\n";
+  }
+  else {
+    die "BLAST program not found: $blast_exe\n";
   }
 
   (-e $db_in) || die "No input";
@@ -576,7 +575,7 @@ sub keep_strand_with_top_hsp {
 }
 ########## END keep_strand_with_top_hsp
 
-########## for blastpgp -j no (no>1)
+########## for psiblast -j no (no>1)
 ########## keep hits from the last round
 sub keep_hsp_of_last_round {
   my $self = shift;
@@ -691,7 +690,7 @@ sub process_blout_blastp_blastn {
   my $len_rep = 0;
   my $bl = defined($blout) ? readblast_m8("", $blout) : readblast_m8_buffer();
   if ($blast_prog eq "blastn") { keep_strand_with_top_hsp($bl); }
-  if (($blast_prog eq "blastpgp") and (not $prof_db)) {keep_hsp_of_last_round($bl); }
+  if ($blast_prog eq "psiblast" ) {keep_hsp_of_last_round($bl); }
 
   if ($g_iden == 0 ) { #### Local identity
     keep_top_hsp($bl); #### local alignment, only the top HSP
@@ -1084,11 +1083,7 @@ Options
              long sequences will not be clustered anyway.
         -sl 0 means no skipping
    program:
-     -prog (blastp, blastn, megablast, blastpgp), default $blast_prog
-     -p  profile search para, default 
-         "$prof_para"
-     -dprof database for building PSSM, default using input
-         you can also use another database that is more comprehensive like NR80
+     -prog (blastp, blastn, megablast, psiblast), default $blast_prog
      -s  blast search para, default 
          "$bl_para"
      -bs (1/0) default $bl_STDIN
