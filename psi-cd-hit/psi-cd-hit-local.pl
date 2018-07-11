@@ -16,6 +16,7 @@ our $opt_g     = 1;    ####################
 
 our $blast_exe = "blastp";                                             #########################
 our $bl_para   = "-seg yes -evalue 0.000001 -max_target_seqs 100000";  #  program
+our $bl_para_u = "";                                                   #
 our $bl_STDIN  = 1;                                                    #
 our $keep_bl   = 0;                                                    #
 our $blast_prog= "blastp";                                             #
@@ -73,7 +74,7 @@ sub parse_para_etc {
     elsif ($arg eq "-sl")         { $skip_long = shift; }
     ## program
     elsif ($arg eq "-prog")       { $blast_prog= shift; }
-    elsif ($arg eq "-s")          { $bl_para   = shift; }
+    elsif ($arg eq "-s")          { $bl_para_u = shift; }
     elsif ($arg eq "-k")          { $keep_bl   = shift; }
     elsif ($arg eq "-bs")         { $bl_STDIN  = shift; }
     ## compute
@@ -127,6 +128,9 @@ sub parse_para_etc {
     else {
       print "Unknown blast program: $blast_prog\n";
       print_usage(); exit();
+    }
+    if ($bl_para_u) {
+      $bl_para = "$bl_para_u -num_threads $bl_threads";
     }
   }
 
