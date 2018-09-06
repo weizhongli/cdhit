@@ -105,22 +105,22 @@ sub parse_para_etc {
   #### for blast+
   if ($bl_plus) {
     if ($blast_prog eq "blastp") {
-      $formatdb  = "makeblastdb -dbtype prot -max_file_sz 8GB";
+      $formatdb  = "makeblastdb -dbtype prot -max_file_sz 2GB";
       $blast_exe = "blastp -outfmt 6";
       $bl_para   = "-seg yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "psiblast") {
-      $formatdb  = "makeblastdb -dbtype prot -max_file_sz 8GB";
+      $formatdb  = "makeblastdb -dbtype prot -max_file_sz 2GB";
       $blast_exe = "psiblast -outfmt 6 -num_iterations 3";
       $bl_para   = "-seg yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "blastn") {
-      $formatdb  = "makeblastdb -dbtype nucl -max_file_sz 8GB";
+      $formatdb  = "makeblastdb -dbtype nucl -max_file_sz 2GB";
       $blast_exe = "blastn -task blastn -outfmt 6";
       $bl_para   = "-dust yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
     }
     elsif ($blast_prog eq "megablast") {
-      $formatdb  = "makeblastdb -dbtype nucl -max_file_sz 8GB";
+      $formatdb  = "makeblastdb -dbtype nucl -max_file_sz 2GB";
       $blast_exe = "blastn -task megablast -outfmt 6";
       $bl_para   = "-dust yes -evalue 0.000001 -max_target_seqs 100000 -num_threads $bl_threads";  #  program
       $blast_prog= "blastn"; #### back to blastn for blast parser type
