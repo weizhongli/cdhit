@@ -65,7 +65,7 @@ foreach $i (@file_list) {
 
 sub usage {
 <<EOD;
-    $0 -s sample_file -o output_dir
+    $0 -s sample_file -o output_dir -j job -f list_files
     -s sample data file, required unless -S is present
        File format example
 #Sample data file example, TAB or space delimited for following lines
@@ -76,6 +76,8 @@ Sample_ID3 sample_data_0 sample_data_1
     -S sample data from command line, required unless -s is present
            format: Sample_ID1:sample_data_0:sample_data_0:sample_data_1,Sample_ID2:sample_data_0:sample_data_1
 
+    -j job name
+    -f list of files (delimited by ,) to pool (cat) 
 EOD
 }
 
