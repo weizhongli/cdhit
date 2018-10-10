@@ -1,6 +1,6 @@
 # CD-HIT - Representative Sequences
 
-CD-HIT is a very widely used program for clustering and comparing protein or nucleotide sequences. CD-HIT was originally developed by [Dr. Weizhong Li](liwz@sdsc.edu) at Dr. Adam Godzik's Lab(http://bioinformatics.burnham.org/ at the [Burnham Institute (now Sanford-Burnham Medical Research Institute)](http://www.sanfordburnham.org/)
+CD-HIT is a very widely used program for clustering and comparing protein or nucleotide sequences. CD-HIT was originally developed by [Dr. Weizhong Li](liwz@sdsc.edu) at Dr. Adam Godzik's Lab at the [Burnham Institute (now Sanford-Burnham Medical Research Institute)](http://www.sanfordburnham.org/)
 
 CD-HIT is very fast and can handle extremely large databases. CD-HIT helps to significantly reduce the computational and manual efforts in many sequence analysis tasks and aids in understanding the data structure and correct the bias within a dataset.
 
