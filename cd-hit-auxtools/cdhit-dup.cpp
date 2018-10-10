@@ -5,10 +5,10 @@
 
 #include <math.h>
 #include <ctype.h>
-#include "minString.hxx"
-#include "minArray.hxx"
-#include "minMap.hxx"
-#include "bioSequence.hxx"
+#include "minString.h"
+#include "minArray.h"
+#include "minMap.h"
+#include "bioSequence.h"
 
 using namespace Min;
 using namespace Bio;

@@ -11,7 +11,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<stdint.h>
-#include"minBase.hxx"
+#include"minBase.h"
 
 BEGIN_NS_MIN
 

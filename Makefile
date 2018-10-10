@@ -36,58 +36,61 @@ PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div cd-hit-454
 # Propagate hardening flags
 CCFLAGS := $(CPPFLAGS) $(CCFLAGS) $(CXXFLAGS)
 
-.c++.o:
+.cpp.o:
 	$(CC) $(CCFLAGS) -c $<
 
-all: $(PROGS)
+all: create-bin-dir $(PROGS)
 
 clean:
-	rm -f *.o $(PROGS)
+	rm -Rf *.o bin/
+
+create-bin-dir: 
+	mkdir -p bin
 
 # programs
 
 cd-hit: cdhit-common.o cdhit-utility.o cdhit.o
-	$(CC) $(CCFLAGS) cdhit.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit
+	$(CC) $(CCFLAGS) cdhit.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit
 
 cd-hit-2d: cdhit-common.o cdhit-utility.o cdhit-2d.o
-	$(CC) $(CCFLAGS) cdhit-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-2d
+	$(CC) $(CCFLAGS) cdhit-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-2d
 
 cd-hit-est: cdhit-common.o cdhit-utility.o cdhit-est.o
-	$(CC) $(CCFLAGS) cdhit-est.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est
+	$(CC) $(CCFLAGS) cdhit-est.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-est
 
 cd-hit-est-2d: cdhit-common.o cdhit-utility.o cdhit-est-2d.o
-	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est-2d
+	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-est-2d
 
 cd-hit-div: cdhit-common.o cdhit-utility.o cdhit-div.o
-	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-div
+	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-div
 
 cd-hit-454: cdhit-common.o cdhit-utility.o cdhit-454.o
-	$(CC) $(CCFLAGS) cdhit-454.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-454
+	$(CC) $(CCFLAGS) cdhit-454.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-454
 
 # objects
-cdhit-common.o: cdhit-common.c++ cdhit-common.h
-	$(CC) $(CCFLAGS) cdhit-common.c++ -c
+cdhit-common.o: src/cdhit-common.cpp src/cdhit-common.h
+	$(CC) $(CCFLAGS) src/cdhit-common.cpp -c
 
-cdhit-utility.o: cdhit-utility.c++ cdhit-utility.h
-	$(CC) $(CCFLAGS) cdhit-utility.c++ -c
+cdhit-utility.o: src/cdhit-utility.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-utility.cpp -c
 
-cdhit.o: cdhit.c++ cdhit-utility.h
-	$(CC) $(CCFLAGS) cdhit.c++ -c
+cdhit.o: src/cdhit.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit.cpp -c
 
-cdhit-2d.o: cdhit-2d.c++ cdhit-utility.h
-	$(CC) $(CCFLAGS) cdhit-2d.c++ -c
+cdhit-2d.o: src/cdhit-2d.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-2d.cpp -c
 
-cdhit-est.o: cdhit-est.c++ cdhit-utility.h
-	$(CC) $(CCFLAGS) cdhit-est.c++ -c
+cdhit-est.o: src/cdhit-est.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-est.cpp -c
 
-cdhit-est-2d.o: cdhit-est-2d.c++ cdhit-utility.h
-	$(CC) $(CCFLAGS) cdhit-est-2d.c++ -c
+cdhit-est-2d.o: src/cdhit-est-2d.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-est-2d.cpp -c
 
-cdhit-div.o: cdhit-div.c++ cdhit-common.h
-	$(CC) $(CCFLAGS) cdhit-div.c++ -c
+cdhit-div.o: src/cdhit-div.cpp src/cdhit-common.h
+	$(CC) $(CCFLAGS) src/cdhit-div.cpp -c
 
-cdhit-454.o: cdhit-454.c++ cdhit-common.h
-	$(CC) $(CCFLAGS) cdhit-454.c++ -c
+cdhit-454.o: src/cdhit-454.cpp src/cdhit-common.h
+	$(CC) $(CCFLAGS) src/cdhit-454.cpp -c
 
 PREFIX ?= /usr/local/bin
 

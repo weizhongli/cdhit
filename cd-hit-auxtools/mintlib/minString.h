@@ -8,7 +8,7 @@
 #define __MIN_STRING_HXX__
 
 #include<string.h>
-#include"minBase.hxx"
+#include"minBase.h"
 
 BEGIN_NS_MIN
 

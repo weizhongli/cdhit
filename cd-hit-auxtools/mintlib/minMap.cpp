@@ -5,7 +5,7 @@
 // Released under the MIT license.
 //================================================================= 
 
-#include"minMap.hxx"
+#include"minMap.h"
 
 BEGIN_NS_MIN
 

@@ -5,8 +5,8 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "minArray.hxx"
-#include "minString.hxx"
+#include "minArray.h"
+#include "minString.h"
 
 #define BEGIN_NS_BIO namespace Bio {
 #define END_NS_BIO }

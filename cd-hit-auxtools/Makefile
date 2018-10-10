@@ -27,21 +27,24 @@ OBJECTS = mintlib/minString.o mintlib/minMap.o bioSequence.o
 
 first: all
 
-all: cd-hit-dup cd-hit-lap read-linker
+all: create-bin-dir cd-hit-dup cd-hit-lap read-linker
 
-.SUFFIXES: .c .obj .cpp .cc .cxx .C
+.SUFFIXES: .c .obj .cc .cpp .C
 
-.cxx.o:
+.cpp.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
 
+create-bin-dir: 
+	mkdir -p bin
+
 cd-hit-dup: $(OBJECTS) cdhit-dup.o
-	$(CC) $(LFLAGS) $(OBJECTS) cdhit-dup.o -o cd-hit-dup
+	$(CC) $(LFLAGS) $(OBJECTS) cdhit-dup.o -o bin/cd-hit-dup
 
 cd-hit-lap: $(OBJECTS) cdhit-lap.o
-	$(CC) $(LFLAGS) $(OBJECTS) cdhit-lap.o -o cd-hit-lap
+	$(CC) $(LFLAGS) $(OBJECTS) cdhit-lap.o -o bin/cd-hit-lap
 
 read-linker: $(OBJECTS) read-linker.o
-	$(CC) $(LFLAGS) $(OBJECTS) read-linker.o -o read-linker
+	$(CC) $(LFLAGS) $(OBJECTS) read-linker.o -o bin/read-linker
 
 clean:
 	rm $(OBJECTS) cdhit-dup.o cdhit-lap.o read-linker.o
