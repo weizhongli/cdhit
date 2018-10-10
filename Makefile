@@ -47,22 +47,22 @@ clean:
 # programs
 
 cd-hit: cdhit-common.o cdhit-utility.o cdhit.o
-	$(CC) $(CCFLAGS) cdhit.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit
+	$(CC) $(CCFLAGS) cdhit.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit
 
 cd-hit-2d: cdhit-common.o cdhit-utility.o cdhit-2d.o
-	$(CC) $(CCFLAGS) cdhit-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-2d
+	$(CC) $(CCFLAGS) cdhit-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-2d
 
 cd-hit-est: cdhit-common.o cdhit-utility.o cdhit-est.o
-	$(CC) $(CCFLAGS) cdhit-est.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est
+	$(CC) $(CCFLAGS) cdhit-est.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-est
 
 cd-hit-est-2d: cdhit-common.o cdhit-utility.o cdhit-est-2d.o
-	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-est-2d
+	$(CC) $(CCFLAGS) cdhit-est-2d.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-est-2d
 
 cd-hit-div: cdhit-common.o cdhit-utility.o cdhit-div.o
-	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-div
+	$(CC) $(CCFLAGS) cdhit-div.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-div
 
 cd-hit-454: cdhit-common.o cdhit-utility.o cdhit-454.o
-	$(CC) $(CCFLAGS) cdhit-454.o cdhit-common.o cdhit-utility.o $(LDFLAGS) cd-hit-454
+	$(CC) $(CCFLAGS) cdhit-454.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-454
 
 # objects
 cdhit-common.o: src/cdhit-common.c++ src/cdhit-common.h
