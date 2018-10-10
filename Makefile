@@ -36,13 +36,16 @@ PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div cd-hit-454
 # Propagate hardening flags
 CCFLAGS := $(CPPFLAGS) $(CCFLAGS) $(CXXFLAGS)
 
-.c++.o:
+.cpp.o:
 	$(CC) $(CCFLAGS) -c $<
 
-all: $(PROGS)
+all: create-bin-dir $(PROGS)
 
 clean:
-	rm -f *.o $(PROGS)
+	rm -Rf *.o bin/
+
+create-bin-dir: 
+	mkdir -p bin
 
 # programs
 
@@ -65,29 +68,29 @@ cd-hit-454: cdhit-common.o cdhit-utility.o cdhit-454.o
 	$(CC) $(CCFLAGS) cdhit-454.o cdhit-common.o cdhit-utility.o $(LDFLAGS) bin/cd-hit-454
 
 # objects
-cdhit-common.o: src/cdhit-common.c++ src/cdhit-common.h
-	$(CC) $(CCFLAGS) src/cdhit-common.c++ -c
+cdhit-common.o: src/cdhit-common.cpp src/cdhit-common.h
+	$(CC) $(CCFLAGS) src/cdhit-common.cpp -c
 
-cdhit-utility.o: src/cdhit-utility.c++ src/cdhit-utility.h
-	$(CC) $(CCFLAGS) src/cdhit-utility.c++ -c
+cdhit-utility.o: src/cdhit-utility.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-utility.cpp -c
 
-cdhit.o: src/cdhit.c++ src/cdhit-utility.h
-	$(CC) $(CCFLAGS) src/cdhit.c++ -c
+cdhit.o: src/cdhit.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit.cpp -c
 
-cdhit-2d.o: src/cdhit-2d.c++ src/cdhit-utility.h
-	$(CC) $(CCFLAGS) src/cdhit-2d.c++ -c
+cdhit-2d.o: src/cdhit-2d.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-2d.cpp -c
 
-cdhit-est.o: src/cdhit-est.c++ src/cdhit-utility.h
-	$(CC) $(CCFLAGS) src/cdhit-est.c++ -c
+cdhit-est.o: src/cdhit-est.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-est.cpp -c
 
-cdhit-est-2d.o: src/cdhit-est-2d.c++ src/cdhit-utility.h
-	$(CC) $(CCFLAGS) src/cdhit-est-2d.c++ -c
+cdhit-est-2d.o: src/cdhit-est-2d.cpp src/cdhit-utility.h
+	$(CC) $(CCFLAGS) src/cdhit-est-2d.cpp -c
 
-cdhit-div.o: src/cdhit-div.c++ src/cdhit-common.h
-	$(CC) $(CCFLAGS) src/cdhit-div.c++ -c
+cdhit-div.o: src/cdhit-div.cpp src/cdhit-common.h
+	$(CC) $(CCFLAGS) src/cdhit-div.cpp -c
 
-cdhit-454.o: src/cdhit-454.c++ src/cdhit-common.h
-	$(CC) $(CCFLAGS) src/cdhit-454.c++ -c
+cdhit-454.o: src/cdhit-454.cpp src/cdhit-common.h
+	$(CC) $(CCFLAGS) src/cdhit-454.cpp -c
 
 PREFIX ?= /usr/local/bin
 

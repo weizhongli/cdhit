@@ -12,7 +12,7 @@
 #include<stdlib.h>
 #include<assert.h>
 #include<new>
-#include"minBase.hxx"
+#include"minBase.h"
 
 BEGIN_NS_MIN
 

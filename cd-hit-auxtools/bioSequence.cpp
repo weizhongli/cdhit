@@ -4,7 +4,7 @@
 //================================================================= 
 
 #include <ctype.h>
-#include "bioSequence.hxx"
+#include "bioSequence.h"
 
 using namespace Min;
 using namespace Bio;
