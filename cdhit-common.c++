@@ -804,6 +804,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	int band_width = band_right - band_left + 1;
 	int band_width1 = band_width + 1;
 
+    // score_mat, back_mat [i][j]: i index of seqi (0 to len(seqi)-1), j index of band (0 to band_width-1)
 	MatrixInt64 & score_mat = buffer.score_mat;
 	MatrixInt   & back_mat = buffer.back_mat;
 
@@ -823,24 +824,25 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 	}
 
 	best_score = 0;
-	/*
-	   seq2 len2 = 17            seq2 len2 = 17      seq2 len2 = 17
-	   01234567890123456       01234567890123456    01234567890123456
-	   0     xxxxxxxxxxxxxxxxx \\\\\\XXXxxxxxxxxxxxxxx    xXXXXXXXxxxxxxxxx
-	   1\\\\\Xxxxxxxxxxxxxxxxx  \\\\\Xxx\xxxxxxxxxxxxx    xx\xxxxx\xxxxxxxx
-	   2 \\\\X\xxxxxxxxxxxxxxx   \\\\Xxxx\xxxxxxxxxxxx    xxx\xxxxx\xxxxxxx
-	   seq1 3  \\\Xx\xxxxxxxxxxxxxx    \\\Xxxxx\xxxxxxxxxxx    xxxx\xxxxx\xxxxxx
-	   len1 4   \\Xxx\xxxxxxxxxxxxx     \\Xxxxxx\xxxxxxxxxx    xxxxx\xxxxx\xxxxx
-	   = 11 5    \Xxxx\xxxxxxxxxxxx      \Xxxxxxx\xxxxxxxxx    xxxxxx\xxxxx\xxxx
-	   6     Xxxxx\xxxxxxxxxxx       Xxxxxxxx\xxxxxxxx    xxxxxxx\xxxxx\xxx
-	   7     x\xxxx\xxxxxxxxxx       x\xxxxxxx\xxxxxxx    xxxxxxxx\xxxxx\xx
-	   8     xx\xxxx\xxxxxxxxx       xx\xxxxxxx\xxxxxx    xxxxxxxxx\xxxxx\x
-	   9     xxx\xxxx\xxxxxxxx       xxx\xxxxxxx\xxxxx    xxxxxxxxxx\xxxxx\
-	   0     xxxx\xxxx\xxxxxxx       xxxx\xxxxxxx\xxxx    xxxxxxxxxxx\xxxxx
-	   band_left < 0           band_left < 0        band_left >=0
-	   band_right < 0          band_right >=0       band_right >=0
-	   init score_mat, and iden_mat (place with upper 'X')
-	 */
+	/* seq1 is query, seq2 is rep
+                  seq2    len2 = 17       seq2    len2 = 17    seq2    len2 = 17
+                  01234567890123456       01234567890123456    01234567890123456
+       0          xxxxxxxxxxxxxxxxx \\\\\\XXXxxxxxxxxxxxxxx    xXXXXXXXxxxxxxxxx
+       1     \\\\\Xxxxxxxxxxxxxxxxx  \\\\\Xxx\xxxxxxxxxxxxx    xx\xxxxx\xxxxxxxx
+       2      \\\\X\xxxxxxxxxxxxxxx   \\\\Xxxx\xxxxxxxxxxxx    xxx\xxxxx\xxxxxxx
+  seq1 3       \\\Xx\xxxxxxxxxxxxxx    \\\Xxxxx\xxxxxxxxxxx    xxxx\xxxxx\xxxxxx
+  len1 4        \\Xxx\xxxxxxxxxxxxx     \\Xxxxxx\xxxxxxxxxx    xxxxx\xxxxx\xxxxx
+  = 11 5         \Xxxx\xxxxxxxxxxxx      \Xxxxxxx\xxxxxxxxx    xxxxxx\xxxxx\xxxx
+       6          Xxxxx\xxxxxxxxxxx       Xxxxxxxx\xxxxxxxx    xxxxxxx\xxxxx\xxx
+       7          x\xxxx\xxxxxxxxxx       x\xxxxxxx\xxxxxxx    xxxxxxxx\xxxxx\xx
+       8          xx\xxxx\xxxxxxxxx       xx\xxxxxxx\xxxxxx    xxxxxxxxx\xxxxx\x
+       9          xxx\xxxx\xxxxxxxx       xxx\xxxxxxx\xxxxx    xxxxxxxxxx\xxxxx\
+       0          xxxx\xxxx\xxxxxxx       xxxx\xxxxxxx\xxxx    xxxxxxxxxxx\xxxxx
+                  band_left < 0 (-6)      band_left < 0 (-6)   band_left >=0 (1)
+                  band_right < 0 (-1)     band_right >=0 (2)   band_right >=0(7)
+                  band_width 6            band_width 9         band_width 7
+       init score_mat, and iden_mat (place with upper 'X')
+     */
 
 	if (band_left < 0) {  //set score to left border of the matrix within band
 		int tband = (band_right < 0) ? band_right : 0;
@@ -849,6 +851,7 @@ int local_band_align( char iseq1[], char iseq2[], int len1, int len2, ScoreMatri
 			i = -k;
 			j1 = k-band_left;
 			// penalty for leading gap opening = penalty for gap extension
+            // each of the left side query hunging residues give ext_gap (-1)
 			score_mat[i][j1] =  mat.ext_gap * i;
 			back_mat[i][j1] = DP_BACK_TOP;
 		}
@@ -2865,9 +2868,9 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 		}
 	}
 
-        //liwz 2016 01, seq is too short for the shortest (longer) seq in word_table to satisfy -aL option
-        //longer seqeunce * -aL -band_width
-        if ( S ) {
+    //liwz 2016 01, seq is too short for the shortest (longer) seq in word_table to satisfy -aL option
+    //longer seqeunce * -aL -band_width
+    if ( S ) {
 		int min = table.sequences[S-1]->size;
 		int min_red = min * options.long_coverage - options.band_width;
 		if (len < min_red) return 0; // return flag=0
@@ -3310,6 +3313,14 @@ void SequenceDB::DoClustering( const Options & options )
 		size_t max_items = opts.max_entries;
 		size_t max_seqs = opts.max_sequences;
 		size_t items = 0;
+
+// find a block from i to m, so that this block can fit into a word table
+//     ...
+//  i  ++++++++++++++++++++++++++
+//     ++++++++++++++++++++
+//     ++++++++++++++++
+//  m  +++++++++++++
+//     ...
 		while( m < N && (sum*redundancy) < max_seqs && items < max_items ){
 			Sequence *seq = sequences[m];
 			if( ! (seq->state & IS_REDUNDANT) ){
@@ -3322,7 +3333,7 @@ void SequenceDB::DoClustering( const Options & options )
 		if( m > N ) m = N;
 		printf( "\rcomparing sequences from  %9i  to  %9i\n", i, m );
 		fflush( stdout );
-		for(int ks=i; ks<m; ks++){
+		for(int ks=i; ks<m; ks++){ // clustering this block
 			Sequence *seq = sequences[ks];
 			i = ks + 1;
 			if (seq->state & IS_REDUNDANT) continue;
@@ -3332,11 +3343,11 @@ void SequenceDB::DoClustering( const Options & options )
 			if( word_table.size >= max_items ) break;
 			int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
 			if( word_table.sequences.size() >= tmax ) break;
-		}
+		} // finishing word table from this block
 		m = i;
 		if( word_table.size == 0 ) continue;
 		float p0 = 0;
-		for(int j=m; j<N; j++){
+		for(int j=m; j<N; j++){ // use this word table to screen rest sequences m->N
 			Sequence *seq = sequences[j];
 			if (seq->state & IS_REDUNDANT) continue;
 			if ( options.store_disk ) seq->SwapIn();

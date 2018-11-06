@@ -280,10 +280,10 @@ struct Options
 	int     frag_size;
 	int     option_r;
 	int     threads;
-	int	PE_mode;     // -P
-        int     trim_len;    // -cx
-        int     trim_len_R2; // -cy
-        int     align_pos;   // -ap for alignment position
+	int     PE_mode;     // -P
+    int     trim_len;    // -cx
+    int     trim_len_R2; // -cy
+    int     align_pos;   // -ap for alignment position
 
 	size_t  max_entries;
 	size_t  max_sequences;
@@ -303,8 +303,8 @@ struct Options
 	string  output;
 	string  output_pe;
         
-        int     sort_output;  // -sc
-        int     sort_outputf; // -sf
+    int     sort_output;  // -sc
+    int     sort_outputf; // -sf
 
 	Options(){
 		backupFile = false;
@@ -342,12 +342,12 @@ struct Options
 		frag_size = 0;
 		des_len = 20;
 		threads = 1;
-                PE_mode = 0;
-                trim_len = 0;
-                trim_len_R2 = 0;
-                align_pos = 0;
-                sort_output = 0;
-                sort_outputf = 0;
+        PE_mode = 0;
+        trim_len = 0;
+        trim_len_R2 = 0;
+        align_pos = 0;
+        sort_output = 0;
+        sort_outputf = 0;
 		max_entries = 0;
 		max_sequences = 1<<20;
 		mem_limit = 100000000;
@@ -374,7 +374,7 @@ struct Sequence
 	// length of the sequence:
 	int   size;
 	int   bufsize;
-        int   size_R2; // size = size.R1 + size.R2 for back-to-back merged seq
+    int   size_R2; // size = size.R1 + size.R2 for back-to-back merged seq
 
 	//uint32_t stats;
 
@@ -387,8 +387,8 @@ struct Sequence
 
 	// stream offset of the description string in the database:
 	size_t   des_begin, des_begin2;
-        // total record length
-        int   tot_length, tot_length2;
+    // total record length
+    int   tot_length, tot_length2;
 
 	char *identifier;
 
@@ -417,7 +417,7 @@ struct Sequence
 	int Format();
 
 	void ConvertBases();
-        void trim(int trim_len);
+    void trim(int trim_len);
 
 	void SwapIn();
 	void SwapOut();
