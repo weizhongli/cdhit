@@ -1,6 +1,5 @@
 For cd-hit
-
-How to compile?
+How to compile
   1. Compile with multi-threading support (default): make
   2. Compile without multi-threading support (if you are on very old systems): make openmp=no
 
@@ -10,8 +9,16 @@ For cd-hit-auxtools
   make
 
 
+Compile cd-hit on MacOS
+To install CD-HIT on MacOS, first install gcc on your system.
+To use Homebrew (https://brew.sh/), see https://brewformulas.org/gcc. 
+Then locate the path to your g++ executable, (e.g. /usr/local/Cellar/gcc/6.3.0_1/bin/g++-6, 
+note: yours g++ path is likely to be different), then use command like this:
+  make CC=/usr/local/Cellar/gcc/6.3.0_1/bin/g++-6
+
+
 For psi-cd-hit
-  please download legacy BLAST (not BLAST+) and install the executables in your $PATH
+  please download BLAST+ (not legacy BLAST) and install the executables in your $PATH
 
 
 For more information, please visit http://cd-hit.org
