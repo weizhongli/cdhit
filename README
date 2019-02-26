@@ -1,7 +1,22 @@
 For cd-hit
+
+Requirements
+Since 4.8.1, cd-hit supports .gz format input file. This requires zlib library. zlib should
+be install in most Linux systems, so cd-hit should be compiled without issue. If your system
+don't have zlib, please install it first. 
+    * On Ubuntu, to install zlib:
+        sudo apt install zlib1g-dev
+    * On CentOS, to install zlib:
+        sudo yum install zlib-devel 
+
+
 How to compile
   1. Compile with multi-threading support (default): make
   2. Compile without multi-threading support (if you are on very old systems): make openmp=no
+
+
+Having problems to compile
+Please download the pre-compiled binary packages for Linux systems
 
 
 For cd-hit-auxtools
@@ -19,7 +34,6 @@ note: yours g++ path is likely to be different), then use command like this:
 
 For psi-cd-hit
   please download BLAST+ (not legacy BLAST) and install the executables in your $PATH
-
 
 For more information, please visit http://cd-hit.org
 

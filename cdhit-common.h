@@ -34,12 +34,13 @@
 #include<ctype.h>
 #include<stdint.h>
 #include<time.h>
+#include<zlib.h>
 
 #include<valarray>
 #include<vector>
 #include<map>
 
-#define CDHIT_VERSION  "4.7"
+#define CDHIT_VERSION  "4.8.1"
 
 #ifndef MAX_SEQ
 #define MAX_SEQ 655360
@@ -559,9 +560,17 @@ class SequenceDB
 		~SequenceDB(){ Clear(); }
 
 		void Read( const char *file, const Options & options );
+		void Readgz( const char *file, const Options & options );
+
 		void Read( const char *file, const char *file2, const Options & options );
+		void Readgz( const char *file, const char *file2, const Options & options );
+
 		void WriteClusters( const char *db, const char *newdb, const Options & options );
+		void WriteClustersgz( const char *db, const char *newdb, const Options & options );
+
 		void WriteClusters( const char *db, const char *db_pe, const char *newdb, const char *newdb_pe, const Options & options );
+		void WriteClustersgz( const char *db, const char *db_pe, const char *newdb, const char *newdb_pe, const Options & options );
+
 		void WriteExtra1D( const Options & options );
 		void WriteExtra2D( SequenceDB & other, const Options & options );
 		void DivideSave( const char *db, const char *newdb, int n, const Options & options );

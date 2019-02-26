@@ -13,18 +13,19 @@ char cd_hit_ref3[] = "\"Beifang Niu, Limin Fu, Shulei Sun and Weizhong Li. Artif
 //
 
 char contacts[] =
-  "   Questions, bugs, contact Limin Fu at l2fu@ucsd.edu, or Weizhong Li at liwz@sdsc.edu\n"
-  "   For updated versions and information, please visit: http://cd-hit.org\n\n"
+  "   Questions, bugs, contact Weizhong Li at liwz@sdsc.edu\n"
+  "   For updated versions and information, please visit: http://cd-hit.org\n"
+  "                                                    or https://github.com/weizhongli/cdhit\n\n"
   "   cd-hit web server is also available from http://cd-hit.org\n\n"
   "   If you find cd-hit useful, please kindly cite:\n\n";
 
-char txt_option_i[] = "\tinput filename in fasta format, required\n";
+char txt_option_i[] = "\tinput filename in fasta format, required, can be in .gz format\n";
 char txt_option_j[] = 
 "\tinput filename in fasta/fastq format for R2 reads if input are paired end (PE) files\n \
 \t -i R1.fq -j R2.fq -o output_R1 -op output_R2 or\n \
 \t -i R1.fa -j R2.fa -o output_R1 -op output_R2 \n";
-char txt_option_i_2d[] = "\tinput filename for db1 in fasta format, required\n";
-char txt_option_i2[] = "\tinput filename for db2 in fasta format, required\n";
+char txt_option_i_2d[] = "\tinput filename for db1 in fasta format, required, can be in .gz format\n";
+char txt_option_i2[] = "\tinput filename for db2 in fasta format, required, can be in .gz format\n";
 char txt_option_j2[] = 
 "\tinput filename in fasta/fastq format for R2 reads if input are paired end (PE) files\n \
 \t -i db1-R1.fq -j db1-R2.fq -i2 db2-R1.fq -j2 db2-R2.fq -o output_R1 -op output_R2 or\n \
@@ -34,12 +35,12 @@ char txt_option_op[] = "\toutput filename for R2 reads if input are paired end (
 char txt_option_c[] = 
 "\tsequence identity threshold, default 0.9\n \
 \tthis is the default cd-hit's \"global sequence identity\" calculated as:\n \
-\tnumber of identical amino acids in alignment\n \
+\tnumber of identical amino acids or bases in alignment\n \
 \tdivided by the full length of the shorter sequence\n";
 char txt_option_G[] = 
 "\tuse global sequence identity, default 1\n \
 \tif set to 0, then use local sequence identity, calculated as :\n \
-\tnumber of identical amino acids in alignment\n \
+\tnumber of identical amino acids or bases in alignment\n \
 \tdivided by the length of the alignment\n \
 \tNOTE!!! don't use -G 0 unless you use alignment coverage controls\n \
 \tsee options -aL, -AL, -aS, -AS\n";
@@ -337,7 +338,7 @@ int print_usage_div (char *arg) {
 char mytxt_option_c[] =
 "\tsequence identity threshold, default 0.98\n \
 \tthis is a \"global sequence identity\" calculated as :\n \
-\tnumber of identical amino acids in alignment\n \
+\tnumber of identical amino acids or bases in alignment\n \
 \tdivided by the full length of the shorter sequence + gaps\n";
 char mytxt_option_b[] = "\tband_width of alignment, default 10\n";
 char mytxt_option_n_est[] = "\tword_length, default 10, see user's guide for choosing it\n";

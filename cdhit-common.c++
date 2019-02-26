@@ -1681,6 +1681,105 @@ void Sequence::PrintInfo( int id, FILE *fout, const Options & options, char *buf
 	}
 }
 
+// by liwz gzip version 2019-02
+// by liwz
+// disable swap option
+// change des_begin, des_length, des_length2, dat_length => des_begin, tot_length
+// where des_begin is the FILE pointer of sequence record start
+//       tot_length is the total bytes of sequence record 
+void SequenceDB::Readgz( const char *file, const Options & options )
+{
+
+    Sequence one;
+    Sequence des;
+    gzFile fin = gzopen(file, "r");
+    char *buffer = NULL;
+    char *res = NULL;
+    int option_l = options.min_length;
+    if( fin == NULL ) bomb_error( "Failed to open the database file" );
+    Clear();
+    buffer = new char[ MAX_LINE_SIZE+1 ];
+
+    while (not gzeof( fin ) || one.size) { /* do not break when the last sequence is not handled */
+        buffer[0] = '>';
+        if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL && one.size == 0) break;
+        if( buffer[0] == '+' ){
+            int len = strlen( buffer );
+            int len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
+
+            // read next line quality score
+            if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) bomb_error("can not read quality score after");
+            len = strlen( buffer );
+            len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
+        }else if (buffer[0] == '>' || buffer[0] == '@' || (res==NULL && one.size)) {
+            if ( one.size ) { // write previous record
+                if( one.identifier == NULL || one.Format() ){
+                    printf( "Warning: from file \"%s\",\n", file );
+                    printf( "Discarding invalid sequence or sequence without identifier and description!\n\n" );
+                    if( one.identifier ) printf( "%s\n", one.identifier );
+                    printf( "%s\n", one.data );
+                    one.size = 0;
+                }
+                one.index = sequences.size();
+                if( one.size > option_l ) {
+                    if (options.trim_len    > 0) one.trim(options.trim_len);
+                    sequences.Append( new Sequence( one ) ); 
+                }
+            }
+            one.size = 0;
+            one.tot_length = 0;
+
+            int len = strlen( buffer );
+            int len2 = len;
+            des.size = 0;
+            des += buffer;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) break;
+                des += buffer;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            size_t offset = gztell( fin );
+            one.des_begin = offset - len;
+            one.tot_length += len;              // count first line
+
+            int i = 0;
+            if( des.data[i] == '>' || des.data[i] == '@' || des.data[i] == '+' ) i += 1;
+            if( des.data[i] == ' ' or des.data[i] == '\t' ) i += 1;
+            if( options.des_len and options.des_len < des.size ) des.size = options.des_len;
+            while( i < des.size and ! isspace( des.data[i] ) ) i += 1;
+            des.data[i] = 0;
+            one.identifier = des.data;
+        } else {
+            one.tot_length += strlen(buffer);  one += buffer;
+        }
+    }
+#if 0
+    int i, n = 0;
+    for(i=0; i<sequences.size(); i++) n += sequences[i].bufsize + 4;
+    cout<<n<<"\t"<<sequences.capacity() * sizeof(Sequence)<<endl;
+    int i;
+    scanf( "%i", & i );
+#endif
+    one.identifier = NULL;
+    delete[] buffer;
+    gzclose( fin );
+}
+
+
+
 // by liwz
 // disable swap option
 // change des_begin, des_length, des_length2, dat_length => des_begin, tot_length
@@ -1688,6 +1787,12 @@ void Sequence::PrintInfo( int id, FILE *fout, const Options & options, char *buf
 //       tot_length is the total bytes of sequence record 
 void SequenceDB::Read( const char *file, const Options & options )
 {
+    int f_len = strlen(file);
+    if (strcmp(file + f_len - 3, ".gz") == 0 ) {
+        Readgz(file, options);
+        return;
+    }
+
     Sequence one;
     Sequence des;
     FILE *fin = fopen( file, "rb" );
@@ -1776,9 +1881,174 @@ void SequenceDB::Read( const char *file, const Options & options )
     fclose( fin );
 }
 
+
+// by liwz gzip version 2019-02
+// PE reads liwz, disable swap option
+void SequenceDB::Readgz( const char *file, const char *file2, const Options & options )
+{
+    Sequence one, two;
+    Sequence des;
+    gzFile fin = gzopen(file, "r");
+    gzFile fin2= gzopen(file2,"r");
+    char *buffer = NULL;
+    char *buffer2= NULL;
+    char *res = NULL;
+    char *res2= NULL;
+    int option_l = options.min_length;
+    if( fin == NULL ) bomb_error( "Failed to open the database file" );
+    if( fin2== NULL ) bomb_error( "Failed to open the database file" );
+    Clear();
+    buffer = new char[ MAX_LINE_SIZE+1 ];
+    buffer2= new char[ MAX_LINE_SIZE+1 ];
+
+    while (((not gzeof( fin )) && (not gzeof( fin2)) ) || (one.size && two.size)) { /* do not break when the last sequence is not handled */
+        buffer[0] = '>'; res =gzgets(fin,  buffer,  MAX_LINE_SIZE);
+        buffer2[0]= '>'; res2=gzgets(fin2, buffer2, MAX_LINE_SIZE);
+
+        if ( (res      == NULL) && (res2     != NULL)) bomb_error( "Paired input files have different number sequences" );
+        if ( (res      != NULL) && (res2     == NULL)) bomb_error( "Paired input files have different number sequences" );
+        if ( (one.size == 0   ) && (two.size >     0)) bomb_error( "Paired input files have different number sequences" );
+        if ( (one.size >  0   ) && (two.size ==    0)) bomb_error( "Paired input files have different number sequences" );
+        if ( (res      == NULL) && (one.size ==    0)) break;
+
+        if( buffer[0] == '+' ){ // fastq 3rd line
+            // file 1
+            int len = strlen( buffer ); 
+            int len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){ // read until the end of the line
+                if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
+
+            // read next line quality score
+            if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) bomb_error("can not read quality score after");
+            len = strlen( buffer );
+            len2 = len;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) break;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            one.tot_length += len;
+
+            // file 2
+            len = strlen( buffer2 );
+            len2 = len;
+            while( len2 && buffer2[len2-1] != '\n' ){ // read until the end of the line
+                if ( (res2=gzgets(fin2, buffer2, MAX_LINE_SIZE)) == NULL ) break;
+                len2 = strlen( buffer2 );
+                len += len2;
+            }
+            two.tot_length += len;
+
+            // read next line quality score
+            if ( (res2=gzgets(fin2, buffer2, MAX_LINE_SIZE)) == NULL ) bomb_error("can not read quality score after");
+            len = strlen( buffer2 );
+            len2 = len;
+            while( len2 && buffer2[len2-1] != '\n' ){
+                if ( (res2=gzgets(fin2, buffer2, MAX_LINE_SIZE)) == NULL ) break;
+                len2 = strlen( buffer2 );
+                len += len2;
+            }
+            two.tot_length += len;
+
+        }else if (buffer[0] == '>' || buffer[0] == '@' || (res==NULL && one.size)) {
+            if ( one.size && two.size ) { // write previous record
+                if( one.identifier == NULL || one.Format() ){
+                    printf( "Warning: from file \"%s\",\n", file );
+                    printf( "Discarding invalid sequence or sequence without identifier and description!\n\n" );
+                    if( one.identifier ) printf( "%s\n", one.identifier );
+                    printf( "%s\n", one.data );
+                    one.size=0; two.size=0;
+                }
+                if( two.identifier == NULL || two.Format() ){
+                    printf( "Warning: from file \"%s\",\n", file2 );
+                    printf( "Discarding invalid sequence or sequence without identifier and description!\n\n" );
+                    if( two.identifier ) printf( "%s\n", two.identifier );
+                    printf( "%s\n", two.data );
+                    one.size=0; two.size = 0;
+                }
+                one.index = sequences.size();
+                if( (one.size + two.size)> option_l ) {
+                    if (options.trim_len    > 0) one.trim(options.trim_len);
+                    if (options.trim_len_R2 > 0) two.trim(options.trim_len_R2);
+                    sequences.Append( new Sequence( one, two, 1 ) ); 
+                }
+            }
+            // R1
+            one.size = 0;
+            one.tot_length = 0;
+
+            int len = strlen( buffer );
+            int len2 = len;
+            des.size = 0;
+            des += buffer;
+            while( len2 && buffer[len2-1] != '\n' ){
+                if ( (res=gzgets(fin, buffer, MAX_LINE_SIZE)) == NULL ) break;
+                des += buffer;
+                len2 = strlen( buffer );
+                len += len2;
+            }
+            size_t offset = gztell( fin );    
+            one.des_begin = offset - len; // offset of ">" or "@" 
+            one.tot_length += len;              // count first line
+
+            int i = 0;
+            if( des.data[i] == '>' || des.data[i] == '@' || des.data[i] == '+' ) i += 1;
+            if( des.data[i] == ' ' or des.data[i] == '\t' ) i += 1;
+            if( options.des_len and options.des_len < des.size ) des.size = options.des_len;
+            while( i < des.size and ! isspace( des.data[i] ) ) i += 1;
+            des.data[i] = 0;                   // find first non-space letter
+            one.identifier = des.data;
+
+            // R2
+            two.size = 0;
+            two.tot_length = 0;
+
+            len = strlen( buffer2 );
+            len2 = len;
+            while( len2 && buffer2[len2-1] != '\n' ){
+                if ( (res=gzgets(fin2, buffer2, MAX_LINE_SIZE)) == NULL ) break;
+                len2 = strlen( buffer2 );
+                len += len2;
+            }
+            offset = gztell( fin2 );
+            two.des_begin = offset - len;
+            two.tot_length += len;              // count first line
+            two.identifier = des.data;
+        } else {
+            one.tot_length += strlen(buffer);  one += buffer;
+            two.tot_length+= strlen(buffer2); two+= buffer2;
+        }
+    }
+#if 0
+    int i, n = 0;
+    for(i=0; i<sequences.size(); i++) n += sequences[i].bufsize + 4;
+    cout<<n<<"\t"<<sequences.capacity() * sizeof(Sequence)<<endl;
+    int i;
+    scanf( "%i", & i );
+#endif
+    one.identifier = NULL;
+    two.identifier = NULL;
+    delete[] buffer;
+    gzclose( fin );
+    delete[] buffer2;
+    gzclose( fin2 );
+}
+
 // PE reads liwz, disable swap option
 void SequenceDB::Read( const char *file, const char *file2, const Options & options )
 {
+    int f_len = strlen(file);
+    int f_len2= strlen(file2);
+    if (strcmp(file + f_len - 3, ".gz") == 0 ) {
+        if ( strcmp(file2 + f_len2 - 3, ".gz") ) bomb_error( "Both input files need to be in .gz format" );
+        Readgz(file, file2, options);
+        return;
+    }
+
     Sequence one, two;
     Sequence des;
     FILE *fin = fopen( file, "rb" );
@@ -2079,8 +2349,48 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 	fclose( fout );
 	delete []buf;
 }
+
+// input db is gzipped
+void SequenceDB::WriteClustersgz( const char *db, const char *newdb, const Options & options )
+{
+    gzFile fin = gzopen(db, "r");
+	FILE *fout = fopen( newdb, "w+" );
+	int i, j, n = rep_seqs.size();
+	int count, rest;
+	char *buf = new char[MAX_LINE_SIZE+1];
+	vector<uint64_t> sorting( n );
+	if( fin == NULL || fout == NULL ) bomb_error( "file opening failed" );
+	for (i=0; i<n; i++) sorting[i] = ((uint64_t)sequences[ rep_seqs[i] ]->index << 32) | rep_seqs[i];
+	std::sort( sorting.begin(), sorting.end() );
+	for (i=0; i<n; i++){
+		Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
+		gzseek( fin, seq->des_begin, SEEK_SET );
+
+		count = seq->tot_length / MAX_LINE_SIZE;
+		rest  = seq->tot_length % MAX_LINE_SIZE;
+		//printf( "count = %6i,  rest = %6i\n", count, rest );
+		for (j=0; j<count; j++){
+			if( gzread(fin, buf, MAX_LINE_SIZE) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, MAX_LINE_SIZE, fout );
+		}
+		if( rest ){
+			if( gzread(fin, buf, rest) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, rest, fout );
+		}
+	}
+	gzclose( fin );
+	fclose( fout );
+	delete []buf;
+}
+
 void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options & options )
 {
+    int f_len = strlen(db);
+    if (strcmp(db + f_len - 3, ".gz") == 0 ) {
+        WriteClustersgz(db, newdb, options);
+        return;
+    }
+
 	FILE *fin = fopen( db, "rb" );
 	FILE *fout = fopen( newdb, "w+" );
 	int i, j, n = rep_seqs.size();
@@ -2110,9 +2420,97 @@ void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options
 	fclose( fout );
 	delete []buf;
 }
+
+
+// input db is gzipped
+// liwz PE output
+void SequenceDB::WriteClustersgz( const char *db, const char *db_pe, const char *newdb, const char *newdb_pe, const Options & options )
+{
+    gzFile fin    = gzopen(db,    "r");
+	gzFile fin_pe = gzopen(db_pe, "r");
+	FILE *fout = fopen( newdb, "w+" );
+	FILE *fout_pe = fopen( newdb_pe, "w+" );
+	int i, j, n = rep_seqs.size();
+	int count, rest;
+	char *buf = new char[MAX_LINE_SIZE+1];
+	vector<uint64_t> sorting( n );
+	if( fin == NULL || fout == NULL ) bomb_error( "file opening failed" );
+	if( fin_pe == NULL || fout_pe == NULL ) bomb_error( "file opening failed" );
+	for (i=0; i<n; i++) sorting[i] = ((uint64_t)sequences[ rep_seqs[i] ]->index << 32) | rep_seqs[i];
+	std::sort( sorting.begin(), sorting.end() );
+
+        //sort fasta / fastq
+        int *clstr_size;
+        int *clstr_idx1;
+        if (options.sort_outputf) {
+            clstr_size = new int[n];
+            clstr_idx1 = new int[n];
+            for (i=0; i<n; i++) { 
+                clstr_size[i] = 0;
+                clstr_idx1[i]  = i;
+            }
+
+            int N = sequences.size();
+            for (i=0; i<N; i++) { 
+                int id = sequences[i]->cluster_id;
+                if (id < 0) continue;
+                if (id >=n) continue;
+                clstr_size[id]++;
+            }
+            quick_sort_idxr(clstr_size, clstr_idx1, 0, n-1);
+        }
+
+	for (i=0; i<n; i++){
+		Sequence *seq = sequences[ sorting[i] & 0xffffffff ];
+                if (options.sort_outputf) seq = sequences[  rep_seqs[ clstr_idx1[i] ] ];
+                //R1
+		gzseek( fin, seq->des_begin, SEEK_SET );
+
+		count = seq->tot_length / MAX_LINE_SIZE;
+		rest  = seq->tot_length % MAX_LINE_SIZE;
+		//printf( "count = %6i,  rest = %6i\n", count, rest );
+		for (j=0; j<count; j++){
+			if( gzread(fin, buf, MAX_LINE_SIZE) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, MAX_LINE_SIZE, fout );
+		}
+		if( rest ){
+			if( gzread(fin, buf, rest) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, rest, fout );
+		}
+
+                //R2
+		gzseek( fin_pe, seq->des_begin2, SEEK_SET );
+
+		count = seq->tot_length2 / MAX_LINE_SIZE;
+		rest  = seq->tot_length2 % MAX_LINE_SIZE;
+		//printf( "count = %6i,  rest = %6i\n", count, rest );
+		for (j=0; j<count; j++){
+			if( gzread(fin_pe, buf, MAX_LINE_SIZE) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, MAX_LINE_SIZE, fout_pe );
+		}
+		if( rest ){
+			if( gzread(fin_pe, buf, rest) ==0 ) bomb_error( "Can not swap in sequence" );
+			fwrite( buf, 1, rest, fout_pe );
+		}
+
+	}
+	gzclose( fin );
+	gzclose( fin_pe );
+	fclose( fout );
+	fclose( fout_pe );
+	delete []buf;
+}
+
+
 // liwz PE output
 void SequenceDB::WriteClusters( const char *db, const char *db_pe, const char *newdb, const char *newdb_pe, const Options & options )
 {
+    int f_len = strlen(db); 
+    if (strcmp(db + f_len - 3, ".gz") == 0 ) {
+        WriteClustersgz(db, db_pe, newdb, newdb_pe, options);
+        return;
+    }
+
 	FILE *fin = fopen( db, "rb" );
 	FILE *fout = fopen( newdb, "w+" );
 	FILE *fin_pe = fopen( db_pe, "rb" );
@@ -2819,7 +3217,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 	}
 	printf( "\n%9i  finished  %9i  clusters\n", sequences.size(), rep_seqs.size() );
 	mem = (mem_need + tabsize*sizeof(IndexCount))/mega;
-	printf( "\nApprixmated maximum memory consumption: %zuM\n", mem );
+	printf( "\nApproximated maximum memory consumption: %zuM\n", mem );
 	last_table.Clear();
 	word_table.Clear();
 }
@@ -3371,7 +3769,7 @@ void SequenceDB::DoClustering( const Options & options )
 	}
 	printf( "\n%9i  finished  %9i  clusters\n", sequences.size(), rep_seqs.size() );
 	mem = (mem_need + tabsize*sizeof(IndexCount))/mega;
-	printf( "\nApprixmated maximum memory consumption: %liM\n", mem );
+	printf( "\nApproximated maximum memory consumption: %liM\n", mem );
 	temp_files.Clear();
 	word_table.Clear();
 
