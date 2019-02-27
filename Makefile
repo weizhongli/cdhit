@@ -28,7 +28,7 @@ ifdef MAX_SEQ
 CCFLAGS += -DMAX_SEQ=$(MAX_SEQ)
 endif
 
-#LDFLAGS = -static -o
+#LDFLAGS = -static -lz -o
 LDFLAGS += -lz -o
 
 PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div cd-hit-454

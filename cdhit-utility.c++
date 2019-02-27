@@ -136,7 +136,8 @@ char txt_option_sc[] =
 \tif set to 1, output clusters by decreasing size\n";
 char txt_option_sf[] =
 "\tsort fasta/fastq by cluster size (number of sequences), default 0, no sorting\n \
-\tif set to 1, output sequences by decreasing cluster size\n";
+\tif set to 1, output sequences by decreasing cluster size\n \
+\tthis can be very slow if the input is in .gz format\n";
 
 char txt_option_mask[] = "\tmasking letters (e.g. -mask NX, to mask out both 'N' and 'X')\n";
 char txt_option_match[] = "\tmatching score, default 2 (1 for T-U and N-N)\n";
