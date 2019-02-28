@@ -1689,7 +1689,7 @@ void Sequence::PrintInfo( int id, FILE *fout, const Options & options, char *buf
 //       tot_length is the total bytes of sequence record 
 void SequenceDB::Readgz( const char *file, const Options & options )
 {
-
+#ifdef WITH_ZLIB
     Sequence one;
     Sequence des;
     gzFile fin = gzopen(file, "r");
@@ -1766,16 +1766,12 @@ void SequenceDB::Readgz( const char *file, const Options & options )
             one.tot_length += strlen(buffer);  one += buffer;
         }
     }
-#if 0
-    int i, n = 0;
-    for(i=0; i<sequences.size(); i++) n += sequences[i].bufsize + 4;
-    cout<<n<<"\t"<<sequences.capacity() * sizeof(Sequence)<<endl;
-    int i;
-    scanf( "%i", & i );
-#endif
     one.identifier = NULL;
     delete[] buffer;
     gzclose( fin );
+#else
+    bomb_error("this program was not compiled with zlib");
+#endif
 }
 
 
@@ -1886,6 +1882,7 @@ void SequenceDB::Read( const char *file, const Options & options )
 // PE reads liwz, disable swap option
 void SequenceDB::Readgz( const char *file, const char *file2, const Options & options )
 {
+#ifdef WITH_ZLIB
     Sequence one, two;
     Sequence des;
     gzFile fin = gzopen(file, "r");
@@ -2023,19 +2020,16 @@ void SequenceDB::Readgz( const char *file, const char *file2, const Options & op
             two.tot_length+= strlen(buffer2); two+= buffer2;
         }
     }
-#if 0
-    int i, n = 0;
-    for(i=0; i<sequences.size(); i++) n += sequences[i].bufsize + 4;
-    cout<<n<<"\t"<<sequences.capacity() * sizeof(Sequence)<<endl;
-    int i;
-    scanf( "%i", & i );
-#endif
     one.identifier = NULL;
     two.identifier = NULL;
     delete[] buffer;
     gzclose( fin );
     delete[] buffer2;
     gzclose( fin2 );
+#else
+    bomb_error("this program was not compiled with zlib");
+#endif
+
 }
 
 // PE reads liwz, disable swap option
@@ -2353,6 +2347,7 @@ void SequenceDB::DivideSave( const char *db, const char *newdb, int n, const Opt
 // input db is gzipped
 void SequenceDB::WriteClustersgz( const char *db, const char *newdb, const Options & options )
 {
+#ifdef WITH_ZLIB
     gzFile fin = gzopen(db, "r");
 	FILE *fout = fopen( newdb, "w+" );
 	int i, j, n = rep_seqs.size();
@@ -2381,6 +2376,10 @@ void SequenceDB::WriteClustersgz( const char *db, const char *newdb, const Optio
 	gzclose( fin );
 	fclose( fout );
 	delete []buf;
+#else
+    bomb_error("this program was not compiled with zlib");
+#endif
+
 }
 
 void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options & options )
@@ -2426,6 +2425,7 @@ void SequenceDB::WriteClusters( const char *db, const char *newdb, const Options
 // liwz PE output
 void SequenceDB::WriteClustersgz( const char *db, const char *db_pe, const char *newdb, const char *newdb_pe, const Options & options )
 {
+#ifdef WITH_ZLIB
     gzFile fin    = gzopen(db,    "r");
 	gzFile fin_pe = gzopen(db_pe, "r");
 	FILE *fout = fopen( newdb, "w+" );
@@ -2499,6 +2499,9 @@ void SequenceDB::WriteClustersgz( const char *db, const char *db_pe, const char 
 	fclose( fout );
 	fclose( fout_pe );
 	delete []buf;
+#else
+    bomb_error("this program was not compiled with zlib");
+#endif
 }
 
 

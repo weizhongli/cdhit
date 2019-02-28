@@ -1,10 +1,8 @@
-
 CC = g++ -Wall -ggdb
 CC = g++ -pg
 CC = g++
 
-# without OpenMP
-
+# default with OpenMP
 # with OpenMP
 # in command line: 
 # make openmp=yes
@@ -12,6 +10,21 @@ ifeq ($(openmp),no)
   CCFLAGS = -DNO_OPENMP
 else
   CCFLAGS = -fopenmp
+endif
+
+#LDFLAGS = -static -lz -o
+#LDFLAGS = /usr/lib/x86_64-linux-gnu/libz.a -o
+
+# default with zlib
+# without zlib
+# in command line:
+# make zlib=no
+ifeq ($(zlib),no)
+  CCFLAGS += 
+  LDFLAGS += -o
+else
+  CCFLAGS += -DWITH_ZLIB
+  LDFLAGS += -lz -o
 endif
 
 # support debugging
@@ -27,9 +40,6 @@ endif
 ifdef MAX_SEQ
 CCFLAGS += -DMAX_SEQ=$(MAX_SEQ)
 endif
-
-#LDFLAGS = -static -lz -o
-LDFLAGS += -lz -o
 
 PROGS = cd-hit cd-hit-est cd-hit-2d cd-hit-est-2d cd-hit-div cd-hit-454
 

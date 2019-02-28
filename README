@@ -13,10 +13,10 @@ don't have zlib, please install it first.
 How to compile
   1. Compile with multi-threading support (default): make
   2. Compile without multi-threading support (if you are on very old systems): make openmp=no
-
+  3. Compile without zlib (if you can not install zlib): make zlib=no
 
 Having problems to compile
-Please download the pre-compiled binary packages for Linux systems
+Please contact the author
 
 
 For cd-hit-auxtools

@@ -34,7 +34,10 @@
 #include<ctype.h>
 #include<stdint.h>
 #include<time.h>
+
+#ifdef WITH_ZLIB
 #include<zlib.h>
+#endif
 
 #include<valarray>
 #include<vector>
