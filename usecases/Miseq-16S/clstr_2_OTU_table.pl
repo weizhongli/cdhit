@@ -5,7 +5,13 @@ getopts("i:s:S:o:f:j:",\%opts);
 
 my $input             = $opts{i}; $input   = "OTU.clstr" unless $input;
 my $output            = $opts{o}; $output  = "OTU.txt" unless ($output);
-my ($i, $j, $k, $str, $cmd, $ll);
+my $output_pre        = $output;
+   $outptu_pre        =~ s/\.([^\.])+$//;
+my $output_meta       = "$outptu_pre-sample-meta.txt";
+my $output_feature    = "$output_pre-feature.txt";
+my $output_short      = "$output_pre-short.txt";
+
+My ($i, $j, $k, $str, $cmd, $ll);
 
 my %count = ();
 my %count_t = ();
@@ -31,8 +37,18 @@ while($ll=<TMP>){
         $count_s{$sample_id}++;
       }
       else {
+        $id =~ s/^([^\|]+)\|//;
+        $id =~ s/;\./;/g;
+        $id = "Root;$id";
+        $id =~ s/;D_0__/;k__/;
+        $id =~ s/;D_1__/;p__/;
+        $id =~ s/;D_2__/;c__/;
+        $id =~ s/;D_3__/;o__/;
+        $id =~ s/;D_4__/;f__/;
+        $id =~ s/;D_5__/;g__/;
+        $id =~ s/;D_6__/;s__/;
         $OTU_2_ann{$OTU} = $id;
-        $tree_flag = 1 if ($id =~ /\|k__Bacteria;.p__/);
+        $tree_flag = 1 if ($id =~ /;k__Bacteria/);
       }
     }
     else {
@@ -45,23 +61,33 @@ close(TMP);
 my @sample_ids = sort keys %sample_id;
 
 open(OUT1, "> $output") || die "can not write $output";
-print OUT1 "OTU";
+open(OUT2, "> $output_short") || die "can not write $output_short";
+open(OUT3, "> $output_feature") || die "can not write $output_feature";
+
+print OUT1 "#OTUID";
+print OUT2 "#OTUID";
+print OUT3 "#OTUID";
 foreach $sample_id (@sample_ids){
   print OUT1 "\t$sample_id";
+  print OUT2 "\t$sample_id";
 }
 if ($tree_flag) {
   print OUT1 "\t", join("\t", qw/Kingdom Phylum Class Order Family Genus Species/);
 }
 #print OUT1 "\tTotal\n";
 print OUT1 "\tAnnotation\n";
+print OUT2 "\ttaxonomy\tconfidence\n";
 
 for ($i=1; $i<=$OTU; $i++){
   $ann = "None";
   if ($OTU_2_ann{$i}) { $ann = $OTU_2_ann{$i}; }
   print OUT1 "OTU$i";
+  print OUT2 "OTU$i";
+  print OUT3 "OTU$i";
   foreach $sample_id (@sample_ids){
     $k = $count{$i}{$sample_id}? $count{$i}{$sample_id} : 0;
     print OUT1 "\t$k";
+    print OUT2 "\t$k";
   }
   if ($tree_flag) {
     my ($tax_k, $tax_p, $tax_c, $tax_o, $tax_f, $tax_g, $tax_s);
@@ -76,7 +102,18 @@ for ($i=1; $i<=$OTU; $i++){
   }
   #print OUT1 "\t$count_t{$i}";
   print OUT1 "\t$ann\n";
+  print OUT2 "\n";
+  print OUT3 "\t$ann\t1.0\n";
 }
 close(OUT1);
+close(OUT2);
+close(OUT3);
+
+open(OUT, ">$output_meta") || die "can not write to $outptu_meta";
+print OUT "#SampleID\tGroup\n";
+foreach $sample_id (@sample_ids){
+  print OUT "$sample_id\tnogroup\n";
+}
+close(OUT);
 
 
