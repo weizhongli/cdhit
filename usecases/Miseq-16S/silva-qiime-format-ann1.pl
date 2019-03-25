@@ -33,7 +33,7 @@ my %id_2_seq = ();
 my $id = "";
 open(TMP, $fasta) || die "can not open $fasta";
 while($ll=<TMP>){
-  if ($ll =~ /^>(\d+)/) {
+  if ($ll =~ /^>(\S+)/) {
     chop($ll);
     $id = $1;
     $ann = $id_2_ann{$id};
