@@ -6,12 +6,12 @@ getopts("i:s:S:o:f:j:",\%opts);
 my $input             = $opts{i}; $input   = "OTU.clstr" unless $input;
 my $output            = $opts{o}; $output  = "OTU.txt" unless ($output);
 my $output_pre        = $output;
-   $outptu_pre        =~ s/\.([^\.])+$//;
-my $output_meta       = "$outptu_pre-sample-meta.txt";
+   $output_pre        =~ s/\.([^\.])+$//;
+my $output_meta       = "$output_pre-sample-meta.txt";
 my $output_feature    = "$output_pre-feature.txt";
 my $output_short      = "$output_pre-short.txt";
 
-My ($i, $j, $k, $str, $cmd, $ll);
+my ($i, $j, $k, $str, $cmd, $ll);
 
 my %count = ();
 my %count_t = ();
@@ -76,10 +76,11 @@ if ($tree_flag) {
 }
 #print OUT1 "\tTotal\n";
 print OUT1 "\tAnnotation\n";
-print OUT2 "\ttaxonomy\tconfidence\n";
+print OUT2 "\n";
+print OUT3 "\ttaxonomy\tconfidence\n";
 
 for ($i=1; $i<=$OTU; $i++){
-  $ann = "None";
+  $ann = "";
   if ($OTU_2_ann{$i}) { $ann = $OTU_2_ann{$i}; }
   print OUT1 "OTU$i";
   print OUT2 "OTU$i";
@@ -109,7 +110,7 @@ close(OUT1);
 close(OUT2);
 close(OUT3);
 
-open(OUT, ">$output_meta") || die "can not write to $outptu_meta";
+open(OUT, ">$output_meta") || die "can not write to $output_meta";
 print OUT "#SampleID\tGroup\n";
 foreach $sample_id (@sample_ids){
   print OUT "$sample_id\tnogroup\n";
