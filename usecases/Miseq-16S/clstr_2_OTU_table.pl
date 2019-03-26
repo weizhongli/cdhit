@@ -1,15 +1,20 @@
 #!/usr/bin/perl
 #
 use Getopt::Std;
-getopts("i:s:S:o:f:j:",\%opts);
+getopts("i:s:S:o:f:j:b:h:",\%opts);
+
+die usage() unless($opts{o});
 
 my $input             = $opts{i}; $input   = "OTU.clstr" unless $input;
-my $output            = $opts{o}; $output  = "OTU.txt" unless ($output);
+my $output            = $opts{o};
 my $output_pre        = $output;
    $output_pre        =~ s/\.([^\.])+$//;
 my $output_meta       = "$output_pre-sample-meta.txt";
 my $output_feature    = "$output_pre-feature.txt";
 my $output_short      = "$output_pre-short.txt";
+my $output_biom       = "$output_pre.biom";
+my $biom_exe          = $opts{b};
+
 
 my ($i, $j, $k, $str, $cmd, $ll);
 
@@ -117,4 +122,23 @@ foreach $sample_id (@sample_ids){
 }
 close(OUT);
 
+if (-e $biom_exe) {
+  $cmd = `$biom_exe convert -i $output_short -o $output_biom --to-hdf5 --observation-metadata-fp $output_feature --sample-metadata-fp $output_meta`;
+}
+
+sub usage {
+<<EOF
+This script converts OTU clusters to tsv format, and if biom is available,
+convert .biom file
+
+Usage:
+$script_name -i OTU.clstr -o OTU.txt
+
+Options:
+    -i input OTU.clstr, by cd-hit-otu-miseq
+    -o output OTU table
+    -b path to biom executible, if provided, will make .biom file
+
+EOF
+}
 
