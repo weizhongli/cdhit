@@ -26,7 +26,7 @@ For cd-hit-auxtools
 
 Compile cd-hit on MacOS
 To install CD-HIT on MacOS, first install gcc on your system.
-To use Homebrew (https://brew.sh/), see https://brewformulas.org/gcc. 
+To use Homebrew (https://brew.sh/), see https://formulae.brew.sh/formula/gcc@6. 
 Then locate the path to your g++ executable, (e.g. /usr/local/Cellar/gcc/6.3.0_1/bin/g++-6, 
 note: yours g++ path is likely to be different), then use command like this:
   make CC=/usr/local/Cellar/gcc/6.3.0_1/bin/g++-6
