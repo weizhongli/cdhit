@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # output single fasta file
 # for each cluster output at least $cutoff seqs
 

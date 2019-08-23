@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #note you have to use "-d 0" in the cd-hit run
 #note you better to use "-g 1" in the cd-hit run

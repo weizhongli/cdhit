@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 $no = 0;
 while($ll=<>){
   if ($ll =~ /^>Cluster (\d+)/) {

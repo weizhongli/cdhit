@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #not like cd-hit-div, this script do not sort input
 #or throw away seq

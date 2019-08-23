@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 my ($gi_file, $seq_file) = @ARGV;
 
