@@ -23,7 +23,10 @@ while($ll=<>){
       else              { 
         push(@non_reps, $id);
         my @lls = split(/\s+/, $ll);
-        my ($a, $iden) = split(/\//, $lls[-1]);
+        # my ($a, $iden) = split(/\//, $lls[-1]); #### bug, with cd-hit-est-2d, there are +/- sign e.g. 10:1029:30:1042/+/97.35%
+        my @mms = split(/\//, $lls[-1]);
+        my $a = $mms[0];
+        my $iden = $mms[-1];
         chop($iden); ### removing % sign
         my ($qb, $qe, $sb, $se) = split(/:/, $a);
         my $alnln = $qe-$qb+1;
