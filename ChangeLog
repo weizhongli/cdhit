@@ -1,6 +1,48 @@
 
 CD-HIT ChangeLog
 
+CD-HIT-V4.8.1 (2019-03-01):
+Add: support  .gz input files
+
+CD-HIT-V4.6.8 (2017-06-22):
+Add: CD-HIT-OTU-MiSeq is included as an use case, for clustering 16S rDNA MiSeq paired end reads.
+Fix: Minor fix made for CD-HIT-OTU-MiSeq
+
+CD-HIT-V4.6.7 (2017-05-02):
+Add: cd-hit-est and cd-hit-est-2d now can cluster paired end (PE) reads.
+AddL user can select sub-sequence from the beginning of the sequences for clustering.
+Add: psi-cd-hit.pl can work with BLAST+
+Add: output cluster file can be sorted by cluster size too (cluster length still default)
+Add: output fasta file can be sorted by cluster size.
+
+CD-HIT-V4.6.6 (2016-07-12):
+Fix: cd-hit-dup in variable length input when write out R1 reads
+
+CD-HIT-V4.6.5 (2016-03-05):
+Add filter for -aL option so that short sequences will be skipped if not
+satisfy representative sequences' -aL requirement.  This will make compute
+faster in clustering settings where sequences in the same cluster are
+required to have similar length using -aL -AL option (e.g.  -aL 0.9).
+
+CD-HIT-V4.6.4 (2015-04-04):
+Major update of cd-hit-dup output format: previous cd-hit-dup output trimmed
+reads, or merged reads of (R1 and R2) for paired end (PE) reads.  The output
+are not really useful for later analysis.  In this version, the full length
+reads are in the output.  For PE reads, both full length reads are in the
+output files.
+
+CD-HIT-V4.6.3 (2015-05-14):
+Fix: A few bug fix
+Fix: Updated documents
+Add: Makefile, openmp as default
+
+CD-HIT-V4.6.2 (2015-05-06):
+Fix: few bug fixes
+Add: support for negative value of the -T option
+Add: minor improvement for supporting long sequences
+Add: new psi-cd-hit-2013-0525, which was developed separately, back to cd-hit
+Add: cd-hit-auxtools-v0.5-2012-03-07-fix
+
 CD-HIT-V4.6.1 (2012-08-27):
 Fix: a minor bug in handling masking letters;
 Add: a few minor changes and fixings to conform to debian packaging rules.
