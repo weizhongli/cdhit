@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 my $script_name = $0;
 my $script_dir = $0;

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 ################################################################################
 ######### PSI-cd-hit written by Weizhong Li at http://cd-hit.org
 ################################################################################
@@ -1372,7 +1372,7 @@ sub write_remote_perl_script {
 
   open(REPERL, "> $remote_perl_script") || die;
   print REPERL <<EOD;
-#!/usr/bin/perl
+#!/usr/bin/env perl
 \$host = shift;
 \$instance = shift;
 \$arg = shift;

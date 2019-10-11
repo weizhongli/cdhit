@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 if(@ARGV==0){
    print "Usage:\n\tclstr_size_stat.pl clstr_file\n";

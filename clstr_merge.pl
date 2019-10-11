@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # the order of clusters need to be identical
 my ($master_clstr, @clstr) = @ARGV;

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ## calculate the sensitivity and specificity of clusters
 ## if the input fasta file has pre-defined classification term

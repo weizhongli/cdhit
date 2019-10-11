@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 use Getopt::Std;
 getopts("s:S:o:f:j:",\%opts);

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 ## =========================== NGS tools ==========================================
 ## NGS tools for metagenomic sequence analysis
 ## May also be used for other type NGS data analysis
