@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl -w
 ################################################################################
 ######### PSI-cd-hit written by Weizhong Li at http://cd-hit.org
 ################################################################################
@@ -1195,9 +1195,9 @@ sub run_batch_blast3_multi {
   if ($exec_mode eq "qsub") {
     for ($j=0; $j<$num_qsub; $j++) {
       my $t = "psi-cd-hit-$j";
-      my $cmd = `qsub -N $t $remote_sh_script $j`; #### pass $j to qsub command
+      my $cmd = `qsub -N $t $remote_sh_script -v para=$j`; #### pass $j to qsub command
       my $qsub_id = 0;
-      if ($cmd =~ /(\d+)/) { $qsub_id = $1;} else {die "can not submit qsub job and return a id\n";}
+      if ($cmd =~ /(\d+)/) { $qsub_id = $1;} else {die "can not submit qsub job and return a id: $cmd\n";}
       print LOG "qsub querying $j, PID $qsub_id\n";
       $qsub_ids{$qsub_id} = 1;
     }
@@ -1348,7 +1348,7 @@ EOD
   print RESH <<EOD;
 $local_sh
 
-para=\$1
+para=\${para:-\$1}
 cd $pwd
 EOD
 
@@ -1372,7 +1372,7 @@ sub write_remote_perl_script {
 
   open(REPERL, "> $remote_perl_script") || die;
   print REPERL <<EOD;
-#!/usr/bin/env perl
+#!/usr/bin/perl
 \$host = shift;
 \$instance = shift;
 \$arg = shift;
@@ -1451,7 +1451,7 @@ sub wait_blast_out {
 sub SGE_qstat_xml_query {
   my ($i, $j, $k, $cmd, $ll);
   %qstat_xml_data = (); #### global
-  $cmd = `qstat -f -xml`;
+  $cmd = `qstat -f -x`;
   if ($cmd =~ /<queue_info/) { #### dummy 
     $qstat_xml_data{"NULL"}= ["NULL","NULL"];
   }
