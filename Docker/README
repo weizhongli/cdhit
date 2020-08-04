@@ -1,0 +1,13 @@
+To build cd-hit docker image
+docker build --tag cd-hit .
+
+To run a cd-hit program using docker 
+docker run -v `pwd`:/data -w /data cd-hit cd-hit -i input.fa -o output -c 0.9 -n 5 -d 0 
+
+Here, you have an input file named input.fa in your current directory
+    option -v `pwd`:`pwd` is to mount your current directory into the docker container at /data
+    opeion -w /data       is to set working dirtory to /data within the docker ocntainer
+    cd-hit                (the first cd-hit) is the name of the docker image
+    cd-hit                (the second cd-hit) is the cd-hit program you are running
+    other options following the second cd-hit are options for cd-hit program
+
