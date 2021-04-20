@@ -95,14 +95,14 @@ mv $SELF/seq.99f.log $SELF/chimeric-small-clusters-list.txt
 
 
 ####
-if [ ! -e "$CMDOPTS.4" ] then;
+if [ ! -e "$CMDOPTS.4" ]; then
   mkdir -p $CMDOPTS.4
 fi
 
 i="0"
 while [ 1 ]; do
 
-  if [ -e "$CMDOPTS.4/lock"] then;
+  if [ -e "$CMDOPTS.4/lock" ]; then
     echo "wait $CMDOPTS.4/lock"
     sleep 5
   else
