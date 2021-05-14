@@ -1,19 +1,19 @@
-CXX = g++ -Wall -ggdb
-CXX = g++ -pg
-CXX = g++
+CXX ?= g++ -Wall -ggdb
+CXX ?= g++ -pg
+CXX ?= g++
 
 # default with OpenMP
 # with OpenMP
 # in command line: 
 # make openmp=yes
 ifeq ($(openmp),no)
-  CXXFLAGS = -DNO_OPENMP
+  CXXFLAGS ?= -DNO_OPENMP
 else
-  CXXFLAGS = -fopenmp
+  CXXFLAGS ?= -fopenmp
 endif
 
-#LDFLAGS = -static -lz -o
-#LDFLAGS = /usr/lib/x86_64-linux-gnu/libz.a -o
+#LDFLAGS ?= -static -lz -o
+#LDFLAGS ?= /usr/lib/x86_64-linux-gnu/libz.a -o
 
 # default with zlib
 # without zlib

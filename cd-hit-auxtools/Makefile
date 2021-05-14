@@ -1,8 +1,8 @@
 
-CXX = g++
+CXX ?= g++
 
-CXXFLAGS = -Wall -Wno-unused -I. -Imintlib
-LDFLAGS = -fPIC
+CXXFLAGS ?= -Wall -Wno-unused -I. -Imintlib
+LDFLAGS ?= -fPIC
 
 
 UNAME = $(shell uname)
