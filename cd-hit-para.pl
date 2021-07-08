@@ -11,6 +11,7 @@
 #                                      Email liwz@sdsc.edu
 # =============================================================================
 
+use warnings;
 use strict;
 no strict "refs";
 

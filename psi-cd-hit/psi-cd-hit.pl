@@ -3,6 +3,8 @@
 ######### PSI-cd-hit written by Weizhong Li at http://cd-hit.org
 ################################################################################
 
+use warnings;
+
 our $script_name = $0;
 our $script_dir = $0;
    $script_dir =~ s/[^\/]+$//;
