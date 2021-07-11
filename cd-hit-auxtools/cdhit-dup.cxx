@@ -369,7 +369,7 @@ void ClusterDuplicate( SequenceList & seqlist, Array<SequenceCluster> & clusters
 
 		int start = primer;
 		dep = 0;//HashingDepth( shared, min );
-		while( maxmm == 0 && clustered == false && (start+2*shared) <= qlen && start <= primer + (maxmm+1) * shared ){
+		while( maxmm > 0 && clustered == false && (start+2*shared) <= qlen && start <= primer + (maxmm+1) * shared ){
 			hash = MakeHash( seq, start, shared );
 			node = middles[start][ dep ].Find( hash );
 			start += shared;
