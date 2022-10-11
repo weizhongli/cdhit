@@ -52,7 +52,7 @@ char txt_option_g[] =
 \t(accurate but slow mode)\n \
 \tbut either 1 or 0 won't change the representatives of final clusters\n";
 char txt_option_b[] = "\tband_width of alignment, default 20\n";
-char txt_option_M[] = "\tmemory limit (in MB) for the program, default 800; 0 for unlimitted;\n";
+char txt_option_M[] = "\tmemory limit (in MB) for the program, default 800; 0 for unlimited;\n";
 char txt_option_n[] = "\tword_length, default 5, see user's guide for choosing it\n";
 char txt_option_n_est[] = "\tword_length, default 10, see user's guide for choosing it\n";
 char txt_option_l[] = "\tlength of throw_away_sequences, default 10\n";

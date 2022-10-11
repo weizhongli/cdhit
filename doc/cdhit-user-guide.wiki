@@ -146,7 +146,7 @@ __**The most updated options are available from the command line version of the 
  	NOTE!!! don't use -G 0 unless you use alignment coverage controls
  	see options -aL, -AL, -aS, -AS
    -b	band_width of alignment, default 20
-   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimited;
    -T	number of threads, default 1; with 0, all CPUs will be used
    -n	word_length, default 5, see user's guide for choosing it
    -l	length of throw_away_sequences, default 10
@@ -285,7 +285,7 @@ Options:
  	NOTE!!! don't use -G 0 unless you use alignment coverage controls
  	see options -aL, -AL, -aS, -AS
    -b	band_width of alignment, default 20
-   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimited;
    -T	number of threads, default 1; with 0, all CPUs will be used
    -n	word_length, default 5, see user's guide for choosing it
    -l	length of throw_away_sequences, default 10
@@ -384,7 +384,7 @@ Options:
  	NOTE!!! don't use -G 0 unless you use alignment coverage controls
  	see options -aL, -AL, -aS, -AS
    -b	band_width of alignment, default 20
-   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimited;
    -T	number of threads, default 1; with 0, all CPUs will be used
    -n	word_length, default 10, see user's guide for choosing it
    -l	length of throw_away_sequences, default 10
@@ -491,7 +491,7 @@ Options:
  	NOTE!!! don't use -G 0 unless you use alignment coverage controls
  	see options -aL, -AL, -aS, -AS
    -b	band_width of alignment, default 20
-   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimited;
    -T	number of threads, default 1; with 0, all CPUs will be used
    -n	word_length, default 10, see user's guide for choosing it
    -l	length of throw_away_sequences, default 10
@@ -577,7 +577,7 @@ Options:
  	number of identical amino acids in alignment
  	divided by the full length of the shorter sequence + gaps
    -b	band_width of alignment, default 10
-   -M	memory limit (in MB) for the program, default 800; 0 for unlimitted;
+   -M	memory limit (in MB) for the program, default 800; 0 for unlimited;
    -T	number of threads, default 1; with 0, all CPUs will be used
    -n	word_length, default 10, see user's guide for choosing it
    -aL	alignment coverage for the longer sequence, default 0.0
